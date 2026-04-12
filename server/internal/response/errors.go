@@ -1,0 +1,62 @@
+package response
+
+import "errors"
+
+var (
+	// Resource not found
+	ErrNotFound = errors.New("resource not found")
+
+	// Input validation
+	ErrValidation = errors.New("validation error")
+
+	// Auth
+	ErrUnauthorized       = errors.New("unauthorized")
+	ErrEmailAlreadyExists = errors.New("email already exists")
+	ErrInvalidCredentials = errors.New("invalid credentials")
+
+	// Permissions
+	ErrForbidden        = errors.New("forbidden")
+	ErrNotOrgMember     = errors.New("user is not a member of the organisation")
+	ErrNotProjectMember = errors.New("user is not a member of the project")
+
+	// Conflict
+	ErrAlreadyExists = errors.New("resource already exists")
+
+	// Token errors
+	ErrMissingToken   = errors.New("missing authorization token")
+	ErrMalformedToken = errors.New("malformed authorization token")
+	ErrInvalidToken   = errors.New("invalid or expired token")
+
+	// Database
+	ErrDatabase = errors.New("a database error occurred")
+
+	// Internal server errors
+	ErrInternal = errors.New("an internal server error occurred")
+)
+
+// ValidationError carries field-level detail on top of ErrValidation
+type ValidationError struct {
+	Field   string
+	Message string
+}
+
+func (e *ValidationError) Error() string {
+	return e.Field + ": " + e.Message
+}
+
+func (e *ValidationError) Unwrap() error {
+	return ErrValidation
+}
+
+// NotFoundError carries the resource type for richer error messages
+type NotFoundError struct {
+	Resource string
+}
+
+func (e *NotFoundError) Error() string {
+	return e.Resource + " not found"
+}
+
+func (e *NotFoundError) Unwrap() error {
+	return ErrNotFound
+}
