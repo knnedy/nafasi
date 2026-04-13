@@ -36,8 +36,8 @@ func newValidator() (*validator.Validate, ut.Translator) {
 }
 
 func formatValidationError(err error, trans ut.Translator) error {
-	valisationErrors := err.(validator.ValidationErrors)
-	firstErr := valisationErrors[0]
+	validationErrors := err.(validator.ValidationErrors)
+	firstErr := validationErrors[0]
 	return &response.ValidationError{
 		Field:   firstErr.Field(),
 		Message: firstErr.Translate(trans),
