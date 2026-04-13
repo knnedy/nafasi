@@ -33,7 +33,7 @@ func NewAuthService(db *repository.Queries, tokens *token.TokenManager) *AuthSer
 type RegisterInput struct {
 	Name     string `validate:"required,min=2,max=100"`
 	Email    string `validate:"required,email"`
-	Password string `validate:"required,min=8,max=100"`
+	Password string `json:"password" validate:"required,min=8,max=100,has_upper,has_lower,has_number,has_special"`
 }
 
 type LoginInput struct {
