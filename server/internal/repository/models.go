@@ -249,12 +249,12 @@ type TicketType struct {
 }
 
 type User struct {
-	ID           pgtype.UUID
-	Name         string
-	Email        string
-	PasswordHash string
-	Role         UserRole
-	AvatarUrl    pgtype.Text
-	CreatedAt    pgtype.Timestamp
-	UpdatedAt    pgtype.Timestamp
+	ID        pgtype.UUID
+	Name      string
+	Email     string
+	Password  string
+	Role      UserRole
+	AvatarUrl pgtype.Text
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
 }

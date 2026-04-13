@@ -15,25 +15,25 @@ const createUser = `-- name: CreateUser :one
 INSERT INTO "users" (
     "name",
     "email",
-    "password_hash",
+    "password",
     "role"
 ) VALUES (
     $1, $2, $3, $4
-) RETURNING id, name, email, password_hash, role, avatar_url, created_at, updated_at
+) RETURNING id, name, email, password, role, avatar_url, created_at, updated_at
 `
 
 type CreateUserParams struct {
-	Name         string
-	Email        string
-	PasswordHash string
-	Role         UserRole
+	Name     string
+	Email    string
+	Password string
+	Role     UserRole
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, createUser,
 		arg.Name,
 		arg.Email,
-		arg.PasswordHash,
+		arg.Password,
 		arg.Role,
 	)
 	var i User
@@ -41,7 +41,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.ID,
 		&i.Name,
 		&i.Email,
-		&i.PasswordHash,
+		&i.Password,
 		&i.Role,
 		&i.AvatarUrl,
 		&i.CreatedAt,
@@ -60,7 +60,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, name, email, password_hash, role, avatar_url, created_at, updated_at FROM "users" WHERE "email" = $1
+SELECT id, name, email, password, role, avatar_url, created_at, updated_at FROM "users" WHERE "email" = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -70,7 +70,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.ID,
 		&i.Name,
 		&i.Email,
-		&i.PasswordHash,
+		&i.Password,
 		&i.Role,
 		&i.AvatarUrl,
 		&i.CreatedAt,
@@ -80,7 +80,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, name, email, password_hash, role, avatar_url, created_at, updated_at FROM "users" WHERE "id" = $1
+SELECT id, name, email, password, role, avatar_url, created_at, updated_at FROM "users" WHERE "id" = $1
 `
 
 func (q *Queries) GetUserById(ctx context.Context, id pgtype.UUID) (User, error) {
@@ -90,7 +90,7 @@ func (q *Queries) GetUserById(ctx context.Context, id pgtype.UUID) (User, error)
 		&i.ID,
 		&i.Name,
 		&i.Email,
-		&i.PasswordHash,
+		&i.Password,
 		&i.Role,
 		&i.AvatarUrl,
 		&i.CreatedAt,
@@ -105,7 +105,7 @@ SET
     "avatar_url" = $2,
     "updated_at" = NOW()
 WHERE "id" = $1
-RETURNING id, name, email, password_hash, role, avatar_url, created_at, updated_at
+RETURNING id, name, email, password, role, avatar_url, created_at, updated_at
 `
 
 type UpdateUserAvatarParams struct {
@@ -120,7 +120,7 @@ func (q *Queries) UpdateUserAvatar(ctx context.Context, arg UpdateUserAvatarPara
 		&i.ID,
 		&i.Name,
 		&i.Email,
-		&i.PasswordHash,
+		&i.Password,
 		&i.Role,
 		&i.AvatarUrl,
 		&i.CreatedAt,
@@ -132,25 +132,25 @@ func (q *Queries) UpdateUserAvatar(ctx context.Context, arg UpdateUserAvatarPara
 const updateUserPassword = `-- name: UpdateUserPassword :one
 UPDATE "users"
 SET
-    "password_hash" = $2,
+    "password" = $2,
     "updated_at" = NOW()
 WHERE "id" = $1
-RETURNING id, name, email, password_hash, role, avatar_url, created_at, updated_at
+RETURNING id, name, email, password, role, avatar_url, created_at, updated_at
 `
 
 type UpdateUserPasswordParams struct {
-	ID           pgtype.UUID
-	PasswordHash string
+	ID       pgtype.UUID
+	Password string
 }
 
 func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) (User, error) {
-	row := q.db.QueryRow(ctx, updateUserPassword, arg.ID, arg.PasswordHash)
+	row := q.db.QueryRow(ctx, updateUserPassword, arg.ID, arg.Password)
 	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.Email,
-		&i.PasswordHash,
+		&i.Password,
 		&i.Role,
 		&i.AvatarUrl,
 		&i.CreatedAt,
@@ -166,7 +166,7 @@ SET
     "email" = $3,
     "updated_at" = NOW()
 WHERE "id" = $1
-RETURNING id, name, email, password_hash, role, avatar_url, created_at, updated_at
+RETURNING id, name, email, password, role, avatar_url, created_at, updated_at
 `
 
 type UpdateUserProfileParams struct {
@@ -182,7 +182,7 @@ func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfilePa
 		&i.ID,
 		&i.Name,
 		&i.Email,
-		&i.PasswordHash,
+		&i.Password,
 		&i.Role,
 		&i.AvatarUrl,
 		&i.CreatedAt,

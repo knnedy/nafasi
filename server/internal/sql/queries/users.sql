@@ -2,7 +2,7 @@
 INSERT INTO "users" (
     "name",
     "email",
-    "password_hash",
+    "password",
     "role"
 ) VALUES (
     $1, $2, $3, $4
@@ -26,7 +26,7 @@ RETURNING *;
 -- name: UpdateUserPassword :one
 UPDATE "users"
 SET
-    "password_hash" = $2,
+    "password" = $2,
     "updated_at" = NOW()
 WHERE "id" = $1
 RETURNING *;
