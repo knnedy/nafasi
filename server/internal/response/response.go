@@ -40,7 +40,7 @@ func WriteError(w http.ResponseWriter, err error) {
 	var detail errorDetail
 
 	switch {
-	case errors.Is(err, ErrValidation):
+	case errors.Is(err, ErrInvalidInput):
 		status = http.StatusUnprocessableEntity
 		detail.Code = "VALIDATION_ERROR"
 		var valErr *ValidationError

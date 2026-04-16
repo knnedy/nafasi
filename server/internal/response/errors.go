@@ -7,7 +7,7 @@ var (
 	ErrNotFound = errors.New("resource not found")
 
 	// Input validation
-	ErrValidation = errors.New("validation error")
+	ErrInvalidInput = errors.New("validation error")
 
 	// Auth
 	ErrUnauthorized       = errors.New("unauthorized")
@@ -34,7 +34,7 @@ var (
 	ErrInternal = errors.New("an internal server error occurred")
 )
 
-// ValidationError carries field-level detail on top of ErrValidation
+// ValidationError carries field-level detail on top of ErrInvalidInput
 type ValidationError struct {
 	Field   string
 	Message string
@@ -45,7 +45,7 @@ func (e *ValidationError) Error() string {
 }
 
 func (e *ValidationError) Unwrap() error {
-	return ErrValidation
+	return ErrInvalidInput
 }
 
 // NotFoundError carries the resource type for richer error messages
