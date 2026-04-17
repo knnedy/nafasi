@@ -2,6 +2,9 @@ package service
 
 import (
 	"context"
+	"errors"
+	"strconv"
+	"strings"
 
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
@@ -26,56 +29,117 @@ func NewTicketTypeService(db *repository.Queries) *TicketTypeService {
 	}
 }
 
+func parsePriceToCents(priceStr string) (int64, error) {
+	parts := strings.Split(priceStr, ".")
+
+	if len(parts) == 1 {
+		whole, err := strconv.ParseInt(parts[0], 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		return whole * 100, nil
+	}
+
+	if len(parts) == 2 {
+		whole, err := strconv.ParseInt(parts[0], 10, 64)
+		if err != nil {
+			return 0, err
+		}
+
+		frac := parts[1]
+		if len(frac) == 1 {
+			frac += "0"
+		}
+		if len(frac) > 2 {
+			return 0, errors.New("invalid price precision")
+		}
+
+		decimal, err := strconv.ParseInt(frac, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+
+		return whole*100 + decimal, nil
+	}
+
+	return 0, errors.New("invalid price format")
+}
+
 type CreateTicketTypeInput struct {
-	Name        string  `json:"name"        validate:"required,min=2,max=100"`
-	Description string  `json:"description" validate:"omitempty"`
-	Price       float64 `json:"price"       validate:"min=0"`
-	Currency    string  `json:"currency"    validate:"required"`
-	Quantity    int32   `json:"quantity"    validate:"required,min=1"`
-	IsFree      bool    `json:"is_free"`
-	SaleStarts  string  `json:"sale_starts" validate:"omitempty"`
-	SaleEnds    string  `json:"sale_ends"   validate:"omitempty"`
+	Name        string `json:"name"        validate:"required,min=2,max=100"`
+	Description string `json:"description" validate:"omitempty"`
+	Price       string `json:"price"       validate:"required"`
+	Quantity    int32  `json:"quantity"    validate:"required,min=1"`
+	IsFree      bool   `json:"is_free"`
+	SaleStarts  string `json:"sale_starts" validate:"omitempty"`
+	SaleEnds    string `json:"sale_ends"   validate:"omitempty"`
 }
 
 type UpdateTicketTypeInput struct {
-	Name        string  `json:"name"        validate:"required,min=2,max=100"`
-	Description string  `json:"description" validate:"omitempty"`
-	Price       float64 `json:"price"       validate:"min=0"`
-	Currency    string  `json:"currency"    validate:"required"`
-	Quantity    int32   `json:"quantity"    validate:"required,min=1"`
-	IsFree      bool    `json:"is_free"`
-	SaleStarts  string  `json:"sale_starts" validate:"omitempty"`
-	SaleEnds    string  `json:"sale_ends"   validate:"omitempty"`
+	Name        string `json:"name"        validate:"required,min=2,max=100"`
+	Description string `json:"description" validate:"omitempty"`
+	Price       string `json:"price"       validate:"required"`
+	Quantity    int32  `json:"quantity"    validate:"required,min=1"`
+	IsFree      bool   `json:"is_free"`
+	SaleStarts  string `json:"sale_starts" validate:"omitempty"`
+	SaleEnds    string `json:"sale_ends"   validate:"omitempty"`
 }
 
-func (s *TicketTypeService) CreateTicketType(ctx context.Context, eventID string, organiserID string, input CreateTicketTypeInput) (repository.TicketType, error) {
+func (s *TicketTypeService) CreateTicketType(ctx context.Context, eventID, organiserID string, input CreateTicketTypeInput) (repository.TicketType, error) {
+	// validate struct
 	if err := s.validate.Struct(input); err != nil {
 		return repository.TicketType{}, formatValidationError(err, s.trans)
 	}
 
+	// parse IDs
 	parsedEventID, err := uuid.Parse(eventID)
 	if err != nil {
 		return repository.TicketType{}, response.ErrNotFound
 	}
 
-	// free tickets must have price 0
-	if input.IsFree && input.Price != 0 {
+	parsedOrganiserID, err := uuid.Parse(organiserID)
+	if err != nil {
+		return repository.TicketType{}, response.ErrNotFound
+	}
+
+	// fetch event and check ownership
+	event, err := s.db.GetEventById(ctx, pgtype.UUID{Bytes: parsedEventID, Valid: true})
+	if err != nil {
+		return repository.TicketType{}, response.ErrNotFound
+	}
+
+	if event.OrganiserID.Bytes != parsedOrganiserID {
+		return repository.TicketType{}, response.ErrNotFound
+	}
+
+	// parse price
+	priceCents, err := parsePriceToCents(input.Price)
+	if err != nil || priceCents < 0 {
 		return repository.TicketType{}, response.ErrInvalidInput
 	}
 
-	// paid tickets must have price > 0
-	if !input.IsFree && input.Price == 0 {
+	// enforce free/paid logic
+	if input.IsFree {
+		priceCents = 0
+	} else if priceCents == 0 {
 		return repository.TicketType{}, response.ErrInvalidInput
 	}
 
-	// parse sale window if provided
+	// quantity
+	if input.Quantity <= 0 {
+		return repository.TicketType{}, response.ErrInvalidInput
+	}
+
+	// sale window
 	var saleStarts, saleEnds pgtype.Timestamp
+
 	if input.SaleStarts != "" {
 		saleStarts, err = parseTime(input.SaleStarts)
 		if err != nil {
 			return repository.TicketType{}, response.ErrInvalidInput
 		}
 	}
+
 	if input.SaleEnds != "" {
 		saleEnds, err = parseTime(input.SaleEnds)
 		if err != nil {
@@ -83,23 +147,21 @@ func (s *TicketTypeService) CreateTicketType(ctx context.Context, eventID string
 		}
 	}
 
-	// sale_ends must be after sale_starts if both provided
 	if saleStarts.Valid && saleEnds.Valid && saleEnds.Time.Before(saleStarts.Time) {
 		return repository.TicketType{}, response.ErrInvalidInput
 	}
 
-	// convert price to pgtype.Numeric
-	price := pgtype.Numeric{}
-	if err := price.Scan(input.Price); err != nil {
+	if saleEnds.Valid && event.StartsAt.Valid && saleEnds.Time.After(event.StartsAt.Time) {
 		return repository.TicketType{}, response.ErrInvalidInput
 	}
 
-	ticketType, err := s.db.CreateTicketType(ctx, repository.CreateTicketTypeParams{
+	// create
+	created, err := s.db.CreateTicketType(ctx, repository.CreateTicketTypeParams{
 		EventID:     pgtype.UUID{Bytes: parsedEventID, Valid: true},
 		Name:        input.Name,
 		Description: pgtype.Text{String: input.Description, Valid: input.Description != ""},
-		Price:       price,
-		Currency:    input.Currency,
+		Price:       priceCents,
+		Currency:    "KES",
 		Quantity:    input.Quantity,
 		IsFree:      input.IsFree,
 		SaleStarts:  saleStarts,
@@ -109,7 +171,7 @@ func (s *TicketTypeService) CreateTicketType(ctx context.Context, eventID string
 		return repository.TicketType{}, response.ErrDatabase
 	}
 
-	return ticketType, nil
+	return created, nil
 }
 
 func (s *TicketTypeService) GetTicketTypeByID(ctx context.Context, ticketTypeID string) (repository.TicketType, error) {
@@ -154,40 +216,72 @@ func (s *TicketTypeService) GetAvailableTicketTypes(ctx context.Context, eventID
 	return ticketTypes, nil
 }
 
-func (s *TicketTypeService) UpdateTicketType(ctx context.Context, ticketTypeID string, organiserID string, input UpdateTicketTypeInput) (repository.TicketType, error) {
+func (s *TicketTypeService) UpdateTicketType(ctx context.Context, ticketTypeID, organiserID string, input UpdateTicketTypeInput) (repository.TicketType, error) {
+
+	// validate input
 	if err := s.validate.Struct(input); err != nil {
 		return repository.TicketType{}, formatValidationError(err, s.trans)
 	}
 
-	parsedID, err := uuid.Parse(ticketTypeID)
+	// parse IDs
+	parsedTicketTypeID, err := uuid.Parse(ticketTypeID)
 	if err != nil {
 		return repository.TicketType{}, response.ErrNotFound
 	}
 
-	// verify ticket type exists
-	_, err = s.db.GetTicketTypeById(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
+	parsedOrganiserID, err := uuid.Parse(organiserID)
 	if err != nil {
 		return repository.TicketType{}, response.ErrNotFound
 	}
 
-	// free tickets must have price 0
-	if input.IsFree && input.Price != 0 {
+	// fetch ticket type
+	ticketType, err := s.db.GetTicketTypeById(ctx, pgtype.UUID{
+		Bytes: parsedTicketTypeID,
+		Valid: true,
+	})
+	if err != nil {
+		return repository.TicketType{}, response.ErrNotFound
+	}
+
+	// fetch event and check ownership
+	event, err := s.db.GetEventById(ctx, ticketType.EventID)
+	if err != nil {
+		return repository.TicketType{}, response.ErrNotFound
+	}
+
+	if event.OrganiserID.Bytes != parsedOrganiserID {
+		return repository.TicketType{}, response.ErrNotFound
+	}
+
+	// parse price
+	priceCents, err := parsePriceToCents(input.Price)
+	if err != nil || priceCents < 0 {
 		return repository.TicketType{}, response.ErrInvalidInput
 	}
 
-	// paid tickets must have price > 0
-	if !input.IsFree && input.Price == 0 {
+	// free/paid logic
+	if input.IsFree {
+		priceCents = 0
+	} else if priceCents == 0 {
 		return repository.TicketType{}, response.ErrInvalidInput
 	}
 
-	// parse sale window if provided
-	var saleStarts, saleEnds pgtype.Timestamp
+	// quantity
+	if input.Quantity <= 0 {
+		return repository.TicketType{}, response.ErrInvalidInput
+	}
+
+	// sale window
+	saleStarts := ticketType.SaleStarts
+	saleEnds := ticketType.SaleEnds
+
 	if input.SaleStarts != "" {
 		saleStarts, err = parseTime(input.SaleStarts)
 		if err != nil {
 			return repository.TicketType{}, response.ErrInvalidInput
 		}
 	}
+
 	if input.SaleEnds != "" {
 		saleEnds, err = parseTime(input.SaleEnds)
 		if err != nil {
@@ -199,17 +293,17 @@ func (s *TicketTypeService) UpdateTicketType(ctx context.Context, ticketTypeID s
 		return repository.TicketType{}, response.ErrInvalidInput
 	}
 
-	price := pgtype.Numeric{}
-	if err := price.Scan(input.Price); err != nil {
+	if saleEnds.Valid && event.StartsAt.Valid && saleEnds.Time.After(event.StartsAt.Time) {
 		return repository.TicketType{}, response.ErrInvalidInput
 	}
 
-	ticketType, err := s.db.UpdateTicketType(ctx, repository.UpdateTicketTypeParams{
-		ID:          pgtype.UUID{Bytes: parsedID, Valid: true},
+	// update DB
+	updatedTicketType, err := s.db.UpdateTicketType(ctx, repository.UpdateTicketTypeParams{
+		ID:          pgtype.UUID{Bytes: parsedTicketTypeID, Valid: true},
 		Name:        input.Name,
 		Description: pgtype.Text{String: input.Description, Valid: input.Description != ""},
-		Price:       price,
-		Currency:    input.Currency,
+		Price:       priceCents,
+		Currency:    "KES",
 		Quantity:    input.Quantity,
 		IsFree:      input.IsFree,
 		SaleStarts:  saleStarts,
@@ -219,22 +313,47 @@ func (s *TicketTypeService) UpdateTicketType(ctx context.Context, ticketTypeID s
 		return repository.TicketType{}, response.ErrDatabase
 	}
 
-	return ticketType, nil
+	return updatedTicketType, nil
 }
 
-func (s *TicketTypeService) DeleteTicketType(ctx context.Context, ticketTypeID string, organiserID string) error {
-	parsedID, err := uuid.Parse(ticketTypeID)
+func (s *TicketTypeService) DeleteTicketType(ctx context.Context, ticketTypeID, organiserID string) error {
+	// parse ticket type ID
+	parsedTicketTypeID, err := uuid.Parse(ticketTypeID)
 	if err != nil {
 		return response.ErrNotFound
 	}
 
-	// verify ticket type exists
-	_, err = s.db.GetTicketTypeById(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
+	// parse organiser ID
+	parsedOrganiserID, err := uuid.Parse(organiserID)
 	if err != nil {
 		return response.ErrNotFound
 	}
 
-	if err := s.db.DeleteTicketType(ctx, pgtype.UUID{Bytes: parsedID, Valid: true}); err != nil {
+	// fetch ticket type
+	ticketType, err := s.db.GetTicketTypeById(ctx, pgtype.UUID{
+		Bytes: parsedTicketTypeID,
+		Valid: true,
+	})
+	if err != nil {
+		return response.ErrNotFound
+	}
+
+	// fetch event
+	event, err := s.db.GetEventById(ctx, ticketType.EventID)
+	if err != nil {
+		return response.ErrNotFound
+	}
+
+	// ownership check
+	if event.OrganiserID.Bytes != parsedOrganiserID {
+		return response.ErrNotFound
+	}
+
+	// delete
+	if err := s.db.DeleteTicketType(ctx, pgtype.UUID{
+		Bytes: parsedTicketTypeID,
+		Valid: true,
+	}); err != nil {
 		return response.ErrDatabase
 	}
 

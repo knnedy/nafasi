@@ -31,7 +31,7 @@ type CreateTicketTypeParams struct {
 	EventID     pgtype.UUID
 	Name        string
 	Description pgtype.Text
-	Price       pgtype.Numeric
+	Price       int64
 	Currency    string
 	Quantity    int32
 	IsFree      bool
@@ -71,11 +71,12 @@ func (q *Queries) CreateTicketType(ctx context.Context, arg CreateTicketTypePara
 }
 
 const decrementQuantitySold = `-- name: DecrementQuantitySold :one
-UPDATE "ticket_types"
+UPDATE ticket_types
 SET
-    "quantity_sold" = "quantity_sold" - $2,
-    "updated_at"    = NOW()
-WHERE "id" = $1
+    quantity_sold = quantity_sold - $2,
+    updated_at = NOW()
+WHERE id = $1
+  AND quantity_sold >= $2
 RETURNING id, event_id, name, description, price, currency, quantity, quantity_sold, is_free, sale_starts, sale_ends, created_at, updated_at
 `
 
@@ -227,11 +228,12 @@ func (q *Queries) GetTicketTypesByEvent(ctx context.Context, eventID pgtype.UUID
 }
 
 const incrementQuantitySold = `-- name: IncrementQuantitySold :one
-UPDATE "ticket_types"
+UPDATE ticket_types
 SET
-    "quantity_sold" = "quantity_sold" + $2,
-    "updated_at"    = NOW()
-WHERE "id" = $1
+    quantity_sold = quantity_sold + $2,
+    updated_at = NOW()
+WHERE id = $1
+  AND quantity_sold + $2 <= quantity
 RETURNING id, event_id, name, description, price, currency, quantity, quantity_sold, is_free, sale_starts, sale_ends, created_at, updated_at
 `
 
@@ -281,7 +283,7 @@ type UpdateTicketTypeParams struct {
 	ID          pgtype.UUID
 	Name        string
 	Description pgtype.Text
-	Price       pgtype.Numeric
+	Price       int64
 	Currency    string
 	Quantity    int32
 	IsFree      bool

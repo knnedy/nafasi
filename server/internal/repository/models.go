@@ -237,7 +237,7 @@ type TicketType struct {
 	EventID      pgtype.UUID
 	Name         string
 	Description  pgtype.Text
-	Price        pgtype.Numeric
+	Price        int64
 	Currency     string
 	Quantity     int32
 	QuantitySold int32
