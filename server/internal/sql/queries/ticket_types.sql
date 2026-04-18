@@ -55,16 +55,15 @@ WHERE id = $1
 RETURNING *;
 
 -- name: GetAvailableTicketTypes :many
-SELECT * FROM "ticket_types"
-WHERE "event_id" = $1
-AND "quantity_sold" < "quantity"
-AND (
-    "sale_starts" IS NULL OR "sale_starts" <= NOW()
-)
-AND (
-    "sale_ends" IS NULL OR "sale_ends" >= NOW()
-)
-ORDER BY "price" ASC;
+SELECT tt.*
+FROM ticket_types tt
+JOIN events e ON e.id = tt.event_id
+WHERE tt.event_id = $1
+  AND tt.quantity_sold < tt.quantity
+  AND (tt.sale_starts IS NULL OR tt.sale_starts <= NOW())
+  AND (tt.sale_ends IS NULL OR tt.sale_ends >= NOW())
+  AND e.starts_at > NOW()
+ORDER BY tt.price ASC;
 
 -- name: DeleteTicketType :exec
 DELETE FROM "ticket_types" WHERE "id" = $1;

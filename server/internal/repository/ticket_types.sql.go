@@ -116,16 +116,15 @@ func (q *Queries) DeleteTicketType(ctx context.Context, id pgtype.UUID) error {
 }
 
 const getAvailableTicketTypes = `-- name: GetAvailableTicketTypes :many
-SELECT id, event_id, name, description, price, currency, quantity, quantity_sold, is_free, sale_starts, sale_ends, created_at, updated_at FROM "ticket_types"
-WHERE "event_id" = $1
-AND "quantity_sold" < "quantity"
-AND (
-    "sale_starts" IS NULL OR "sale_starts" <= NOW()
-)
-AND (
-    "sale_ends" IS NULL OR "sale_ends" >= NOW()
-)
-ORDER BY "price" ASC
+SELECT tt.id, tt.event_id, tt.name, tt.description, tt.price, tt.currency, tt.quantity, tt.quantity_sold, tt.is_free, tt.sale_starts, tt.sale_ends, tt.created_at, tt.updated_at
+FROM ticket_types tt
+JOIN events e ON e.id = tt.event_id
+WHERE tt.event_id = $1
+  AND tt.quantity_sold < tt.quantity
+  AND (tt.sale_starts IS NULL OR tt.sale_starts <= NOW())
+  AND (tt.sale_ends IS NULL OR tt.sale_ends >= NOW())
+  AND e.starts_at > NOW()
+ORDER BY tt.price ASC
 `
 
 func (q *Queries) GetAvailableTicketTypes(ctx context.Context, eventID pgtype.UUID) ([]TicketType, error) {
