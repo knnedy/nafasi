@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math/big"
 	"regexp"
 	"strings"
@@ -240,10 +241,16 @@ func (s *PaymentService) initiateMpesaPayment(ctx context.Context, order reposit
 	})
 	if err != nil {
 		// mark order failed if STK push fails
-		_, _ = s.queries.UpdateOrderStatus(ctx, repository.UpdateOrderStatusParams{
+		if _, err = s.queries.UpdateOrderStatus(ctx, repository.UpdateOrderStatusParams{
 			ID:     order.ID,
 			Status: repository.OrderStatusFAILED,
-		})
+		}); err != nil {
+			// DB failed to mark order as failed — needs attention, order stuck in PENDING
+			slog.Error("failed to mark order as failed after STK error",
+				"order_id", uuid.UUID(order.ID.Bytes).String(),
+				"err", err,
+			)
+		}
 		return nil, response.ErrPaymentFailed
 	}
 
