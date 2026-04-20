@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math/big"
 	"regexp"
 	"strings"
 
@@ -18,16 +19,19 @@ import (
 )
 
 type PaymentService struct {
-	db       *repository.Queries
+	db       *repository.DB
+	queries  *repository.Queries
 	mpesa    *MpesaService
 	validate *validator.Validate
 	trans    ut.Translator
 }
 
-func NewPaymentService(db *repository.Queries, mpesa *MpesaService) *PaymentService {
+func NewPaymentService(db *repository.DB, mpesa *MpesaService) *PaymentService {
 	validate, trans := newValidator()
+
 	return &PaymentService{
 		db:       db,
+		queries:  db.Queries(),
 		mpesa:    mpesa,
 		validate: validate,
 		trans:    trans,
@@ -56,15 +60,23 @@ func generateQRCode() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
+func toNumeric(v int64) pgtype.Numeric {
+	return pgtype.Numeric{
+		Int:   new(big.Int).SetInt64(v),
+		Exp:   0,
+		Valid: true,
+	}
+}
+
 func formatPhoneNumber(phone string) (string, error) {
-	// 1. Trim spaces
+	// Trim spaces
 	phone = strings.TrimSpace(phone)
 
-	// 2. Remove spaces, dashes, parentheses, etc.
+	// Remove spaces, dashes, parentheses, etc.
 	re := regexp.MustCompile(`[^0-9+]`)
 	phone = re.ReplaceAllString(phone, "")
 
-	// 3. Normalize formats (ORDER MATTERS)
+	// Normalize formats (ORDER MATTERS)
 	switch {
 	case strings.HasPrefix(phone, "+254"):
 		phone = phone[1:] // strip '+'
@@ -82,7 +94,7 @@ func formatPhoneNumber(phone string) (string, error) {
 		return "", errors.New("invalid phone number format")
 	}
 
-	// 4. Final validation (strict Kenyan mobile check)
+	// Final validation (strict Kenyan mobile check)
 	// Must be 12 digits and start with 2547 or 2541 (new prefixes)
 	if len(phone) != 12 {
 		return "", errors.New("invalid phone length")
@@ -96,18 +108,22 @@ func formatPhoneNumber(phone string) (string, error) {
 }
 
 func (s *PaymentService) InitiatePayment(ctx context.Context, userID string, input InitiatePaymentInput) (*PaymentResult, error) {
+	// Validate request body
 	if err := s.validate.Struct(input); err != nil {
 		return nil, formatValidationError(err, s.trans)
 	}
 
-	// validate phone early for M-Pesa payments
+	// Validate MPESA phone number
+	var formattedPhone string
 	if input.PaymentMethod == "MPESA" {
-		if _, err := formatPhoneNumber(input.PhoneNumber); err != nil {
+		normalized, err := formatPhoneNumber(input.PhoneNumber)
+		if err != nil {
 			return nil, response.ErrInvalidInput
 		}
+		formattedPhone = normalized
 	}
 
-	// parse IDs
+	// Parse UUIDs
 	parsedUserID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, response.ErrNotFound
@@ -123,56 +139,45 @@ func (s *PaymentService) InitiatePayment(ctx context.Context, userID string, inp
 		return nil, response.ErrNotFound
 	}
 
-	// verify ticket type exists and is available
-	ticketType, err := s.db.GetTicketTypeById(ctx, pgtype.UUID{Bytes: parsedTicketTypeID, Valid: true})
+	// Fetch ticket type from DB
+	ticketType, err := s.queries.GetTicketTypeById(
+		ctx,
+		pgtype.UUID{Bytes: parsedTicketTypeID, Valid: true},
+	)
 	if err != nil {
 		return nil, response.ErrNotFound
 	}
 
-	// check availability
-	available := ticketType.Quantity - ticketType.QuantitySold
-	if int32(available) < input.Quantity {
-		return nil, response.ErrInsufficientTickets
-	}
-
-	// calculate total
-	// price is int64 from sqlc — represents cents/lowest currency unit
+	// Calculate total
 	totalAmount := ticketType.Price * int64(input.Quantity)
 
-	unitPriceNumeric := pgtype.Numeric{}
-	if err := unitPriceNumeric.Scan(ticketType.Price); err != nil {
-		return nil, response.ErrInternal
-	}
-
-	totalAmountNumeric := pgtype.Numeric{}
-	if err := totalAmountNumeric.Scan(totalAmount); err != nil {
-		return nil, response.ErrInternal
-	}
-
-	// create order in pending state
-	order, err := s.db.CreateOrder(ctx, repository.CreateOrderParams{
-		UserID:        pgtype.UUID{Bytes: parsedUserID, Valid: true},
-		EventID:       pgtype.UUID{Bytes: parsedEventID, Valid: true},
-		TicketTypeID:  pgtype.UUID{Bytes: parsedTicketTypeID, Valid: true},
-		Quantity:      input.Quantity,
-		UnitPrice:     unitPriceNumeric,
-		TotalAmount:   totalAmountNumeric,
-		Currency:      ticketType.Currency,
-		Status:        repository.OrderStatusPENDING,
-		PaymentMethod: repository.NullPaymentMethod{PaymentMethod: repository.PaymentMethod(input.PaymentMethod), Valid: true},
+	// Create order (PENDING state)
+	order, err := s.queries.CreateOrder(ctx, repository.CreateOrderParams{
+		UserID:       pgtype.UUID{Bytes: parsedUserID, Valid: true},
+		EventID:      pgtype.UUID{Bytes: parsedEventID, Valid: true},
+		TicketTypeID: pgtype.UUID{Bytes: parsedTicketTypeID, Valid: true},
+		Quantity:     input.Quantity,
+		UnitPrice:    toNumeric(ticketType.Price),
+		TotalAmount:  toNumeric(totalAmount),
+		Currency:     ticketType.Currency,
+		Status:       repository.OrderStatusPENDING,
+		PaymentMethod: repository.NullPaymentMethod{
+			PaymentMethod: repository.PaymentMethod(input.PaymentMethod),
+			Valid:         true,
+		},
 	})
 	if err != nil {
 		return nil, response.ErrDatabase
 	}
 
-	// handle free tickets
+	// Route payment flow
+
 	if ticketType.IsFree || input.PaymentMethod == "FREE" {
 		return s.confirmFreeOrder(ctx, order, parsedTicketTypeID, input.Quantity)
 	}
 
-	// handle M-Pesa
 	if input.PaymentMethod == "MPESA" {
-		return s.initiateMpesaPayment(ctx, order, input.PhoneNumber, totalAmount)
+		return s.initiateMpesaPayment(ctx, order, formattedPhone, totalAmount)
 	}
 
 	return nil, response.ErrInvalidInput
@@ -184,30 +189,36 @@ func (s *PaymentService) confirmFreeOrder(ctx context.Context, order repository.
 		return nil, response.ErrInternal
 	}
 
-	_, err = s.db.UpdateOrderPayment(ctx, repository.UpdateOrderPaymentParams{
-		ID:            order.ID,
-		Status:        repository.OrderStatusPAID,
-		PaymentMethod: repository.NullPaymentMethod{PaymentMethod: repository.PaymentMethodFREE, Valid: true},
-		PaymentRef:    pgtype.Text{String: "FREE", Valid: true},
-	})
-	if err != nil {
-		return nil, response.ErrDatabase
-	}
+	err = s.db.WithTransaction(ctx, func(q *repository.Queries) error {
+		_, err := q.UpdateOrderPayment(ctx, repository.UpdateOrderPaymentParams{
+			ID:            order.ID,
+			Status:        repository.OrderStatusPAID,
+			PaymentMethod: repository.NullPaymentMethod{PaymentMethod: repository.PaymentMethodFREE, Valid: true},
+			PaymentRef:    pgtype.Text{String: "FREE", Valid: true},
+		})
+		if err != nil {
+			return response.ErrDatabase
+		}
 
-	_, err = s.db.UpdateOrderQRCode(ctx, repository.UpdateOrderQRCodeParams{
-		ID:     order.ID,
-		QrCode: pgtype.Text{String: qrCode, Valid: true},
-	})
-	if err != nil {
-		return nil, response.ErrDatabase
-	}
+		_, err = q.UpdateOrderQRCode(ctx, repository.UpdateOrderQRCodeParams{
+			ID:     order.ID,
+			QrCode: pgtype.Text{String: qrCode, Valid: true},
+		})
+		if err != nil {
+			return response.ErrDatabase
+		}
 
-	_, err = s.db.IncrementQuantitySold(ctx, repository.IncrementQuantitySoldParams{
-		ID:           pgtype.UUID{Bytes: ticketTypeID, Valid: true},
-		QuantitySold: quantity,
+		if _, err = q.IncrementQuantitySold(ctx, repository.IncrementQuantitySoldParams{
+			ID:           pgtype.UUID{Bytes: ticketTypeID, Valid: true},
+			QuantitySold: quantity,
+		}); err != nil {
+			return response.ErrDatabase
+		}
+
+		return nil
 	})
 	if err != nil {
-		return nil, response.ErrDatabase
+		return nil, err
 	}
 
 	return &PaymentResult{
@@ -217,25 +228,37 @@ func (s *PaymentService) confirmFreeOrder(ctx context.Context, order repository.
 }
 
 func (s *PaymentService) initiateMpesaPayment(ctx context.Context, order repository.Order, phoneNumber string, totalAmount int64) (*PaymentResult, error) {
+	// convert cents to KES
+	mpesaAmount := totalAmount / 100
+
+	// Trigger STK push
 	stkResp, err := s.mpesa.InitiateSTKPush(ctx, STKPushRequest{
 		PhoneNumber: phoneNumber,
-		Amount:      totalAmount,
+		Amount:      mpesaAmount,
 		OrderID:     uuid.UUID(order.ID.Bytes).String(),
-		Description: "Nafasi Ticket Payment",
+		Description: "Ticket Payment",
 	})
 	if err != nil {
-		_, _ = s.db.UpdateOrderStatus(ctx, repository.UpdateOrderStatusParams{
+		// mark order failed if STK push fails
+		_, _ = s.queries.UpdateOrderStatus(ctx, repository.UpdateOrderStatusParams{
 			ID:     order.ID,
 			Status: repository.OrderStatusFAILED,
 		})
 		return nil, response.ErrPaymentFailed
 	}
 
-	_, err = s.db.UpdateOrderPayment(ctx, repository.UpdateOrderPaymentParams{
-		ID:            order.ID,
-		Status:        repository.OrderStatusPENDING,
-		PaymentMethod: repository.NullPaymentMethod{PaymentMethod: repository.PaymentMethodMPESA, Valid: true},
-		PaymentRef:    pgtype.Text{String: stkResp.CheckoutRequestID, Valid: true},
+	// Save CheckoutRequestID this links callback to order
+	_, err = s.queries.UpdateOrderPayment(ctx, repository.UpdateOrderPaymentParams{
+		ID:     order.ID,
+		Status: repository.OrderStatusPENDING,
+		PaymentMethod: repository.NullPaymentMethod{
+			PaymentMethod: repository.PaymentMethodMPESA,
+			Valid:         true,
+		},
+		PaymentRef: pgtype.Text{
+			String: stkResp.CheckoutRequestID,
+			Valid:  true,
+		},
 	})
 	if err != nil {
 		return nil, response.ErrDatabase
@@ -244,34 +267,37 @@ func (s *PaymentService) initiateMpesaPayment(ctx context.Context, order reposit
 	return &PaymentResult{
 		OrderID:           uuid.UUID(order.ID.Bytes).String(),
 		CheckoutRequestID: stkResp.CheckoutRequestID,
-		Message:           "STK push sent, waiting for payment confirmation",
+		Message:           "STK push sent",
 	}, nil
 }
 
 func (s *PaymentService) HandleMpesaCallback(ctx context.Context, callback MpesaCallback) error {
 	result := s.mpesa.ParseCallback(callback)
 
-	order, err := s.db.GetOrderByPaymentRef(ctx, pgtype.Text{String: result.CheckoutRequestID, Valid: true})
+	// Find order using CheckoutRequestID
+	order, err := s.queries.GetOrderByPaymentRef(
+		ctx,
+		pgtype.Text{
+			String: result.CheckoutRequestID,
+			Valid:  true,
+		},
+	)
 	if err != nil {
 		return response.ErrNotFound
 	}
 
+	// Prevent duplicate processing (VERY IMPORTANT)
+	if order.Status == repository.OrderStatusPAID {
+		return nil
+	}
+
+	// If payment failed
 	if !result.Success {
-		_, err = s.db.UpdateOrderStatus(ctx, repository.UpdateOrderStatusParams{
+		_, err = s.queries.UpdateOrderStatus(ctx, repository.UpdateOrderStatusParams{
 			ID:     order.ID,
 			Status: repository.OrderStatusFAILED,
 		})
 		return err
-	}
-
-	_, err = s.db.UpdateOrderPayment(ctx, repository.UpdateOrderPaymentParams{
-		ID:            order.ID,
-		Status:        repository.OrderStatusPAID,
-		PaymentMethod: repository.NullPaymentMethod{PaymentMethod: repository.PaymentMethodMPESA, Valid: true},
-		PaymentRef:    pgtype.Text{String: result.MpesaReceiptNumber, Valid: true},
-	})
-	if err != nil {
-		return response.ErrDatabase
 	}
 
 	qrCode, err := generateQRCode()
@@ -279,23 +305,39 @@ func (s *PaymentService) HandleMpesaCallback(ctx context.Context, callback Mpesa
 		return response.ErrInternal
 	}
 
-	_, err = s.db.UpdateOrderQRCode(ctx, repository.UpdateOrderQRCodeParams{
-		ID:     order.ID,
-		QrCode: pgtype.Text{String: qrCode, Valid: true},
-	})
-	if err != nil {
-		return response.ErrDatabase
-	}
+	// Payment SUCCESS - atomic transaction
+	return s.db.WithTransaction(ctx, func(q *repository.Queries) error {
+		_, err := q.UpdateOrderPayment(ctx, repository.UpdateOrderPaymentParams{
+			ID:     order.ID,
+			Status: repository.OrderStatusPAID,
+			PaymentMethod: repository.NullPaymentMethod{
+				PaymentMethod: repository.PaymentMethodMPESA,
+				Valid:         true,
+			},
+			PaymentRef: pgtype.Text{String: result.MpesaReceiptNumber, Valid: true},
+		})
+		if err != nil {
+			return fmt.Errorf("callback: failed to update order payment: %w", err)
+		}
 
-	_, err = s.db.IncrementQuantitySold(ctx, repository.IncrementQuantitySoldParams{
-		ID:           order.TicketTypeID,
-		QuantitySold: order.Quantity,
-	})
-	if err != nil {
-		return response.ErrDatabase
-	}
+		_, err = q.UpdateOrderQRCode(ctx, repository.UpdateOrderQRCodeParams{
+			ID:     order.ID,
+			QrCode: pgtype.Text{String: qrCode, Valid: true},
+		})
+		if err != nil {
+			return fmt.Errorf("callback: failed to update qr code: %w", err)
+		}
 
-	return nil
+		_, err = q.IncrementQuantitySold(ctx, repository.IncrementQuantitySoldParams{
+			ID:           order.TicketTypeID,
+			QuantitySold: order.Quantity,
+		})
+		if err != nil {
+			return fmt.Errorf("callback: failed to increment quantity sold: %w", err)
+		}
+
+		return nil
+	})
 }
 
 func (s *PaymentService) QueryPaymentStatus(ctx context.Context, orderID string) (*repository.Order, error) {
@@ -304,7 +346,7 @@ func (s *PaymentService) QueryPaymentStatus(ctx context.Context, orderID string)
 		return nil, response.ErrNotFound
 	}
 
-	order, err := s.db.GetOrderById(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
+	order, err := s.queries.GetOrderById(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
 	if err != nil {
 		return nil, response.ErrNotFound
 	}

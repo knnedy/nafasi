@@ -77,7 +77,7 @@ SET
     updated_at = NOW()
 WHERE id = $1
   AND quantity_sold >= $2
-RETURNING id, event_id, name, description, price, currency, quantity, quantity_sold, is_free, sale_starts, sale_ends, created_at, updated_at
+RETURNING id
 `
 
 type DecrementQuantitySoldParams struct {
@@ -85,25 +85,11 @@ type DecrementQuantitySoldParams struct {
 	QuantitySold int32
 }
 
-func (q *Queries) DecrementQuantitySold(ctx context.Context, arg DecrementQuantitySoldParams) (TicketType, error) {
+func (q *Queries) DecrementQuantitySold(ctx context.Context, arg DecrementQuantitySoldParams) (pgtype.UUID, error) {
 	row := q.db.QueryRow(ctx, decrementQuantitySold, arg.ID, arg.QuantitySold)
-	var i TicketType
-	err := row.Scan(
-		&i.ID,
-		&i.EventID,
-		&i.Name,
-		&i.Description,
-		&i.Price,
-		&i.Currency,
-		&i.Quantity,
-		&i.QuantitySold,
-		&i.IsFree,
-		&i.SaleStarts,
-		&i.SaleEnds,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
 }
 
 const deleteTicketType = `-- name: DeleteTicketType :exec
@@ -233,7 +219,7 @@ SET
     updated_at = NOW()
 WHERE id = $1
   AND quantity_sold + $2 <= quantity
-RETURNING id, event_id, name, description, price, currency, quantity, quantity_sold, is_free, sale_starts, sale_ends, created_at, updated_at
+RETURNING id
 `
 
 type IncrementQuantitySoldParams struct {
@@ -241,25 +227,11 @@ type IncrementQuantitySoldParams struct {
 	QuantitySold int32
 }
 
-func (q *Queries) IncrementQuantitySold(ctx context.Context, arg IncrementQuantitySoldParams) (TicketType, error) {
+func (q *Queries) IncrementQuantitySold(ctx context.Context, arg IncrementQuantitySoldParams) (pgtype.UUID, error) {
 	row := q.db.QueryRow(ctx, incrementQuantitySold, arg.ID, arg.QuantitySold)
-	var i TicketType
-	err := row.Scan(
-		&i.ID,
-		&i.EventID,
-		&i.Name,
-		&i.Description,
-		&i.Price,
-		&i.Currency,
-		&i.Quantity,
-		&i.QuantitySold,
-		&i.IsFree,
-		&i.SaleStarts,
-		&i.SaleEnds,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
 }
 
 const updateTicketType = `-- name: UpdateTicketType :one

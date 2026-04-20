@@ -43,7 +43,7 @@ SET
     updated_at = NOW()
 WHERE id = $1
   AND quantity_sold + $2 <= quantity
-RETURNING *;
+RETURNING id;
 
 -- name: DecrementQuantitySold :one
 UPDATE ticket_types
@@ -52,7 +52,7 @@ SET
     updated_at = NOW()
 WHERE id = $1
   AND quantity_sold >= $2
-RETURNING *;
+RETURNING id;
 
 -- name: GetAvailableTicketTypes :many
 SELECT tt.*
