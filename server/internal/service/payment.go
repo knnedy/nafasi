@@ -172,7 +172,6 @@ func (s *PaymentService) InitiatePayment(ctx context.Context, userID string, inp
 	}
 
 	// Route payment flow
-
 	if ticketType.IsFree || input.PaymentMethod == "FREE" {
 		return s.confirmFreeOrder(ctx, order, parsedTicketTypeID, input.Quantity)
 	}
