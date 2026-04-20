@@ -15,9 +15,7 @@ var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 
 	// Permissions
-	ErrForbidden        = errors.New("forbidden")
-	ErrNotOrgMember     = errors.New("user is not a member of the organisation")
-	ErrNotProjectMember = errors.New("user is not a member of the project")
+	ErrForbidden = errors.New("forbidden")
 
 	// Conflict
 	ErrAlreadyExists = errors.New("resource already exists")
@@ -32,6 +30,21 @@ var (
 
 	// Internal server errors
 	ErrInternal = errors.New("an internal server error occurred")
+
+	// Payment errors
+	ErrPaymentFailed          = errors.New("payment initiation failed")
+	ErrInsufficientTickets    = errors.New("insufficient tickets available")
+	ErrTicketAlreadyCheckedIn = errors.New("ticket has already been checked in")
+	ErrInvalidPaymentMethod   = errors.New("invalid payment method")
+	ErrOrderAlreadyPaid       = errors.New("order has already been paid")
+	ErrOrderCancelled         = errors.New("order has been cancelled")
+
+	// Event errors
+	ErrEventNotPublished = errors.New("event is not published")
+	ErrEventCancelled    = errors.New("event has been cancelled")
+	ErrEventCompleted    = errors.New("event has already completed")
+	ErrSaleNotStarted    = errors.New("ticket sales have not started yet")
+	ErrSaleEnded         = errors.New("ticket sales have ended")
 )
 
 // ValidationError carries field-level detail on top of ErrInvalidInput
@@ -59,4 +72,18 @@ func (e *NotFoundError) Error() string {
 
 func (e *NotFoundError) Unwrap() error {
 	return ErrNotFound
+}
+
+// PaymentError carries payment-specific detail
+type PaymentError struct {
+	Code    string
+	Message string
+}
+
+func (e *PaymentError) Error() string {
+	return e.Code + ": " + e.Message
+}
+
+func (e *PaymentError) Unwrap() error {
+	return ErrPaymentFailed
 }
