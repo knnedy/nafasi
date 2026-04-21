@@ -21,26 +21,20 @@ func NewUserHandler(user *service.UserService) *UserHandler {
 
 // UserResponse is the public representation of a user
 type UserResponse struct {
-	ID        string  `json:"id"`
-	Name      string  `json:"name"`
-	Email     string  `json:"email"`
-	CreatedAt string  `json:"created_at"`
-	UpdatedAt *string `json:"updated_at,omitempty"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
 func toUserResponse(user repository.User) UserResponse {
-	var updatedAt *string
-	if user.UpdatedAt.Valid {
-		t := user.UpdatedAt.Time.Format(time.RFC3339)
-		updatedAt = &t
-	}
-
 	return UserResponse{
 		ID:        user.ID.String(),
 		Name:      user.Name,
 		Email:     user.Email,
 		CreatedAt: user.CreatedAt.Time.Format(time.RFC3339),
-		UpdatedAt: updatedAt,
+		UpdatedAt: user.UpdatedAt.Time.Format(time.RFC3339),
 	}
 }
 

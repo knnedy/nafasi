@@ -18,7 +18,7 @@ CREATE TABLE "orders" (
     "checked_in"     BOOLEAN NOT NULL DEFAULT FALSE,
     "checked_in_at"  TIMESTAMP(3),
     "created_at"     TIMESTAMP(3) NOT NULL DEFAULT NOW(),
-    "updated_at"     TIMESTAMP(3),
+    "updated_at"     TIMESTAMP(3) NOT NULL DEFAULT NOW(),
     CONSTRAINT "orders_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE,
     CONSTRAINT "orders_event_id_fkey" FOREIGN KEY ("event_id") REFERENCES "events"("id") ON DELETE CASCADE,
     CONSTRAINT "orders_ticket_type_id_fkey" FOREIGN KEY ("ticket_type_id") REFERENCES "ticket_types"("id") ON DELETE CASCADE,

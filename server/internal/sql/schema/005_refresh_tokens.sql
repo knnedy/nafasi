@@ -5,7 +5,7 @@ CREATE TABLE "refresh_tokens" (
     "token"      TEXT NOT NULL,
     "expires_at" TIMESTAMP(3) NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT now(),
-    "revoked_at" TIMESTAMP(3),
+    "revoked_at" TIMESTAMP(3) NOT NULL DEFAULT NOW(),
     CONSTRAINT "refresh_tokens_token_key" UNIQUE ("token"),
     CONSTRAINT "refresh_tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE
 );

@@ -9,6 +9,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/knnedy/nafasi/internal/repository"
 	"github.com/knnedy/nafasi/internal/response"
@@ -177,12 +178,15 @@ func (s *TicketTypeService) CreateTicketType(ctx context.Context, eventID, organ
 func (s *TicketTypeService) GetTicketTypeByID(ctx context.Context, ticketTypeID string) (repository.TicketType, error) {
 	parsedID, err := uuid.Parse(ticketTypeID)
 	if err != nil {
-		return repository.TicketType{}, response.ErrNotFound
+		return repository.TicketType{}, response.ErrInvalidInput
 	}
 
 	ticketType, err := s.db.GetTicketTypeById(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
 	if err != nil {
-		return repository.TicketType{}, response.ErrNotFound
+		if errors.Is(err, pgx.ErrNoRows) {
+			return repository.TicketType{}, response.ErrNotFound
+		}
+		return repository.TicketType{}, response.ErrDatabase
 	}
 
 	return ticketType, nil
@@ -191,7 +195,7 @@ func (s *TicketTypeService) GetTicketTypeByID(ctx context.Context, ticketTypeID 
 func (s *TicketTypeService) GetTicketTypesByEvent(ctx context.Context, eventID string) ([]repository.TicketType, error) {
 	parsedID, err := uuid.Parse(eventID)
 	if err != nil {
-		return nil, response.ErrNotFound
+		return nil, response.ErrInvalidInput
 	}
 
 	ticketTypes, err := s.db.GetTicketTypesByEvent(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
@@ -205,7 +209,7 @@ func (s *TicketTypeService) GetTicketTypesByEvent(ctx context.Context, eventID s
 func (s *TicketTypeService) GetAvailableTicketTypes(ctx context.Context, eventID string) ([]repository.TicketType, error) {
 	parsedID, err := uuid.Parse(eventID)
 	if err != nil {
-		return nil, response.ErrNotFound
+		return nil, response.ErrInvalidInput
 	}
 
 	ticketTypes, err := s.db.GetAvailableTicketTypes(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})

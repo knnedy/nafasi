@@ -12,7 +12,7 @@ CREATE TABLE "ticket_types" (
     "sale_starts"   TIMESTAMP(3),
     "sale_ends"     TIMESTAMP(3),
     "created_at"    TIMESTAMP(3) NOT NULL DEFAULT NOW(),
-    "updated_at"    TIMESTAMP(3),
+    "updated_at"    TIMESTAMP(3) NOT NULL DEFAULT NOW(),
     CONSTRAINT "ticket_types_event_id_fkey" FOREIGN KEY ("event_id") REFERENCES "events"("id") ON DELETE CASCADE,
     CONSTRAINT "quantity_sold_valid" CHECK ("quantity_sold" <= "quantity"),
     CONSTRAINT "price_positive" CHECK ("price" >= 0)

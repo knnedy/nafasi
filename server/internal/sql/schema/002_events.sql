@@ -16,7 +16,7 @@ CREATE TABLE "events" (
     "is_online"    BOOLEAN NOT NULL DEFAULT FALSE,
     "online_url"   TEXT,
     "created_at"   TIMESTAMP(3) NOT NULL DEFAULT NOW(),
-    "updated_at"   TIMESTAMP(3),
+    "updated_at"   TIMESTAMP(3) NOT NULL DEFAULT NOW(),
     CONSTRAINT "events_slug_key" UNIQUE ("slug"),
     CONSTRAINT "events_organiser_id_fkey" FOREIGN KEY ("organiser_id") REFERENCES "users"("id") ON DELETE CASCADE
 );

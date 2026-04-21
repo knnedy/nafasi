@@ -35,16 +35,10 @@ type EventResponse struct {
 	IsOnline    bool    `json:"is_online"`
 	OnlineUrl   *string `json:"online_url,omitempty"`
 	CreatedAt   string  `json:"created_at"`
-	UpdatedAt   *string `json:"updated_at,omitempty"`
+	UpdatedAt   string  `json:"updated_at"`
 }
 
 func toEventResponse(event repository.Event) EventResponse {
-	var updatedAt *string
-	if event.UpdatedAt.Valid {
-		t := event.UpdatedAt.Time.Format(time.RFC3339)
-		updatedAt = &t
-	}
-
 	return EventResponse{
 		ID:          event.ID.String(),
 		OrganiserID: event.OrganiserID.String(),
@@ -60,7 +54,7 @@ func toEventResponse(event repository.Event) EventResponse {
 		IsOnline:    event.IsOnline,
 		OnlineUrl:   &event.OnlineUrl.String,
 		CreatedAt:   event.CreatedAt.Time.Format(time.RFC3339),
-		UpdatedAt:   updatedAt,
+		UpdatedAt:   event.UpdatedAt.Time.Format(time.RFC3339),
 	}
 }
 

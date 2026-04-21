@@ -9,7 +9,7 @@ CREATE TABLE "users" (
     "role"          user_role NOT NULL DEFAULT 'ATTENDEE',
     "avatar_url"    TEXT,
     "created_at"    TIMESTAMP(3) NOT NULL DEFAULT NOW(),
-    "updated_at"    TIMESTAMP(3),
+    "updated_at"    TIMESTAMP(3) NOT NULL DEFAULT NOW(),
     CONSTRAINT "users_email_key" UNIQUE ("email")
 );
 
