@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -9,6 +11,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/knnedy/nafasi/internal/repository"
 	"github.com/knnedy/nafasi/internal/response"
@@ -129,12 +132,15 @@ func (s *EventService) CreateEvent(ctx context.Context, organiserID string, inpu
 func (s *EventService) GetEventByID(ctx context.Context, eventID string) (repository.Event, error) {
 	parsedID, err := uuid.Parse(eventID)
 	if err != nil {
-		return repository.Event{}, response.ErrNotFound
+		return repository.Event{}, response.ErrInvalidInput
 	}
 
 	event, err := s.db.GetEventById(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
 	if err != nil {
-		return repository.Event{}, response.ErrNotFound
+		if errors.Is(err, sql.ErrNoRows) {
+			return repository.Event{}, response.ErrNotFound
+		}
+		return repository.Event{}, response.ErrDatabase
 	}
 
 	return event, nil
@@ -143,7 +149,10 @@ func (s *EventService) GetEventByID(ctx context.Context, eventID string) (reposi
 func (s *EventService) GetEventBySlug(ctx context.Context, slug string) (repository.Event, error) {
 	event, err := s.db.GetEventBySlug(ctx, slug)
 	if err != nil {
-		return repository.Event{}, response.ErrNotFound
+		if errors.Is(err, pgx.ErrNoRows) {
+			return repository.Event{}, response.ErrNotFound
+		}
+		return repository.Event{}, response.ErrDatabase
 	}
 
 	return event, nil
@@ -152,7 +161,7 @@ func (s *EventService) GetEventBySlug(ctx context.Context, slug string) (reposit
 func (s *EventService) GetEventsByOrganiser(ctx context.Context, organiserID string) ([]repository.Event, error) {
 	parsedID, err := uuid.Parse(organiserID)
 	if err != nil {
-		return nil, response.ErrNotFound
+		return nil, response.ErrInvalidInput
 	}
 
 	events, err := s.db.GetEventsByOrganiser(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})

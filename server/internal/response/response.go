@@ -25,7 +25,8 @@ type errorResponse struct {
 func WriteJSON(w http.ResponseWriter, statusCode int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(successResponse{
+
+	_ = json.NewEncoder(w).Encode(successResponse{
 		Success: true,
 		Data:    data,
 	})
@@ -42,10 +43,13 @@ func WriteError(w http.ResponseWriter, err error) {
 	case errors.Is(err, ErrInvalidInput):
 		status = http.StatusUnprocessableEntity
 		detail.Code = "VALIDATION_ERROR"
+
 		var valErr *ValidationError
 		if errors.As(err, &valErr) {
 			detail.Message = valErr.Message
 			detail.Field = valErr.Field
+		} else {
+			detail.Message = "validation error"
 		}
 
 	// Auth
@@ -90,6 +94,7 @@ func WriteError(w http.ResponseWriter, err error) {
 	case errors.Is(err, ErrNotFound):
 		status = http.StatusNotFound
 		detail.Code = "NOT_FOUND"
+
 		var nfErr *NotFoundError
 		if errors.As(err, &nfErr) {
 			detail.Message = nfErr.Error()
@@ -107,6 +112,7 @@ func WriteError(w http.ResponseWriter, err error) {
 	case errors.Is(err, ErrPaymentFailed):
 		status = http.StatusBadGateway
 		detail.Code = "PAYMENT_FAILED"
+
 		var payErr *PaymentError
 		if errors.As(err, &payErr) {
 			detail.Message = payErr.Message
@@ -165,6 +171,18 @@ func WriteError(w http.ResponseWriter, err error) {
 		detail.Code = "SALE_ENDED"
 		detail.Message = "ticket sales have ended"
 
+	// Database
+	case errors.Is(err, ErrDatabase):
+		status = http.StatusInternalServerError
+		detail.Code = "DATABASE_ERROR"
+		detail.Message = "a database error occurred"
+
+	// Internal
+	case errors.Is(err, ErrInternal):
+		status = http.StatusInternalServerError
+		detail.Code = "INTERNAL_ERROR"
+		detail.Message = "an internal server error occurred"
+
 	// Fallback
 	default:
 		status = http.StatusInternalServerError
@@ -173,7 +191,8 @@ func WriteError(w http.ResponseWriter, err error) {
 	}
 
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(errorResponse{
+
+	_ = json.NewEncoder(w).Encode(errorResponse{
 		Success: false,
 		Error:   detail,
 	})
