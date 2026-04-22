@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"fmt"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -20,32 +20,39 @@ type Config struct {
 	MpesaCallbackURL    string
 }
 
-func Load() Config {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+func Load() (*Config, error) {
+	// only load .env file in development
+	if os.Getenv("ENV") != "production" {
+		if err := godotenv.Load(); err != nil {
+			return nil, fmt.Errorf("error loading .env file: %w", err)
+		}
 	}
 
-	return Config{
-		DBUrl:               mustGet("DATABASE_URL"),
-		JWTSecret:           mustGet("JWT_SECRET"),
-		Port:                getOrDefault("PORT", "8080"),
-		Env:                 getOrDefault("ENV", "development"),
-		MpesaConsumerKey:    mustGet("MPESA_CONSUMER_KEY"),
-		MpesaConsumerSecret: mustGet("MPESA_CONSUMER_SECRET"),
-		MpesaShortcode:      mustGet("MPESA_SHORTCODE"),
-		MpesaPasskey:        mustGet("MPESA_PASSKEY"),
-		MpesaEnv:            getOrDefault("MPESA_ENV", "sandbox"),
-		MpesaCallbackURL:    mustGet("MPESA_CALLBACK_URL"),
+	cfg := &Config{
+		Port:     getOrDefault("PORT", "8000"),
+		Env:      getOrDefault("ENV", "development"),
+		MpesaEnv: getOrDefault("MPESA_ENV", "sandbox"),
 	}
-}
 
-func mustGet(key string) string {
-	val := os.Getenv(key)
-	if val == "" {
-		log.Fatalf("missing required environment variable: %s", key)
+	required := map[string]*string{
+		"DATABASE_URL":          &cfg.DBUrl,
+		"JWT_SECRET":            &cfg.JWTSecret,
+		"MPESA_CONSUMER_KEY":    &cfg.MpesaConsumerKey,
+		"MPESA_CONSUMER_SECRET": &cfg.MpesaConsumerSecret,
+		"MPESA_SHORTCODE":       &cfg.MpesaShortcode,
+		"MPESA_PASSKEY":         &cfg.MpesaPasskey,
+		"MPESA_CALLBACK_URL":    &cfg.MpesaCallbackURL,
 	}
-	return val
+
+	for key, dest := range required {
+		val := os.Getenv(key)
+		if val == "" {
+			return nil, fmt.Errorf("missing required environment variable: %s", key)
+		}
+		*dest = val
+	}
+
+	return cfg, nil
 }
 
 func getOrDefault(key, defaultVal string) string {
