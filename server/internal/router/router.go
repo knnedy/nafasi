@@ -40,6 +40,9 @@ func New(
 			r.Post("/logout", auth.Logout)
 		})
 
+		// mpesa callback — public, Safaricom has no JWT
+		r.Post("/payments/mpesa/callback", payment.MpesaCallback)
+
 		// events — public routes
 		r.Route("/events", func(r chi.Router) {
 			r.Get("/published", event.GetPublished)
@@ -52,10 +55,23 @@ func New(
 			r.Get("/{eventID}/ticket-types", ticketType.GetByEvent)
 			r.Get("/{eventID}/ticket-types/available", ticketType.GetAvailableByEvent)
 			r.Get("/{eventID}/ticket-types/{ticketTypeID}", ticketType.GetById)
-		})
 
-		// mpesa callback — public, Safaricom has no JWT
-		r.Post("/payments/mpesa/callback", payment.MpesaCallback)
+			// events — organiser write
+			r.Group(func(r chi.Router) {
+				r.Use(authMiddleware.Authenticate)
+
+				r.Post("/", event.Create)
+				r.Patch("/{eventID}", event.Update)
+				r.Patch("/{eventID}/status", event.UpdateStatus)
+				r.Delete("/{eventID}", event.Delete)
+
+				// ticket types — organiser write
+				r.Post("/{eventID}/ticket-types", ticketType.Create)
+				r.Patch("/{eventID}/ticket-types/{ticketTypeID}", ticketType.Update)
+				r.Delete("/{eventID}/ticket-types/{ticketTypeID}", ticketType.Delete)
+			})
+
+		})
 
 		//  Authenticated routes
 		r.Group(func(r chi.Router) {
@@ -67,19 +83,6 @@ func New(
 				r.Patch("/me", user.UpdateMe)
 				r.Patch("/me/password", user.UpdatePassword)
 				r.Delete("/me", user.DeleteMe)
-			})
-
-			// events — organiser write
-			r.Route("/events", func(r chi.Router) {
-				r.Post("/", event.Create)
-				r.Patch("/{eventID}", event.Update)
-				r.Patch("/{eventID}/status", event.UpdateStatus)
-				r.Delete("/{eventID}", event.Delete)
-
-				// ticket types — organiser write
-				r.Post("/{eventID}/ticket-types", ticketType.Create)
-				r.Patch("/{eventID}/ticket-types/{ticketTypeID}", ticketType.Update)
-				r.Delete("/{eventID}/ticket-types/{ticketTypeID}", ticketType.Delete)
 			})
 
 			// payments
