@@ -96,7 +96,7 @@ func (h *TicketTypeHandler) Create(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusCreated, toTicketTypeResponse(createdTicketType))
 }
 
-// GET /v1/ticket-type/[ticketTypeID]
+// GET /v1/event/[eventID]/ticket-types/[ticketTypeID]
 func (h *TicketTypeHandler) GetById(w http.ResponseWriter, r *http.Request) {
 	ticketTypeID := chi.URLParam(r, "ticketTypeID")
 	if ticketTypeID == "" {
