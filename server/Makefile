@@ -5,6 +5,8 @@ export
 BINARY_NAME=api
 MAIN_PATH=./cmd/api
 DB_URL=$(DATABASE_URL)
+SWAG_MAIN=./cmd/api/main.go
+SWAG_OUT=./docs
 
 # build
 build:
@@ -46,3 +48,8 @@ migrate-status:
 
 migrate-create:
 	goose -dir ./internal/sql/schema create $(name) sql
+
+
+# swagger
+swagger:
+	swag init -g $(MAIN_PATH)/main.go -o ./docs

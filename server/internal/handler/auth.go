@@ -53,7 +53,17 @@ func clearRefreshTokenCookie(w http.ResponseWriter) {
 	})
 }
 
-// POST  /api/v1/auth/register
+// Register godoc
+// @Summary Register a new user
+// @Description Creates a new user account and returns access + refresh tokens
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param input body service.RegisterInput true "Register payload"
+// @Success 201 {object} authDataResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /auth/register [post]
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var input service.RegisterInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -71,7 +81,18 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusCreated, toAuthDataResponse(result))
 }
 
-// POST /api/v1/auth/login
+// Login godoc
+// @Summary Login user
+// @Description Authenticates user and returns access + refresh tokens
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param input body service.LoginInput true "Login payload"
+// @Success 200 {object} authDataResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /auth/login [post]
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var input service.LoginInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -89,7 +110,15 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toAuthDataResponse(result))
 }
 
-// POST /api/v1/auth/refresh
+// RefreshAccessToken godoc
+// @Summary Refresh access token
+// @Description Generates a new access token using refresh token from HttpOnly cookie
+// @Tags Auth
+// @Produce json
+// @Success 200 {object} authDataResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /auth/refresh [post]
 func (h *AuthHandler) RefreshAccessToken(w http.ResponseWriter, r *http.Request) {
 	// read refresh token from httponly cookie
 	cookie, err := r.Cookie("refresh_token")
@@ -108,7 +137,17 @@ func (h *AuthHandler) RefreshAccessToken(w http.ResponseWriter, r *http.Request)
 	response.WriteJSON(w, http.StatusOK, toAuthDataResponse(result))
 }
 
-// POST /api/v1/auth/forgot-password
+// ForgotPassword godoc
+// @Summary Request password reset
+// @Description Sends password reset link if account exists (prevents email enumeration)
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param input body service.ForgotPasswordInput true "Forgot password payload"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /auth/forgot-password [post]
 func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	var input service.ForgotPasswordInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -127,7 +166,18 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /api/v1/auth/reset-password
+// ResetPassword godoc
+// @Summary Reset user password
+// @Description Resets password using reset token
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param input body service.ResetPasswordInput true "Reset password payload"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /auth/reset-password [post]
 func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	var input service.ResetPasswordInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -145,7 +195,15 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /api/v1/auth/logout
+// Logout godoc
+// @Summary Logout user
+// @Description Invalidates refresh token and clears cookie
+// @Tags Auth
+// @Produce json
+// @Success 200 {object} nil
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /auth/logout [post]
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	// read refresh token from httponly cookie
 	cookie, err := r.Cookie("refresh_token")

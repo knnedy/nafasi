@@ -11,15 +11,15 @@ type successResponse struct {
 	Data    any  `json:"data"`
 }
 
-type errorDetail struct {
+type ErrorDetail struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
 	Field   string `json:"field,omitempty"`
 }
 
-type errorResponse struct {
+type ErrorResponse struct {
 	Success bool        `json:"success"`
-	Error   errorDetail `json:"error"`
+	Error   ErrorDetail `json:"error"`
 }
 
 func WriteJSON(w http.ResponseWriter, statusCode int, data any) {
@@ -36,7 +36,7 @@ func WriteError(w http.ResponseWriter, err error) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var status int
-	var detail errorDetail
+	var detail ErrorDetail
 
 	switch {
 	// Validation
@@ -197,7 +197,7 @@ func WriteError(w http.ResponseWriter, err error) {
 
 	w.WriteHeader(status)
 
-	_ = json.NewEncoder(w).Encode(errorResponse{
+	_ = json.NewEncoder(w).Encode(ErrorResponse{
 		Success: false,
 		Error:   detail,
 	})

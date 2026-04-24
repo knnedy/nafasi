@@ -1,3 +1,11 @@
+// @title Nafasi API
+// @version 1.0
+// @description Event ticketing API
+// @BasePath /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 package main
 
 import (

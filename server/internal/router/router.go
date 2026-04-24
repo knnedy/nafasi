@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
+
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/knnedy/nafasi/internal/handler"
 	"github.com/knnedy/nafasi/internal/middleware"
@@ -28,6 +30,9 @@ func New(
 	r.Use(chimiddleware.RealIP)
 	r.Use(chimiddleware.Recoverer)
 	r.Use(middleware.Logger)
+
+	// swagger docs
+	r.Get("/swagger/*", httpSwagger.Handler())
 
 	authMiddleware := middleware.NewAuthMiddleware(tokens)
 

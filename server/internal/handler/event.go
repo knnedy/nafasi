@@ -58,7 +58,19 @@ func toEventResponse(event repository.Event) EventResponse {
 	}
 }
 
-// POST /api/v1/event
+// Create godoc
+// @Summary Create event
+// @Description Creates a new event (organiser only)
+// @Tags Events
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param input body service.CreateEventInput true "Create event payload"
+// @Success 201 {object} EventResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /events [post]
 func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -82,7 +94,16 @@ func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusCreated, toEventResponse(createdEvent))
 }
 
-// GET /api/v1/event/[eventID]
+// GetById godoc
+// @Summary Get event by ID
+// @Description Returns a single event by its ID
+// @Tags Events
+// @Produce json
+// @Param eventID path string true "Event ID"
+// @Success 200 {object} EventResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /events/{eventID} [get]
 func (h *EventHandler) GetById(w http.ResponseWriter, r *http.Request) {
 	eventID := chi.URLParam(r, "eventID")
 	if eventID == "" {
@@ -99,7 +120,16 @@ func (h *EventHandler) GetById(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toEventResponse(event))
 }
 
-// GET /api/v1/event/[slug]
+// GetBySlug godoc
+// @Summary Get event by slug
+// @Description Returns a single event by its slug
+// @Tags Events
+// @Produce json
+// @Param slug path string true "Event slug"
+// @Success 200 {object} EventResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /events/slug/{slug} [get]
 func (h *EventHandler) GetBySlug(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 	if slug == "" {
@@ -116,7 +146,16 @@ func (h *EventHandler) GetBySlug(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toEventResponse(event))
 }
 
-// GET /api/v1/events/organiser/[organiserID]
+// GetByOrganiser godoc
+// @Summary Get events by organiser
+// @Description Returns all events created by a specific organiser
+// @Tags Events
+// @Produce json
+// @Param organiserID path string true "Organiser ID"
+// @Success 200 {array} EventResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /events/organiser/{organiserID} [get]
 func (h *EventHandler) GetByOrganiser(w http.ResponseWriter, r *http.Request) {
 	organiserID := chi.URLParam(r, "organiserID")
 	if organiserID == "" {
@@ -138,7 +177,14 @@ func (h *EventHandler) GetByOrganiser(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, eventResponses)
 }
 
-// GET /api/v1/events/published
+// GetPublished godoc
+// @Summary Get published events
+// @Description Returns all published events
+// @Tags Events
+// @Produce json
+// @Success 200 {array} EventResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /events/published [get]
 func (h *EventHandler) GetPublished(w http.ResponseWriter, r *http.Request) {
 	events, err := h.event.GetPublishedEvents(r.Context())
 	if err != nil {
@@ -154,7 +200,14 @@ func (h *EventHandler) GetPublished(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, eventResponses)
 }
 
-// GET /api/v1/events/upcoming
+// GetUpcoming godoc
+// @Summary Get upcoming events
+// @Description Returns upcoming events based on start date
+// @Tags Events
+// @Produce json
+// @Success 200 {array} EventResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /events/upcoming [get]
 func (h *EventHandler) GetUpcoming(w http.ResponseWriter, r *http.Request) {
 	events, err := h.event.GetUpcomingEvents(r.Context())
 	if err != nil {
@@ -170,7 +223,21 @@ func (h *EventHandler) GetUpcoming(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, eventResponses)
 }
 
-// PATCH /api/v1/event/[eventID]
+// Update godoc
+// @Summary Update event
+// @Description Updates an existing event (organiser only)
+// @Tags Events
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param eventID path string true "Event ID"
+// @Param input body service.UpdateEventInput true "Update event payload"
+// @Success 200 {object} EventResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /events/{eventID} [patch]
 func (h *EventHandler) Update(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -200,7 +267,21 @@ func (h *EventHandler) Update(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toEventResponse(updatedEvent))
 }
 
-// PATCH /api/v1/event/[eventID]/status
+// UpdateStatus godoc
+// @Summary Update event status
+// @Description Updates the status of an event (e.g. draft, published)
+// @Tags Events
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param eventID path string true "Event ID"
+// @Param input body service.UpdateEventStatusInput true "Update status payload"
+// @Success 200 {object} EventResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /events/{eventID}/status [patch]
 func (h *EventHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -230,7 +311,18 @@ func (h *EventHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toEventResponse(updatedEvent))
 }
 
-// DELETE /api/v1/event/[eventID]
+// Delete godoc
+// @Summary Delete event
+// @Description Deletes an event (organiser only)
+// @Tags Events
+// @Produce json
+// @Security BearerAuth
+// @Param eventID path string true "Event ID"
+// @Success 200 {object} map[string]string
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /events/{eventID} [delete]
 func (h *EventHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())

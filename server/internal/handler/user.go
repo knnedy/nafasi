@@ -38,7 +38,16 @@ func toUserResponse(user repository.User) UserResponse {
 	}
 }
 
-// GET /api/v1/users/me
+// GetMe godoc
+// @Summary Get current user
+// @Description Returns the authenticated user's profile
+// @Tags Users
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} UserResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /users/me [get]
 func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -56,7 +65,19 @@ func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toUserResponse(user))
 }
 
-// PATCH /api/v1/users/me
+// UpdateMe godoc
+// @Summary Update user profile
+// @Description Updates the authenticated user's profile details
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param input body service.UpdateProfileInput true "Update profile payload"
+// @Success 200 {object} UserResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /users/me [patch]
 func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -82,7 +103,19 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toUserResponse(user))
 }
 
-// PATCH /api/v1/users/me/avatar
+// UpdateAvatar godoc
+// @Summary Update user avatar
+// @Description Updates the authenticated user's avatar
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param input body service.UpdateAvatarInput true "Update avatar payload"
+// @Success 200 {object} UserResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /users/me/avatar [patch]
 func (h *UserHandler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -108,7 +141,19 @@ func (h *UserHandler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toUserResponse(user))
 }
 
-// patCh /users/me/password
+// UpdatePassword godoc
+// @Summary Update user password
+// @Description Updates the authenticated user's password
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param input body service.UpdatePasswordInput true "Update password payload"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /users/me/password [patch]
 func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -133,7 +178,17 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, nil)
 }
 
-// DELETE /users/me
+// DeleteMe godoc
+// @Summary Delete user account
+// @Description Deletes the authenticated user's account
+// @Tags Users
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]string
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /users/me [delete]
+
 func (h *UserHandler) DeleteMe(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())

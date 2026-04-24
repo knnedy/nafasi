@@ -22,7 +22,19 @@ type checkInRequest struct {
 	QRCode string `json:"qr_code"`
 }
 
-// POST /api/v1/checkin
+// CheckIn godoc
+// @Summary Check in ticket
+// @Description Validates QR code and marks ticket as checked in (organiser only)
+// @Tags CheckIn
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param input body checkInRequest true "Check-in payload"
+// @Success 200 {object} service.CheckInResult
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /checkin [post]
 func (h *CheckInHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 	organiserID, ok := middleware.GetUserID(r.Context())
 	if !ok {
@@ -36,11 +48,6 @@ func (h *CheckInHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.QRCode == "" {
-		response.WriteError(w, response.ErrInvalidInput)
-		return
-	}
-
 	result, err := h.checkIn.CheckIn(r.Context(), organiserID, req.QRCode)
 	if err != nil {
 		response.WriteError(w, err)
@@ -50,9 +57,24 @@ func (h *CheckInHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, result)
 }
 
-// GET /api/v1/checkin/{eventID}
+// GetCheckedInOrders godoc
+// @Summary Get checked-in orders
+// @Description Returns all orders that have been checked in for an event
+// @Tags CheckIn
+// @Produce json
+// @Security BearerAuth
+// @Param eventID path string true "Event ID"
+// @Success 200 {array} service.CheckInResult
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /checkin/{eventID} [get]
 func (h *CheckInHandler) GetCheckedInOrders(w http.ResponseWriter, r *http.Request) {
-	organiserID := r.Context().Value("user_id").(string)
+	organiserID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		response.WriteError(w, response.ErrUnauthorized)
+		return
+	}
+
 	eventID := chi.URLParam(r, "eventID")
 
 	if eventID == "" {

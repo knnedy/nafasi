@@ -37,13 +37,17 @@ type TicketTypeResponse struct {
 }
 
 func toTicketTypeResponse(ticketType repository.TicketType) TicketTypeResponse {
-	var saleStarts, saleEnds *string
+	var description, saleStarts, saleEnds *string
 
-	if !ticketType.SaleStarts.Valid {
+	if ticketType.Description.Valid {
+		description = &ticketType.Description.String
+	}
+
+	if ticketType.SaleStarts.Valid {
 		ss := ticketType.SaleStarts.Time.Format(time.RFC3339)
 		saleStarts = &ss
 	}
-	if !ticketType.SaleEnds.Valid {
+	if ticketType.SaleEnds.Valid {
 		se := ticketType.SaleEnds.Time.Format(time.RFC3339)
 		saleEnds = &se
 	}
@@ -52,7 +56,7 @@ func toTicketTypeResponse(ticketType repository.TicketType) TicketTypeResponse {
 		ID:           ticketType.ID.String(),
 		EventID:      ticketType.EventID.String(),
 		Name:         ticketType.Name,
-		Description:  &ticketType.Description.String,
+		Description:  description,
 		Price:        ticketType.Price,
 		Currency:     ticketType.Currency,
 		Quantity:     ticketType.Quantity,
@@ -65,7 +69,21 @@ func toTicketTypeResponse(ticketType repository.TicketType) TicketTypeResponse {
 	}
 }
 
-// POST /api/v1/event/[eventID]/ticket-type
+// Create godoc
+// @Summary Create ticket type
+// @Description Creates a ticket type for an event (organiser only)
+// @Tags TicketTypes
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param eventID path string true "Event ID"
+// @Param input body service.CreateTicketTypeInput true "Create ticket type payload"
+// @Success 201 {object} TicketTypeResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /events/{eventID}/ticket-types [post]
 func (h *TicketTypeHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -96,7 +114,17 @@ func (h *TicketTypeHandler) Create(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusCreated, toTicketTypeResponse(createdTicketType))
 }
 
-// GET /api/v1/event/[eventID]/ticket-types/[ticketTypeID]
+// GetById godoc
+// @Summary Get ticket type by ID
+// @Description Returns a specific ticket type
+// @Tags TicketTypes
+// @Produce json
+// @Param eventID path string true "Event ID"
+// @Param ticketTypeID path string true "Ticket Type ID"
+// @Success 200 {object} TicketTypeResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /events/{eventID}/ticket-types/{ticketTypeID} [get]
 func (h *TicketTypeHandler) GetById(w http.ResponseWriter, r *http.Request) {
 	ticketTypeID := chi.URLParam(r, "ticketTypeID")
 	if ticketTypeID == "" {
@@ -113,7 +141,16 @@ func (h *TicketTypeHandler) GetById(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toTicketTypeResponse(ticketType))
 }
 
-// GET /api/v1/event/[eventID]/ticket-types
+// GetByEvent godoc
+// @Summary Get ticket types by event
+// @Description Returns all ticket types for a given event
+// @Tags TicketTypes
+// @Produce json
+// @Param eventID path string true "Event ID"
+// @Success 200 {array} TicketTypeResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /events/{eventID}/ticket-types [get]
 func (h *TicketTypeHandler) GetByEvent(w http.ResponseWriter, r *http.Request) {
 	eventID := chi.URLParam(r, "eventID")
 	if eventID == "" {
@@ -135,7 +172,16 @@ func (h *TicketTypeHandler) GetByEvent(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, resp)
 }
 
-// GET /api/v1/event/[eventID]/available-ticket-types
+// GetAvailableByEvent godoc
+// @Summary Get available ticket types
+// @Description Returns ticket types that are currently available for purchase
+// @Tags TicketTypes
+// @Produce json
+// @Param eventID path string true "Event ID"
+// @Success 200 {array} TicketTypeResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /events/{eventID}/ticket-types/available [get]
 func (h *TicketTypeHandler) GetAvailableByEvent(w http.ResponseWriter, r *http.Request) {
 	eventID := chi.URLParam(r, "eventID")
 	if eventID == "" {
@@ -157,7 +203,22 @@ func (h *TicketTypeHandler) GetAvailableByEvent(w http.ResponseWriter, r *http.R
 	response.WriteJSON(w, http.StatusOK, resp)
 }
 
-// PATCH /api/v1/ticket-type/[ticketTypeID]
+// Update godoc
+// @Summary Update ticket type
+// @Description Updates a ticket type (organiser only)
+// @Tags TicketTypes
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param eventID path string true "Event ID"
+// @Param ticketTypeID path string true "Ticket Type ID"
+// @Param input body service.UpdateTicketTypeInput true "Update ticket type payload"
+// @Success 200 {object} TicketTypeResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /events/{eventID}/ticket-types/{ticketTypeID} [patch]
 func (h *TicketTypeHandler) Update(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -187,7 +248,19 @@ func (h *TicketTypeHandler) Update(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toTicketTypeResponse(updatedTicketType))
 }
 
-// DELETE /api/v1/ticket-type/[ticketTypeID]
+// Delete godoc
+// @Summary Delete ticket type
+// @Description Deletes a ticket type (organiser only)
+// @Tags TicketTypes
+// @Produce json
+// @Security BearerAuth
+// @Param eventID path string true "Event ID"
+// @Param ticketTypeID path string true "Ticket Type ID"
+// @Success 200 {object} map[string]string
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /events/{eventID}/ticket-types/{ticketTypeID} [delete]
 func (h *TicketTypeHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())

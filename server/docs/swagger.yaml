@@ -1,0 +1,1394 @@
+basePath: /api/v1
+definitions:
+  github_com_knnedy_nafasi_internal_response.ErrorDetail:
+    properties:
+      code:
+        type: string
+      field:
+        type: string
+      message:
+        type: string
+    type: object
+  github_com_knnedy_nafasi_internal_response.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorDetail'
+      success:
+        type: boolean
+    type: object
+  github_com_knnedy_nafasi_internal_service.CheckInResult:
+    properties:
+      checked_in:
+        type: boolean
+      event_id:
+        type: string
+      message:
+        type: string
+      order_id:
+        type: string
+      user_id:
+        type: string
+    type: object
+  github_com_knnedy_nafasi_internal_service.CreateEventInput:
+    properties:
+      description:
+        type: string
+      ends_at:
+        type: string
+      is_online:
+        type: boolean
+      location:
+        type: string
+      online_url:
+        type: string
+      starts_at:
+        type: string
+      title:
+        maxLength: 255
+        minLength: 3
+        type: string
+      venue:
+        type: string
+    required:
+    - ends_at
+    - starts_at
+    - title
+    type: object
+  github_com_knnedy_nafasi_internal_service.CreateTicketTypeInput:
+    properties:
+      description:
+        type: string
+      is_free:
+        type: boolean
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      price:
+        type: string
+      quantity:
+        minimum: 1
+        type: integer
+      sale_ends:
+        type: string
+      sale_starts:
+        type: string
+    required:
+    - name
+    - price
+    - quantity
+    type: object
+  github_com_knnedy_nafasi_internal_service.ForgotPasswordInput:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  github_com_knnedy_nafasi_internal_service.InitiatePaymentInput:
+    properties:
+      event_id:
+        type: string
+      payment_method:
+        enum:
+        - MPESA
+        - FREE
+        type: string
+      phone_number:
+        type: string
+      quantity:
+        maximum: 10
+        minimum: 1
+        type: integer
+      ticket_type_id:
+        type: string
+    required:
+    - event_id
+    - payment_method
+    - phone_number
+    - quantity
+    - ticket_type_id
+    type: object
+  github_com_knnedy_nafasi_internal_service.LoginInput:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  github_com_knnedy_nafasi_internal_service.MpesaCallback:
+    properties:
+      Body:
+        properties:
+          stkCallback:
+            properties:
+              CallbackMetadata:
+                properties:
+                  Item:
+                    items:
+                      properties:
+                        Name:
+                          type: string
+                        Value: {}
+                      type: object
+                    type: array
+                type: object
+              CheckoutRequestID:
+                type: string
+              MerchantRequestID:
+                type: string
+              ResultCode:
+                type: integer
+              ResultDesc:
+                type: string
+            type: object
+        type: object
+    type: object
+  github_com_knnedy_nafasi_internal_service.PaymentResult:
+    properties:
+      checkout_request_id:
+        type: string
+      message:
+        type: string
+      order_id:
+        type: string
+    type: object
+  github_com_knnedy_nafasi_internal_service.RegisterInput:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        maxLength: 100
+        minLength: 8
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  github_com_knnedy_nafasi_internal_service.ResetPasswordInput:
+    properties:
+      new_password:
+        maxLength: 100
+        minLength: 8
+        type: string
+      token:
+        type: string
+    required:
+    - new_password
+    - token
+    type: object
+  github_com_knnedy_nafasi_internal_service.UpdateAvatarInput:
+    properties:
+      avatarURL:
+        type: string
+    required:
+    - avatarURL
+    type: object
+  github_com_knnedy_nafasi_internal_service.UpdateEventInput:
+    properties:
+      description:
+        type: string
+      ends_at:
+        type: string
+      is_online:
+        type: boolean
+      location:
+        type: string
+      online_url:
+        type: string
+      starts_at:
+        type: string
+      title:
+        maxLength: 255
+        minLength: 3
+        type: string
+      venue:
+        type: string
+    required:
+    - ends_at
+    - starts_at
+    - title
+    type: object
+  github_com_knnedy_nafasi_internal_service.UpdateEventStatusInput:
+    properties:
+      status:
+        enum:
+        - DRAFT
+        - PUBLISHED
+        - CANCELLED
+        - COMPLETED
+        type: string
+    required:
+    - status
+    type: object
+  github_com_knnedy_nafasi_internal_service.UpdatePasswordInput:
+    properties:
+      currentPassword:
+        maxLength: 100
+        minLength: 8
+        type: string
+      newPassword:
+        maxLength: 100
+        minLength: 8
+        type: string
+    required:
+    - currentPassword
+    - newPassword
+    type: object
+  github_com_knnedy_nafasi_internal_service.UpdateProfileInput:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - email
+    - name
+    type: object
+  github_com_knnedy_nafasi_internal_service.UpdateTicketTypeInput:
+    properties:
+      description:
+        type: string
+      is_free:
+        type: boolean
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      price:
+        type: string
+      quantity:
+        minimum: 1
+        type: integer
+      sale_ends:
+        type: string
+      sale_starts:
+        type: string
+    required:
+    - name
+    - price
+    - quantity
+    type: object
+  internal_handler.EventResponse:
+    properties:
+      banner_url:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      ends_at:
+        type: string
+      id:
+        type: string
+      is_online:
+        type: boolean
+      location:
+        type: string
+      online_url:
+        type: string
+      organiser_id:
+        type: string
+      slug:
+        type: string
+      starts_at:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      venue:
+        type: string
+    type: object
+  internal_handler.OrderResponse:
+    properties:
+      checked_in:
+        type: boolean
+      checked_in_at:
+        type: string
+      created_at:
+        type: string
+      currency:
+        type: string
+      event_id:
+        type: string
+      id:
+        type: string
+      payment_method:
+        type: string
+      payment_ref:
+        type: string
+      qr_code:
+        type: string
+      quantity:
+        type: integer
+      status:
+        type: string
+      ticket_type_id:
+        type: string
+      total_amount:
+        type: number
+      unit_price:
+        type: number
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  internal_handler.TicketTypeResponse:
+    properties:
+      created_at:
+        type: string
+      currency:
+        type: string
+      description:
+        type: string
+      event_id:
+        type: string
+      id:
+        type: string
+      is_free:
+        type: boolean
+      name:
+        type: string
+      price:
+        type: integer
+      quantity:
+        type: integer
+      quantity_sold:
+        type: integer
+      sale_ends:
+        type: string
+      sale_starts:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_handler.UserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_handler.authDataResponse:
+    properties:
+      access_token:
+        type: string
+      user:
+        $ref: '#/definitions/internal_handler.UserResponse'
+    type: object
+  internal_handler.checkInRequest:
+    properties:
+      qr_code:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Event ticketing API
+  title: Nafasi API
+  version: "1.0"
+paths:
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Sends password reset link if account exists (prevents email enumeration)
+      parameters:
+      - description: Forgot password payload
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.ForgotPasswordInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      summary: Request password reset
+      tags:
+      - Auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates user and returns access + refresh tokens
+      parameters:
+      - description: Login payload
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.LoginInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.authDataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      summary: Login user
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      description: Invalidates refresh token and clears cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      summary: Logout user
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      description: Generates a new access token using refresh token from HttpOnly
+        cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.authDataResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account and returns access + refresh tokens
+      parameters:
+      - description: Register payload
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.RegisterInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_handler.authDataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - Auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Resets password using reset token
+      parameters:
+      - description: Reset password payload
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.ResetPasswordInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      summary: Reset user password
+      tags:
+      - Auth
+  /checkin:
+    post:
+      consumes:
+      - application/json
+      description: Validates QR code and marks ticket as checked in (organiser only)
+      parameters:
+      - description: Check-in payload
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.checkInRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.CheckInResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Check in ticket
+      tags:
+      - CheckIn
+  /checkin/{eventID}:
+    get:
+      description: Returns all orders that have been checked in for an event
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.CheckInResult'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get checked-in orders
+      tags:
+      - CheckIn
+  /events:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new event (organiser only)
+      parameters:
+      - description: Create event payload
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.CreateEventInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_handler.EventResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create event
+      tags:
+      - Events
+  /events/{eventID}:
+    delete:
+      description: Deletes an event (organiser only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete event
+      tags:
+      - Events
+    get:
+      description: Returns a single event by its ID
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.EventResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      summary: Get event by ID
+      tags:
+      - Events
+    patch:
+      consumes:
+      - application/json
+      description: Updates an existing event (organiser only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      - description: Update event payload
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.UpdateEventInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.EventResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update event
+      tags:
+      - Events
+  /events/{eventID}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the status of an event (e.g. draft, published)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      - description: Update status payload
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.UpdateEventStatusInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.EventResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update event status
+      tags:
+      - Events
+  /events/{eventID}/ticket-types:
+    get:
+      description: Returns all ticket types for a given event
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_handler.TicketTypeResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      summary: Get ticket types by event
+      tags:
+      - TicketTypes
+    post:
+      consumes:
+      - application/json
+      description: Creates a ticket type for an event (organiser only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      - description: Create ticket type payload
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.CreateTicketTypeInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_handler.TicketTypeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create ticket type
+      tags:
+      - TicketTypes
+  /events/{eventID}/ticket-types/{ticketTypeID}:
+    delete:
+      description: Deletes a ticket type (organiser only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      - description: Ticket Type ID
+        in: path
+        name: ticketTypeID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete ticket type
+      tags:
+      - TicketTypes
+    get:
+      description: Returns a specific ticket type
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      - description: Ticket Type ID
+        in: path
+        name: ticketTypeID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.TicketTypeResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      summary: Get ticket type by ID
+      tags:
+      - TicketTypes
+    patch:
+      consumes:
+      - application/json
+      description: Updates a ticket type (organiser only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      - description: Ticket Type ID
+        in: path
+        name: ticketTypeID
+        required: true
+        type: string
+      - description: Update ticket type payload
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.UpdateTicketTypeInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.TicketTypeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update ticket type
+      tags:
+      - TicketTypes
+  /events/{eventID}/ticket-types/available:
+    get:
+      description: Returns ticket types that are currently available for purchase
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_handler.TicketTypeResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      summary: Get available ticket types
+      tags:
+      - TicketTypes
+  /events/organiser/{organiserID}:
+    get:
+      description: Returns all events created by a specific organiser
+      parameters:
+      - description: Organiser ID
+        in: path
+        name: organiserID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_handler.EventResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      summary: Get events by organiser
+      tags:
+      - Events
+  /events/published:
+    get:
+      description: Returns all published events
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_handler.EventResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      summary: Get published events
+      tags:
+      - Events
+  /events/slug/{slug}:
+    get:
+      description: Returns a single event by its slug
+      parameters:
+      - description: Event slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.EventResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      summary: Get event by slug
+      tags:
+      - Events
+  /events/upcoming:
+    get:
+      description: Returns upcoming events based on start date
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_handler.EventResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      summary: Get upcoming events
+      tags:
+      - Events
+  /payments/initiate:
+    post:
+      consumes:
+      - application/json
+      description: Initiates a payment (e.g. M-Pesa STK push)
+      parameters:
+      - description: Payment initiation payload
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.InitiatePaymentInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.PaymentResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Initiate payment
+      tags:
+      - Payments
+  /payments/mpesa/callback:
+    post:
+      consumes:
+      - application/json
+      description: Safaricom callback endpoint for payment status updates (no authentication)
+      parameters:
+      - description: M-Pesa callback payload
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.MpesaCallback'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Safaricom acknowledgment response
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      summary: M-Pesa callback
+      tags:
+      - Payments
+  /payments/status/{orderID}:
+    get:
+      description: Retrieves the status of a payment by order ID
+      parameters:
+      - description: Order ID
+        in: path
+        name: orderID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.OrderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get payment status
+      tags:
+      - Payments
+  /users/me:
+    get:
+      description: Returns the authenticated user's profile
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - Users
+    patch:
+      consumes:
+      - application/json
+      description: Updates the authenticated user's profile details
+      parameters:
+      - description: Update profile payload
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.UpdateProfileInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - Users
+  /users/me/avatar:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the authenticated user's avatar
+      parameters:
+      - description: Update avatar payload
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.UpdateAvatarInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update user avatar
+      tags:
+      - Users
+  /users/me/password:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the authenticated user's password
+      parameters:
+      - description: Update password payload
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.UpdatePasswordInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update user password
+      tags:
+      - Users
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
