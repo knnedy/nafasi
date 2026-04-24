@@ -15,6 +15,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/knnedy/nafasi/internal/notifications"
 	"github.com/knnedy/nafasi/internal/repository"
 	"github.com/knnedy/nafasi/internal/response"
 )
@@ -23,17 +24,19 @@ type PaymentService struct {
 	db       *repository.DB
 	queries  *repository.Queries
 	mpesa    *MpesaService
+	email    *notifications.EmailService
 	validate *validator.Validate
 	trans    ut.Translator
 }
 
-func NewPaymentService(db *repository.DB, mpesa *MpesaService) *PaymentService {
+func NewPaymentService(db *repository.DB, mpesa *MpesaService, email *notifications.EmailService) *PaymentService {
 	validate, trans := newValidator()
 
 	return &PaymentService{
 		db:       db,
 		queries:  db.Queries(),
 		mpesa:    mpesa,
+		email:    email,
 		validate: validate,
 		trans:    trans,
 	}
@@ -221,6 +224,21 @@ func (s *PaymentService) confirmFreeOrder(ctx context.Context, order repository.
 		return nil, err
 	}
 
+	// send ticket confirmation after tx commits
+	// email failure is non-critical, log and continue
+	user, err := s.queries.GetUserById(ctx, order.UserID)
+	if err == nil {
+		event, err := s.queries.GetEventById(ctx, order.EventID)
+		if err == nil {
+			if err = s.email.SendTicketConfirmation(user.Email, event.Title, qrCode); err != nil {
+				slog.Error("failed to send ticket confirmation email for free order",
+					"order_id", uuid.UUID(order.ID.Bytes).String(),
+					"err", err,
+				)
+			}
+		}
+	}
+
 	return &PaymentResult{
 		OrderID: uuid.UUID(order.ID.Bytes).String(),
 		Message: "ticket confirmed",
@@ -312,7 +330,7 @@ func (s *PaymentService) HandleMpesaCallback(ctx context.Context, callback Mpesa
 	}
 
 	// Payment SUCCESS - atomic transaction
-	return s.db.WithTransaction(ctx, func(q *repository.Queries) error {
+	err = s.db.WithTransaction(ctx, func(q *repository.Queries) error {
 		_, err := q.UpdateOrderPayment(ctx, repository.UpdateOrderPaymentParams{
 			ID:     order.ID,
 			Status: repository.OrderStatusPAID,
@@ -344,6 +362,27 @@ func (s *PaymentService) HandleMpesaCallback(ctx context.Context, callback Mpesa
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	// send ticket confirmation after tx commits
+	// email failure is non-critical, log and continue
+	user, err := s.queries.GetUserById(ctx, order.UserID)
+	if err == nil {
+		event, err := s.queries.GetEventById(ctx, order.EventID)
+		if err == nil {
+			if err = s.email.SendTicketConfirmation(user.Email, event.Title, qrCode); err != nil {
+				slog.Error("failed to send ticket confirmation email for paid order",
+					"order_id", uuid.UUID(order.ID.Bytes).String(),
+					"err", err,
+				)
+			}
+		}
+	}
+
+	return nil
+
 }
 
 func (s *PaymentService) QueryPaymentStatus(ctx context.Context, orderID string) (*repository.Order, error) {

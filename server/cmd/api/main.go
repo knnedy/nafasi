@@ -12,6 +12,7 @@ import (
 
 	"github.com/knnedy/nafasi/internal/config"
 	"github.com/knnedy/nafasi/internal/handler"
+	"github.com/knnedy/nafasi/internal/notifications"
 	"github.com/knnedy/nafasi/internal/repository"
 	"github.com/knnedy/nafasi/internal/router"
 	"github.com/knnedy/nafasi/internal/service"
@@ -50,7 +51,8 @@ func main() {
 	userService := service.NewUserService(db.Queries())
 	eventService := service.NewEventService(db.Queries())
 	ticketService := service.NewTicketTypeService(db.Queries())
-	paymentService := service.NewPaymentService(db, mpesaService)
+	emailService := notifications.NewEmailService(cfg.ResendAPIKey, cfg.ResendFromEmail)
+	paymentService := service.NewPaymentService(db, mpesaService, emailService)
 
 	// initialize handlers
 	authHandler := handler.NewAuthHandler(authService)
