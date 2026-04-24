@@ -65,7 +65,7 @@ func toTicketTypeResponse(ticketType repository.TicketType) TicketTypeResponse {
 	}
 }
 
-// POST /v1/event/[eventID]/ticket-type
+// POST /api/v1/event/[eventID]/ticket-type
 func (h *TicketTypeHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -96,7 +96,7 @@ func (h *TicketTypeHandler) Create(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusCreated, toTicketTypeResponse(createdTicketType))
 }
 
-// GET /v1/event/[eventID]/ticket-types/[ticketTypeID]
+// GET /api/v1/event/[eventID]/ticket-types/[ticketTypeID]
 func (h *TicketTypeHandler) GetById(w http.ResponseWriter, r *http.Request) {
 	ticketTypeID := chi.URLParam(r, "ticketTypeID")
 	if ticketTypeID == "" {
@@ -113,7 +113,7 @@ func (h *TicketTypeHandler) GetById(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toTicketTypeResponse(ticketType))
 }
 
-// GET /v1/event/[eventID]/ticket-types
+// GET /api/v1/event/[eventID]/ticket-types
 func (h *TicketTypeHandler) GetByEvent(w http.ResponseWriter, r *http.Request) {
 	eventID := chi.URLParam(r, "eventID")
 	if eventID == "" {
@@ -135,7 +135,7 @@ func (h *TicketTypeHandler) GetByEvent(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, resp)
 }
 
-// GET /v1/event/[eventID]/available-ticket-types
+// GET /api/v1/event/[eventID]/available-ticket-types
 func (h *TicketTypeHandler) GetAvailableByEvent(w http.ResponseWriter, r *http.Request) {
 	eventID := chi.URLParam(r, "eventID")
 	if eventID == "" {
@@ -157,7 +157,7 @@ func (h *TicketTypeHandler) GetAvailableByEvent(w http.ResponseWriter, r *http.R
 	response.WriteJSON(w, http.StatusOK, resp)
 }
 
-// PATCH /v1/ticket-type/[ticketTypeID]
+// PATCH /api/v1/ticket-type/[ticketTypeID]
 func (h *TicketTypeHandler) Update(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -187,7 +187,7 @@ func (h *TicketTypeHandler) Update(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toTicketTypeResponse(updatedTicketType))
 }
 
-// DELETE /v1/ticket-type/[ticketTypeID]
+// DELETE /api/v1/ticket-type/[ticketTypeID]
 func (h *TicketTypeHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())

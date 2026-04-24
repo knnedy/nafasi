@@ -19,6 +19,7 @@ func New(
 	event *handler.EventHandler,
 	ticketType *handler.TicketTypeHandler,
 	payment *handler.PaymentHandler,
+	checkin *handler.CheckInHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -92,6 +93,12 @@ func New(
 			r.Route("/payments", func(r chi.Router) {
 				r.Post("/initiate", payment.InitiatePayment)
 				r.Get("/status/{orderID}", payment.QueryPaymentStatus)
+			})
+
+			// checkin - organiser only
+			r.Route("/checkin", func(r chi.Router) {
+				r.Post("/", checkin.CheckIn)
+				r.Get("/{eventID}", checkin.GetCheckedInOrders)
 			})
 		})
 	})

@@ -38,7 +38,7 @@ func toUserResponse(user repository.User) UserResponse {
 	}
 }
 
-// GET /v1/users/me
+// GET /api/v1/users/me
 func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -56,7 +56,7 @@ func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toUserResponse(user))
 }
 
-// PATCH /v1/users/me
+// PATCH /api/v1/users/me
 func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -82,7 +82,7 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toUserResponse(user))
 }
 
-// PATCH /v1/users/me/avatar
+// PATCH /api/v1/users/me/avatar
 func (h *UserHandler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())

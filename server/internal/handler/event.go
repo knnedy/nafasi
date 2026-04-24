@@ -58,7 +58,7 @@ func toEventResponse(event repository.Event) EventResponse {
 	}
 }
 
-// POST /v1/event
+// POST /api/v1/event
 func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -82,7 +82,7 @@ func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusCreated, toEventResponse(createdEvent))
 }
 
-// GET /v1/event/[eventID]
+// GET /api/v1/event/[eventID]
 func (h *EventHandler) GetById(w http.ResponseWriter, r *http.Request) {
 	eventID := chi.URLParam(r, "eventID")
 	if eventID == "" {
@@ -99,7 +99,7 @@ func (h *EventHandler) GetById(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toEventResponse(event))
 }
 
-// GET /v1/event/[slug]
+// GET /api/v1/event/[slug]
 func (h *EventHandler) GetBySlug(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 	if slug == "" {
@@ -116,7 +116,7 @@ func (h *EventHandler) GetBySlug(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toEventResponse(event))
 }
 
-// GET /v1/events/organiser/[organiserID]
+// GET /api/v1/events/organiser/[organiserID]
 func (h *EventHandler) GetByOrganiser(w http.ResponseWriter, r *http.Request) {
 	organiserID := chi.URLParam(r, "organiserID")
 	if organiserID == "" {
@@ -138,7 +138,7 @@ func (h *EventHandler) GetByOrganiser(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, eventResponses)
 }
 
-// GET /v1/events/published
+// GET /api/v1/events/published
 func (h *EventHandler) GetPublished(w http.ResponseWriter, r *http.Request) {
 	events, err := h.event.GetPublishedEvents(r.Context())
 	if err != nil {
@@ -154,7 +154,7 @@ func (h *EventHandler) GetPublished(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, eventResponses)
 }
 
-// GET /v1/events/upcoming
+// GET /api/v1/events/upcoming
 func (h *EventHandler) GetUpcoming(w http.ResponseWriter, r *http.Request) {
 	events, err := h.event.GetUpcomingEvents(r.Context())
 	if err != nil {
@@ -170,7 +170,7 @@ func (h *EventHandler) GetUpcoming(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, eventResponses)
 }
 
-// PATCH /v1/event/[eventID]
+// PATCH /api/v1/event/[eventID]
 func (h *EventHandler) Update(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -200,7 +200,7 @@ func (h *EventHandler) Update(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toEventResponse(updatedEvent))
 }
 
-// PATCH /v1/event/[eventID]/status
+// PATCH /api/v1/event/[eventID]/status
 func (h *EventHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -230,7 +230,7 @@ func (h *EventHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toEventResponse(updatedEvent))
 }
 
-// DELETE /v1/event/[eventID]
+// DELETE /api/v1/event/[eventID]
 func (h *EventHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())

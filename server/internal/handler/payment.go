@@ -18,7 +18,7 @@ func NewPaymentHandler(payments *service.PaymentService) *PaymentHandler {
 	return &PaymentHandler{payments: payments}
 }
 
-// POST /v1/payments/initiate
+// POST /api/v1/payments/initiate
 func (h *PaymentHandler) InitiatePayment(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(string)
 
@@ -37,7 +37,7 @@ func (h *PaymentHandler) InitiatePayment(w http.ResponseWriter, r *http.Request)
 	response.WriteJSON(w, http.StatusOK, result)
 }
 
-// POST /v1/payments/mpesa/callback
+// POST /api/v1/payments/mpesa/callback
 func (h *PaymentHandler) MpesaCallback(w http.ResponseWriter, r *http.Request) {
 	var callback service.MpesaCallback
 	if err := json.NewDecoder(r.Body).Decode(&callback); err != nil {
@@ -58,7 +58,7 @@ func (h *PaymentHandler) MpesaCallback(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// GET /v1/payments/status/{orderID}
+// GET /api/v1/payments/status/{orderID}
 func (h *PaymentHandler) QueryPaymentStatus(w http.ResponseWriter, r *http.Request) {
 	orderID := chi.URLParam(r, "orderID")
 	if orderID == "" {

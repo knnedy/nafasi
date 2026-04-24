@@ -53,7 +53,7 @@ func clearRefreshTokenCookie(w http.ResponseWriter) {
 	})
 }
 
-// POST  /v1/auth/register
+// POST  /api/v1/auth/register
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var input service.RegisterInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -71,7 +71,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusCreated, toAuthDataResponse(result))
 }
 
-// POST /v1/auth/login
+// POST /api/v1/auth/login
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var input service.LoginInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -89,7 +89,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toAuthDataResponse(result))
 }
 
-// POST /v1/auth/refresh
+// POST /api/v1/auth/refresh
 func (h *AuthHandler) RefreshAccessToken(w http.ResponseWriter, r *http.Request) {
 	// read refresh token from httponly cookie
 	cookie, err := r.Cookie("refresh_token")
@@ -108,7 +108,7 @@ func (h *AuthHandler) RefreshAccessToken(w http.ResponseWriter, r *http.Request)
 	response.WriteJSON(w, http.StatusOK, toAuthDataResponse(result))
 }
 
-// POST /v1/auth/forgot-password
+// POST /api/v1/auth/forgot-password
 func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	var input service.ForgotPasswordInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -127,7 +127,7 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /v1/auth/reset-password
+// POST /api/v1/auth/reset-password
 func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	var input service.ResetPasswordInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -145,7 +145,7 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /v1/auth/logout
+// POST /api/v1/auth/logout
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	// read refresh token from httponly cookie
 	cookie, err := r.Cookie("refresh_token")

@@ -17,9 +17,9 @@ const (
 	sandboxBaseURL    = "https://sandbox.safaricom.co.ke"
 	productionBaseURL = "https://api.safaricom.co.ke"
 
-	authEndpoint    = "/oauth/v1/generate?grant_type=client_credentials"
-	stkPushEndpoint = "/mpesa/stkpush/v1/processrequest"
-	queryEndpoint   = "/mpesa/stkpushquery/v1/query"
+	authEndpoint    = "/oauth/api/v1/generate?grant_type=client_credentials"
+	stkPushEndpoint = "/mpesa/stkpush/api/v1/processrequest"
+	queryEndpoint   = "/mpesa/stkpushquery/api/v1/query"
 )
 
 type MpesaService struct {
