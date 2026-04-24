@@ -56,10 +56,11 @@ func New(
 			r.Get("/{eventID}/ticket-types/available", ticketType.GetAvailableByEvent)
 			r.Get("/{eventID}/ticket-types/{ticketTypeID}", ticketType.GetById)
 
-			// events — organiser write
+			// events & ticket types — authenticated
 			r.Group(func(r chi.Router) {
 				r.Use(authMiddleware.Authenticate)
 
+				// events — organiser write
 				r.Post("/", event.Create)
 				r.Patch("/{eventID}", event.Update)
 				r.Patch("/{eventID}/status", event.UpdateStatus)
