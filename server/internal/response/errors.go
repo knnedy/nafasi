@@ -37,6 +37,7 @@ var (
 	ErrTicketAlreadyCheckedIn = errors.New("ticket has already been checked in")
 	ErrInvalidPaymentMethod   = errors.New("invalid payment method")
 	ErrOrderAlreadyPaid       = errors.New("order has already been paid")
+	ErrOrderNotPaid           = errors.New("order has not been paid")
 	ErrOrderCancelled         = errors.New("order has been cancelled")
 
 	// Event errors

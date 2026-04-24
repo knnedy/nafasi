@@ -140,6 +140,11 @@ func WriteError(w http.ResponseWriter, err error) {
 		detail.Code = "ORDER_ALREADY_PAID"
 		detail.Message = "order has already been paid"
 
+	case errors.Is(err, ErrOrderNotPaid):
+		status = http.StatusConflict
+		detail.Code = "ORDER_NOT_PAID"
+		detail.Message = "order has not been paid"
+
 	case errors.Is(err, ErrOrderCancelled):
 		status = http.StatusConflict
 		detail.Code = "ORDER_CANCELLED"

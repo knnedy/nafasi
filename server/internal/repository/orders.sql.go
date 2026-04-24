@@ -218,6 +218,35 @@ func (q *Queries) GetOrderByPaymentRef(ctx context.Context, paymentRef pgtype.Te
 	return i, err
 }
 
+const getOrderByQRCode = `-- name: GetOrderByQRCode :one
+SELECT id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount, currency, status, payment_method, payment_ref, qr_code, checked_in, checked_in_at, created_at, updated_at FROM "orders"
+WHERE "qr_code" = $1
+`
+
+func (q *Queries) GetOrderByQRCode(ctx context.Context, qrCode pgtype.Text) (Order, error) {
+	row := q.db.QueryRow(ctx, getOrderByQRCode, qrCode)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.EventID,
+		&i.TicketTypeID,
+		&i.Quantity,
+		&i.UnitPrice,
+		&i.TotalAmount,
+		&i.Currency,
+		&i.Status,
+		&i.PaymentMethod,
+		&i.PaymentRef,
+		&i.QrCode,
+		&i.CheckedIn,
+		&i.CheckedInAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getOrdersByEvent = `-- name: GetOrdersByEvent :many
 SELECT id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount, currency, status, payment_method, payment_ref, qr_code, checked_in, checked_in_at, created_at, updated_at FROM "orders"
 WHERE "event_id" = $1

@@ -30,6 +30,10 @@ ORDER BY "created_at" DESC;
 SELECT * FROM "orders"
 WHERE "payment_ref" = $1;
 
+-- name: GetOrderByQRCode :one
+SELECT * FROM "orders"
+WHERE "qr_code" = $1;
+
 -- name: UpdateOrderStatus :one
 UPDATE "orders"
 SET
