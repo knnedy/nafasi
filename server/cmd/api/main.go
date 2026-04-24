@@ -46,12 +46,12 @@ func main() {
 	tokens := token.NewTokenManager(cfg.JWTSecret)
 
 	// initialize services
-	mpesaService := service.NewMpesaService(cfg)
-	authService := service.NewAuthService(db.Queries(), tokens)
+	emailService := notifications.NewEmailService(cfg.ResendAPIKey, cfg.ResendFromEmail)
+	authService := service.NewAuthService(db.Queries(), tokens, emailService, cfg.ClientURL)
 	userService := service.NewUserService(db.Queries())
 	eventService := service.NewEventService(db.Queries())
 	ticketService := service.NewTicketTypeService(db.Queries())
-	emailService := notifications.NewEmailService(cfg.ResendAPIKey, cfg.ResendFromEmail)
+	mpesaService := service.NewMpesaService(cfg)
 	paymentService := service.NewPaymentService(db, mpesaService, emailService)
 
 	// initialize handlers

@@ -12,6 +12,7 @@ type Config struct {
 	JWTSecret           string
 	Port                string
 	Env                 string
+	ClientURL           string
 	MpesaConsumerKey    string
 	MpesaConsumerSecret string
 	MpesaShortcode      string
@@ -31,14 +32,16 @@ func Load() (*Config, error) {
 	}
 
 	cfg := &Config{
-		Port:     getOrDefault("PORT", "8000"),
-		Env:      getOrDefault("ENV", "development"),
-		MpesaEnv: getOrDefault("MPESA_ENV", "sandbox"),
+		Port:      getOrDefault("PORT", "8000"),
+		Env:       getOrDefault("ENV", "development"),
+		MpesaEnv:  getOrDefault("MPESA_ENV", "sandbox"),
+		ClientURL: getOrDefault("CLIENT_URL", "http://localhost:3000"),
 	}
 
 	required := map[string]*string{
 		"DATABASE_URL":          &cfg.DBUrl,
 		"JWT_SECRET":            &cfg.JWTSecret,
+		"CLIENT_URL":            &cfg.ClientURL,
 		"MPESA_CONSUMER_KEY":    &cfg.MpesaConsumerKey,
 		"MPESA_CONSUMER_SECRET": &cfg.MpesaConsumerSecret,
 		"MPESA_SHORTCODE":       &cfg.MpesaShortcode,

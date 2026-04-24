@@ -24,22 +24,83 @@ func (s *EmailService) SendPasswordReset(toEmail, resetURL string) error {
 		To:      []string{toEmail},
 		Subject: "Reset your Nafasi password",
 		Html: fmt.Sprintf(`
-			<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-				<h2>Reset your password</h2>
-				<p>You requested a password reset for your Nafasi account.</p>
-				<p>Click the button below to reset your password. This link expires in 1 hour.</p>
-				<a href="%s" style="
-					display: inline-block;
-					background-color: #000;
-					color: #fff;
-					padding: 12px 24px;
-					border-radius: 6px;
-					text-decoration: none;
-					margin: 16px 0;
-				">Reset Password</a>
-				<p>If you did not request this, you can safely ignore this email.</p>
-				<p>— The Nafasi Team</p>
-			</div>
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#0a0a0a;font-family:'Georgia',serif;">
+  <table width="100%%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;padding:48px 16px;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%%;">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding-bottom:40px;">
+              <table width="100%%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <span style="font-family:'Georgia',serif;font-size:22px;font-weight:700;letter-spacing:0.12em;color:#f5f0e8;text-transform:uppercase;">Nafasi</span>
+                  </td>
+                  <td align="right">
+                    <span style="font-size:11px;letter-spacing:0.2em;color:#555;text-transform:uppercase;font-family:'Courier New',monospace;">Security Notice</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding-bottom:40px;">
+              <div style="height:1px;background:linear-gradient(to right,#c9a96e,transparent);"></div>
+            </td>
+          </tr>
+
+          <!-- Body Card -->
+          <tr>
+            <td style="background-color:#111;border:1px solid #222;border-radius:2px;padding:48px 40px;">
+
+              <p style="margin:0 0 8px 0;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.25em;color:#c9a96e;text-transform:uppercase;">Password Reset</p>
+              <h1 style="margin:0 0 28px 0;font-family:'Georgia',serif;font-size:32px;font-weight:400;color:#f5f0e8;line-height:1.2;">A reset was<br>requested.</h1>
+
+              <p style="margin:0 0 12px 0;font-size:15px;line-height:1.7;color:#888;font-family:'Georgia',serif;">
+                Someone requested a password reset for your Nafasi account. If this was you, click below to choose a new password.
+              </p>
+              <p style="margin:0 0 36px 0;font-size:13px;line-height:1.6;color:#555;font-family:'Courier New',monospace;">
+                ⟶ This link expires in 1 hour.
+              </p>
+
+              <!-- CTA Button -->
+              <table cellpadding="0" cellspacing="0" style="margin-bottom:36px;">
+                <tr>
+                  <td style="background-color:#c9a96e;border-radius:1px;">
+                    <a href="%s" style="display:inline-block;padding:14px 36px;font-family:'Courier New',monospace;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:#0a0a0a;text-decoration:none;font-weight:700;">Reset Password →</a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Divider -->
+              <div style="height:1px;background:#1e1e1e;margin-bottom:28px;"></div>
+
+              <p style="margin:0;font-size:13px;line-height:1.6;color:#444;font-family:'Georgia',serif;">
+                If you didn't request this, no action is needed — your account remains secure.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding-top:32px;" align="center">
+              <p style="margin:0;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.15em;color:#333;text-transform:uppercase;">— The Nafasi Team</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
 		`, resetURL),
 	}
 
@@ -57,22 +118,80 @@ func (s *EmailService) SendTicketConfirmation(toEmail, eventTitle, qrCode string
 		To:      []string{toEmail},
 		Subject: fmt.Sprintf("Your ticket for %s", eventTitle),
 		Html: fmt.Sprintf(`
-			<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-				<h2>Your ticket is confirmed!</h2>
-				<p>Thank you for your purchase. Here are your ticket details for <strong>%s</strong>.</p>
-				<div style="
-					background: #f5f5f5;
-					border-radius: 8px;
-					padding: 24px;
-					margin: 16px 0;
-					text-align: center;
-				">
-					<p style="font-size: 12px; color: #666;">Your QR code</p>
-					<p style="font-family: monospace; font-size: 14px; word-break: break-all;">%s</p>
-				</div>
-				<p>Present this QR code at the event entrance.</p>
-				<p>— The Nafasi Team</p>
-			</div>
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#0a0a0a;font-family:'Georgia',serif;">
+  <table width="100%%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;padding:48px 16px;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%%;">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding-bottom:40px;">
+              <table width="100%%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <span style="font-family:'Georgia',serif;font-size:22px;font-weight:700;letter-spacing:0.12em;color:#f5f0e8;text-transform:uppercase;">Nafasi</span>
+                  </td>
+                  <td align="right">
+                    <span style="font-size:11px;letter-spacing:0.2em;color:#555;text-transform:uppercase;font-family:'Courier New',monospace;">Ticket Confirmed</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding-bottom:40px;">
+              <div style="height:1px;background:linear-gradient(to right,#c9a96e,transparent);"></div>
+            </td>
+          </tr>
+
+          <!-- Body Card -->
+          <tr>
+            <td style="background-color:#111;border:1px solid #222;border-radius:2px;padding:48px 40px;">
+
+              <p style="margin:0 0 8px 0;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.25em;color:#c9a96e;text-transform:uppercase;">You're going</p>
+              <h1 style="margin:0 0 8px 0;font-family:'Georgia',serif;font-size:32px;font-weight:400;color:#f5f0e8;line-height:1.2;">Your ticket is<br>confirmed.</h1>
+              <p style="margin:0 0 36px 0;font-size:15px;color:#666;font-family:'Georgia',serif;font-style:italic;">%s</p>
+
+              <!-- QR Code Block -->
+              <table width="100%%" cellpadding="0" cellspacing="0" style="margin-bottom:36px;">
+                <tr>
+                  <td style="background-color:#0d0d0d;border:1px solid #2a2a2a;border-top:3px solid #c9a96e;border-radius:2px;padding:32px 24px;text-align:center;">
+                    <p style="margin:0 0 20px 0;font-family:'Courier New',monospace;font-size:10px;letter-spacing:0.3em;color:#555;text-transform:uppercase;">Entry QR Code</p>
+                    <p style="margin:0 0 20px 0;font-family:'Courier New',monospace;font-size:13px;color:#c9a96e;word-break:break-all;line-height:1.8;letter-spacing:0.05em;">%s</p>
+                    <div style="height:1px;background:#1e1e1e;margin:20px 0;"></div>
+                    <p style="margin:0;font-family:'Courier New',monospace;font-size:10px;letter-spacing:0.2em;color:#444;text-transform:uppercase;">Present at entrance</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Divider -->
+              <div style="height:1px;background:#1e1e1e;margin-bottom:28px;"></div>
+
+              <p style="margin:0;font-size:13px;line-height:1.6;color:#444;font-family:'Georgia',serif;">
+                Show this email at the door. We look forward to seeing you there.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding-top:32px;" align="center">
+              <p style="margin:0;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.15em;color:#333;text-transform:uppercase;">— The Nafasi Team</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
 		`, eventTitle, qrCode),
 	}
 
