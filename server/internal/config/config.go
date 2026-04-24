@@ -18,6 +18,8 @@ type Config struct {
 	MpesaPasskey        string
 	MpesaEnv            string
 	MpesaCallbackURL    string
+	ResendAPIKey        string
+	ResendFromEmail     string
 }
 
 func Load() (*Config, error) {
@@ -42,6 +44,8 @@ func Load() (*Config, error) {
 		"MPESA_SHORTCODE":       &cfg.MpesaShortcode,
 		"MPESA_PASSKEY":         &cfg.MpesaPasskey,
 		"MPESA_CALLBACK_URL":    &cfg.MpesaCallbackURL,
+		"RESEND_API_KEY":        &cfg.ResendAPIKey,
+		"RESEND_FROM_EMAIL":     &cfg.ResendFromEmail,
 	}
 
 	for key, dest := range required {
