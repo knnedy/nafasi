@@ -69,7 +69,7 @@ func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var input service.CreateEventInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		response.WriteError(w, err)
+		response.WriteError(w, response.ErrInvalidInput)
 		return
 	}
 
@@ -187,7 +187,7 @@ func (h *EventHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var input service.UpdateEventInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		response.WriteError(w, err)
+		response.WriteError(w, response.ErrInvalidInput)
 		return
 	}
 
@@ -217,7 +217,7 @@ func (h *EventHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 
 	var input service.UpdateEventStatusInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		response.WriteError(w, err)
+		response.WriteError(w, response.ErrInvalidInput)
 		return
 	}
 

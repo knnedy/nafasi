@@ -37,6 +37,8 @@ func New(
 			r.Post("/register", auth.Register)
 			r.Post("/login", auth.Login)
 			r.Post("/refresh", auth.RefreshAccessToken)
+			r.Post("/forgot-password", auth.ForgotPassword)
+			r.Post("/reset-password", auth.ResetPassword)
 			r.Post("/logout", auth.Logout)
 		})
 

@@ -57,7 +57,7 @@ func clearRefreshTokenCookie(w http.ResponseWriter) {
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var input service.RegisterInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		response.WriteError(w, err)
+		response.WriteError(w, response.ErrInvalidInput)
 		return
 	}
 
@@ -75,7 +75,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var input service.LoginInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		response.WriteError(w, err)
+		response.WriteError(w, response.ErrInvalidInput)
 		return
 	}
 
@@ -106,6 +106,43 @@ func (h *AuthHandler) RefreshAccessToken(w http.ResponseWriter, r *http.Request)
 
 	setRefreshTokenCookie(w, result.RefreshToken)
 	response.WriteJSON(w, http.StatusOK, toAuthDataResponse(result))
+}
+
+// POST /v1/auth/forgot-password
+func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var input service.ForgotPasswordInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.WriteError(w, response.ErrInvalidInput)
+		return
+	}
+
+	if err := h.auth.ForgotPassword(r.Context(), input); err != nil {
+		response.WriteError(w, err)
+		return
+	}
+
+	// don't reveal whether the email exists prevents email enumeration
+	response.WriteJSON(w, http.StatusOK, map[string]string{
+		"message": "if an account exists with that email, a reset link has been sent",
+	})
+}
+
+// POST /v1/auth/reset-password
+func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var input service.ResetPasswordInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.WriteError(w, response.ErrInvalidInput)
+		return
+	}
+
+	if err := h.auth.ResetPassword(r.Context(), input); err != nil {
+		response.WriteError(w, err)
+		return
+	}
+
+	response.WriteJSON(w, http.StatusOK, map[string]string{
+		"message": "password reset successfully, please log in",
+	})
 }
 
 // POST /v1/auth/logout
