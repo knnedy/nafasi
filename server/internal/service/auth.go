@@ -20,7 +20,7 @@ import (
 )
 
 type AuthService struct {
-	db        *repository.Queries
+	db        AuthQuerier
 	tokens    *token.TokenManager
 	email     *notifications.EmailService
 	clientURL string
@@ -28,7 +28,7 @@ type AuthService struct {
 	trans     ut.Translator
 }
 
-func NewAuthService(db *repository.Queries, tokens *token.TokenManager, email *notifications.EmailService, clientURL string) *AuthService {
+func NewAuthService(db AuthQuerier, tokens *token.TokenManager, email *notifications.EmailService, clientURL string) *AuthService {
 	validate, trans := newValidator()
 	return &AuthService{
 		db:        db,
