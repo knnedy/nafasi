@@ -13,12 +13,12 @@ import (
 )
 
 type UserService struct {
-	db       *repository.Queries
+	db       UserQuerier
 	validate *validator.Validate
 	trans    ut.Translator
 }
 
-func NewUserService(db *repository.Queries) *UserService {
+func NewUserService(db UserQuerier) *UserService {
 	validate, trans := newValidator()
 	return &UserService{
 		db:       db,

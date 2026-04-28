@@ -21,3 +21,12 @@ type AuthQuerier interface {
 	DeleteUserPasswordResetTokens(ctx context.Context, userID pgtype.UUID) error
 	UpdateUserPassword(ctx context.Context, arg repository.UpdateUserPasswordParams) (repository.User, error)
 }
+
+type UserQuerier interface {
+	GetUserById(ctx context.Context, id pgtype.UUID) (repository.User, error)
+	GetUserByEmail(ctx context.Context, email string) (repository.User, error)
+	UpdateUserProfile(ctx context.Context, arg repository.UpdateUserProfileParams) (repository.User, error)
+	UpdateUserPassword(ctx context.Context, arg repository.UpdateUserPasswordParams) (repository.User, error)
+	UpdateUserAvatar(ctx context.Context, arg repository.UpdateUserAvatarParams) (repository.User, error)
+	DeleteUser(ctx context.Context, id pgtype.UUID) error
+}

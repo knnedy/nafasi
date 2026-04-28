@@ -18,7 +18,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func newTestAuthService(db *mock.Queries) *service.AuthService {
+func newTestAuthService(db *mock.AuthQueries) *service.AuthService {
 	tokens := token.NewTokenManager("test-secret-that-is-long-enough")
 	return service.NewAuthService(db, tokens, nil, "http://localhost:3000")
 }
@@ -30,7 +30,7 @@ func makeUserID() pgtype.UUID {
 
 // Register
 func TestRegister_Success(t *testing.T) {
-	db := new(mock.Queries)
+	db := new(mock.AuthQueries)
 	svc := newTestAuthService(db)
 
 	userID := makeUserID()
@@ -68,7 +68,7 @@ func TestRegister_Success(t *testing.T) {
 }
 
 func TestRegister_EmailAlreadyExists(t *testing.T) {
-	db := new(mock.Queries)
+	db := new(mock.AuthQueries)
 	svc := newTestAuthService(db)
 
 	db.On("GetUserByEmail", mocktestify.Anything, "john@example.com").
@@ -85,7 +85,7 @@ func TestRegister_EmailAlreadyExists(t *testing.T) {
 }
 
 func TestRegister_WeakPassword(t *testing.T) {
-	db := new(mock.Queries)
+	db := new(mock.AuthQueries)
 	svc := newTestAuthService(db)
 
 	tests := []struct {
@@ -112,7 +112,7 @@ func TestRegister_WeakPassword(t *testing.T) {
 }
 
 func TestRegister_InvalidEmail(t *testing.T) {
-	db := new(mock.Queries)
+	db := new(mock.AuthQueries)
 	svc := newTestAuthService(db)
 
 	_, err := svc.Register(context.Background(), service.RegisterInput{
@@ -126,7 +126,7 @@ func TestRegister_InvalidEmail(t *testing.T) {
 
 // Login
 func TestLogin_Success(t *testing.T) {
-	db := new(mock.Queries)
+	db := new(mock.AuthQueries)
 	svc := newTestAuthService(db)
 
 	userID := makeUserID()
@@ -161,7 +161,7 @@ func TestLogin_Success(t *testing.T) {
 }
 
 func TestLogin_WrongPassword(t *testing.T) {
-	db := new(mock.Queries)
+	db := new(mock.AuthQueries)
 	svc := newTestAuthService(db)
 
 	db.On("GetUserByEmail", mocktestify.Anything, "john@example.com").
@@ -181,7 +181,7 @@ func TestLogin_WrongPassword(t *testing.T) {
 }
 
 func TestLogin_UserNotFound(t *testing.T) {
-	db := new(mock.Queries)
+	db := new(mock.AuthQueries)
 	svc := newTestAuthService(db)
 
 	db.On("GetUserByEmail", mocktestify.Anything, "nobody@example.com").
@@ -198,7 +198,7 @@ func TestLogin_UserNotFound(t *testing.T) {
 
 // Logout
 func TestLogout_Success(t *testing.T) {
-	db := new(mock.Queries)
+	db := new(mock.AuthQueries)
 	svc := newTestAuthService(db)
 
 	token := uuid.New().String()
@@ -213,7 +213,7 @@ func TestLogout_Success(t *testing.T) {
 }
 
 func TestLogout_DatabaseError(t *testing.T) {
-	db := new(mock.Queries)
+	db := new(mock.AuthQueries)
 	svc := newTestAuthService(db)
 
 	token := uuid.New().String()
@@ -229,7 +229,7 @@ func TestLogout_DatabaseError(t *testing.T) {
 
 // RefreshAccessToken
 func TestRefreshAccessToken_Success(t *testing.T) {
-	db := new(mock.Queries)
+	db := new(mock.AuthQueries)
 	svc := newTestAuthService(db)
 
 	userID := makeUserID()
@@ -270,7 +270,7 @@ func TestRefreshAccessToken_Success(t *testing.T) {
 }
 
 func TestRefreshAccessToken_InvalidToken(t *testing.T) {
-	db := new(mock.Queries)
+	db := new(mock.AuthQueries)
 	svc := newTestAuthService(db)
 
 	db.On("GetRefreshToken", mocktestify.Anything, "invalid-token").
