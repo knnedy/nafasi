@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -18,12 +17,12 @@ import (
 )
 
 type EventService struct {
-	db       *repository.Queries
+	db       EventQuerier
 	validate *validator.Validate
 	trans    ut.Translator
 }
 
-func NewEventService(db *repository.Queries) *EventService {
+func NewEventService(db EventQuerier) *EventService {
 	validate, trans := newValidator()
 	return &EventService{
 		db:       db,
@@ -137,7 +136,7 @@ func (s *EventService) GetEventByID(ctx context.Context, eventID string) (reposi
 
 	event, err := s.db.GetEventById(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return repository.Event{}, response.ErrNotFound
 		}
 		return repository.Event{}, response.ErrDatabase

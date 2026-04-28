@@ -30,3 +30,15 @@ type UserQuerier interface {
 	UpdateUserAvatar(ctx context.Context, arg repository.UpdateUserAvatarParams) (repository.User, error)
 	DeleteUser(ctx context.Context, id pgtype.UUID) error
 }
+
+type EventQuerier interface {
+	CreateEvent(ctx context.Context, arg repository.CreateEventParams) (repository.Event, error)
+	GetEventById(ctx context.Context, id pgtype.UUID) (repository.Event, error)
+	GetEventBySlug(ctx context.Context, slug string) (repository.Event, error)
+	GetEventsByOrganiser(ctx context.Context, organiserID pgtype.UUID) ([]repository.Event, error)
+	GetPublishedEvents(ctx context.Context) ([]repository.Event, error)
+	GetUpcomingEvents(ctx context.Context) ([]repository.Event, error)
+	UpdateEvent(ctx context.Context, arg repository.UpdateEventParams) (repository.Event, error)
+	UpdateEventStatus(ctx context.Context, arg repository.UpdateEventStatusParams) (repository.Event, error)
+	DeleteEvent(ctx context.Context, id pgtype.UUID) error
+}

@@ -9,12 +9,11 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// compile time check — fails immediately if mock doesn't satisfy interface
-var _ service.AuthQuerier = (*AuthQueries)(nil)
-
 type AuthQueries struct {
 	mock.Mock
 }
+
+var _ service.AuthQuerier = (*AuthQueries)(nil)
 
 func (m *AuthQueries) CreateUser(ctx context.Context, arg repository.CreateUserParams) (repository.User, error) {
 	args := m.Called(ctx, arg)

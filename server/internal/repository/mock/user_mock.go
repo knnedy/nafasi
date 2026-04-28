@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var _ service.UserQuerier = (*UserQueries)(nil)
-
 type UserQueries struct {
 	mock.Mock
 }
+
+var _ service.UserQuerier = (*UserQueries)(nil)
 
 func (m *UserQueries) GetUserById(ctx context.Context, id pgtype.UUID) (repository.User, error) {
 	args := m.Called(ctx, id)
