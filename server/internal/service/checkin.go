@@ -10,10 +10,10 @@ import (
 )
 
 type CheckInService struct {
-	queries *repository.Queries
+	queries CheckInQuerier
 }
 
-func NewCheckInService(queries *repository.Queries) *CheckInService {
+func NewCheckInService(queries CheckInQuerier) *CheckInService {
 	return &CheckInService{queries: queries}
 }
 
@@ -57,7 +57,7 @@ func (s *CheckInService) CheckIn(ctx context.Context, organiserID, qrCode string
 	if err != nil {
 		return nil, response.ErrNotFound
 	}
-	if event.OrganiserID.Bytes != parsedOrganiserID {
+	if uuid.UUID(event.OrganiserID.Bytes) != parsedOrganiserID {
 		return nil, response.ErrNotFound
 	}
 
@@ -93,7 +93,7 @@ func (s *CheckInService) GetCheckedInOrders(ctx context.Context, organiserID str
 		return nil, response.ErrNotFound
 	}
 
-	if event.OrganiserID.Bytes != parsedOrganiserID {
+	if uuid.UUID(event.OrganiserID.Bytes) != parsedOrganiserID {
 		return nil, response.ErrForbidden
 	}
 

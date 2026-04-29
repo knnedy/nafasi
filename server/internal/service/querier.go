@@ -70,3 +70,10 @@ type PaymentDB interface {
 	Queries() *repository.Queries
 	WithTransaction(ctx context.Context, fn func(q *repository.Queries) error) error
 }
+
+type CheckInQuerier interface {
+	GetOrderByQRCode(ctx context.Context, qrCode pgtype.Text) (repository.Order, error)
+	GetEventById(ctx context.Context, id pgtype.UUID) (repository.Event, error)
+	CheckInOrder(ctx context.Context, id pgtype.UUID) (repository.Order, error)
+	GetCheckedInOrders(ctx context.Context, eventID pgtype.UUID) ([]repository.Order, error)
+}
