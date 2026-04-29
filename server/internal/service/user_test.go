@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/knnedy/nafasi/internal/repository"
-	"github.com/knnedy/nafasi/internal/repository/mock"
 	"github.com/knnedy/nafasi/internal/response"
 	"github.com/knnedy/nafasi/internal/service"
+	"github.com/knnedy/nafasi/internal/service/mock"
 	"github.com/stretchr/testify/assert"
 	mocktestify "github.com/stretchr/testify/mock"
 )
