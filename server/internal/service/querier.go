@@ -42,3 +42,13 @@ type EventQuerier interface {
 	UpdateEventStatus(ctx context.Context, arg repository.UpdateEventStatusParams) (repository.Event, error)
 	DeleteEvent(ctx context.Context, id pgtype.UUID) error
 }
+
+type TicketTypeQuerier interface {
+	CreateTicketType(ctx context.Context, arg repository.CreateTicketTypeParams) (repository.TicketType, error)
+	GetTicketTypeById(ctx context.Context, id pgtype.UUID) (repository.TicketType, error)
+	GetTicketTypesByEvent(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error)
+	GetAvailableTicketTypes(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error)
+	GetEventById(ctx context.Context, id pgtype.UUID) (repository.Event, error)
+	UpdateTicketType(ctx context.Context, arg repository.UpdateTicketTypeParams) (repository.TicketType, error)
+	DeleteTicketType(ctx context.Context, id pgtype.UUID) error
+}

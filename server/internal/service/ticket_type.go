@@ -16,12 +16,12 @@ import (
 )
 
 type TicketTypeService struct {
-	db       *repository.Queries
+	db       TicketTypeQuerier
 	validate *validator.Validate
 	trans    ut.Translator
 }
 
-func NewTicketTypeService(db *repository.Queries) *TicketTypeService {
+func NewTicketTypeService(db TicketTypeQuerier) *TicketTypeService {
 	validate, trans := newValidator()
 	return &TicketTypeService{
 		db:       db,
