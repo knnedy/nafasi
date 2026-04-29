@@ -13,10 +13,10 @@ import (
 )
 
 type TicketTypeHandler struct {
-	ticketType *service.TicketTypeService
+	ticketType TicketTypeServicer
 }
 
-func NewTicketTypeHandler(ticketType *service.TicketTypeService) *TicketTypeHandler {
+func NewTicketTypeHandler(ticketType TicketTypeServicer) *TicketTypeHandler {
 	return &TicketTypeHandler{ticketType: ticketType}
 }
 

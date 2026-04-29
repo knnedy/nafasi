@@ -13,10 +13,10 @@ import (
 )
 
 type EventHandler struct {
-	event *service.EventService
+	event EventServicer
 }
 
-func NewEventHandler(event *service.EventService) *EventHandler {
+func NewEventHandler(event EventServicer) *EventHandler {
 	return &EventHandler{event: event}
 }
 

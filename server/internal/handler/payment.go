@@ -12,7 +12,7 @@ import (
 )
 
 type PaymentHandler struct {
-	payments *service.PaymentService
+	payments PaymentServicer
 }
 
 type OrderResponse struct {
@@ -34,7 +34,7 @@ type OrderResponse struct {
 	UpdatedAt     string  `json:"updated_at"`
 }
 
-func NewPaymentHandler(payments *service.PaymentService) *PaymentHandler {
+func NewPaymentHandler(payments PaymentServicer) *PaymentHandler {
 	return &PaymentHandler{payments: payments}
 }
 

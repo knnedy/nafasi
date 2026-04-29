@@ -7,14 +7,13 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/knnedy/nafasi/internal/middleware"
 	"github.com/knnedy/nafasi/internal/response"
-	"github.com/knnedy/nafasi/internal/service"
 )
 
 type CheckInHandler struct {
-	checkIn *service.CheckInService
+	checkIn CheckInServicer
 }
 
-func NewCheckInHandler(checkIn *service.CheckInService) *CheckInHandler {
+func NewCheckInHandler(checkIn CheckInServicer) *CheckInHandler {
 	return &CheckInHandler{checkIn: checkIn}
 }
 
