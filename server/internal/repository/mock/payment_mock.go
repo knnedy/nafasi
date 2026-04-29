@@ -50,9 +50,9 @@ func (m *PaymentQueries) UpdateOrderQRCode(ctx context.Context, arg repository.U
 	return args.Get(0).(repository.Order), args.Error(1)
 }
 
-func (m *PaymentQueries) IncrementQuantitySold(ctx context.Context, arg repository.IncrementQuantitySoldParams) (repository.TicketType, error) {
+func (m *PaymentQueries) IncrementQuantitySold(ctx context.Context, arg repository.IncrementQuantitySoldParams) (pgtype.UUID, error) {
 	args := m.Called(ctx, arg)
-	return args.Get(0).(repository.TicketType), args.Error(1)
+	return args.Get(0).(pgtype.UUID), args.Error(1)
 }
 
 func (m *PaymentQueries) GetUserById(ctx context.Context, id pgtype.UUID) (repository.User, error) {

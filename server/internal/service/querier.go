@@ -61,7 +61,7 @@ type PaymentQuerier interface {
 	UpdateOrderStatus(ctx context.Context, arg repository.UpdateOrderStatusParams) (repository.Order, error)
 	UpdateOrderPayment(ctx context.Context, arg repository.UpdateOrderPaymentParams) (repository.Order, error)
 	UpdateOrderQRCode(ctx context.Context, arg repository.UpdateOrderQRCodeParams) (repository.Order, error)
-	IncrementQuantitySold(ctx context.Context, arg repository.IncrementQuantitySoldParams) (repository.TicketType, error)
+	IncrementQuantitySold(ctx context.Context, arg repository.IncrementQuantitySoldParams) (pgtype.UUID, error)
 	GetUserById(ctx context.Context, id pgtype.UUID) (repository.User, error)
 	GetEventById(ctx context.Context, id pgtype.UUID) (repository.Event, error)
 }

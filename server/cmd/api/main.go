@@ -60,7 +60,7 @@ func main() {
 	eventService := service.NewEventService(db.Queries())
 	ticketService := service.NewTicketTypeService(db.Queries())
 	mpesaService := service.NewMpesaService(cfg)
-	paymentService := service.NewPaymentService(db, mpesaService, emailService)
+	paymentService := service.NewPaymentService(db, db.Queries(), mpesaService, emailService)
 	checkInService := service.NewCheckInService(db.Queries())
 
 	// initialize handlers

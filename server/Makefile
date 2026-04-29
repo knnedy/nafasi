@@ -24,7 +24,11 @@ dev:
 test:
 	go test ./... -v
 
+test-service:
+	go test ./internal/service/... -v
+
 # test with coverage
+
 test-coverage:
 	go test ./... -coverprofile=coverage.out
 	go tool cover -html=coverage.out
