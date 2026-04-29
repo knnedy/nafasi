@@ -56,7 +56,6 @@ func makeEventWithOrganiser(organiserID string) repository.Event {
 }
 
 // CreateTicketType
-
 func TestCreateTicketType_Success(t *testing.T) {
 	db := new(mock.TicketTypeQueries)
 	svc := newTestTicketTypeService(db)
@@ -241,7 +240,6 @@ func TestCreateTicketType_DatabaseError(t *testing.T) {
 }
 
 // GetTicketTypeByID
-
 func TestGetTicketTypeByID_Success(t *testing.T) {
 	db := new(mock.TicketTypeQueries)
 	svc := newTestTicketTypeService(db)
@@ -313,7 +311,6 @@ func TestGetTicketTypesByEvent_InvalidID(t *testing.T) {
 }
 
 // UpdateTicketType
-
 func TestUpdateTicketType_Success(t *testing.T) {
 	db := new(mock.TicketTypeQueries)
 	svc := newTestTicketTypeService(db)
@@ -377,7 +374,6 @@ func TestUpdateTicketType_NotOwner(t *testing.T) {
 }
 
 // DeleteTicketType
-
 func TestDeleteTicketType_Success(t *testing.T) {
 	db := new(mock.TicketTypeQueries)
 	svc := newTestTicketTypeService(db)

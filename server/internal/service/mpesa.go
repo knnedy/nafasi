@@ -22,9 +22,13 @@ const (
 	queryEndpoint   = "/mpesa/stkpushquery/v1/query"
 )
 
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
 type MpesaService struct {
 	config     *config.Config
-	httpClient *http.Client
+	httpClient HTTPClient
 	baseURL    string
 }
 
@@ -305,4 +309,27 @@ func (s *MpesaService) ParseCallback(callback MpesaCallback) MpesaCallbackResult
 	}
 
 	return result
+}
+
+// NewMpesaServiceWithClient creates an MpesaService with a custom HTTP client for testing
+func NewMpesaServiceWithClient(cfg *config.Config, client HTTPClient) *MpesaService {
+	baseURL := sandboxBaseURL
+	if cfg.MpesaEnv == "production" {
+		baseURL = productionBaseURL
+	}
+	return &MpesaService{
+		config:     cfg,
+		baseURL:    baseURL,
+		httpClient: client,
+	}
+}
+
+// GeneratePasswordForTest exposes generatePassword for testing
+func (s *MpesaService) GeneratePasswordForTest(timestamp string) string {
+	return s.generatePassword(timestamp)
+}
+
+// FormatPhoneNumberForTest exposes formatPhoneNumber for testing
+func FormatPhoneNumberForTest(phone string) (string, error) {
+	return formatPhoneNumber(phone)
 }
