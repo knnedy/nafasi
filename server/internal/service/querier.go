@@ -52,3 +52,21 @@ type TicketTypeQuerier interface {
 	UpdateTicketType(ctx context.Context, arg repository.UpdateTicketTypeParams) (repository.TicketType, error)
 	DeleteTicketType(ctx context.Context, id pgtype.UUID) error
 }
+
+type PaymentQuerier interface {
+	GetTicketTypeById(ctx context.Context, id pgtype.UUID) (repository.TicketType, error)
+	CreateOrder(ctx context.Context, arg repository.CreateOrderParams) (repository.Order, error)
+	GetOrderByPaymentRef(ctx context.Context, paymentRef pgtype.Text) (repository.Order, error)
+	GetOrderById(ctx context.Context, id pgtype.UUID) (repository.Order, error)
+	UpdateOrderStatus(ctx context.Context, arg repository.UpdateOrderStatusParams) (repository.Order, error)
+	UpdateOrderPayment(ctx context.Context, arg repository.UpdateOrderPaymentParams) (repository.Order, error)
+	UpdateOrderQRCode(ctx context.Context, arg repository.UpdateOrderQRCodeParams) (repository.Order, error)
+	IncrementQuantitySold(ctx context.Context, arg repository.IncrementQuantitySoldParams) (repository.TicketType, error)
+	GetUserById(ctx context.Context, id pgtype.UUID) (repository.User, error)
+	GetEventById(ctx context.Context, id pgtype.UUID) (repository.Event, error)
+}
+
+type PaymentDB interface {
+	Queries() *repository.Queries
+	WithTransaction(ctx context.Context, fn func(q *repository.Queries) error) error
+}

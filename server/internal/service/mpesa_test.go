@@ -67,7 +67,6 @@ func makeErrorResponse(status int, body string) *http.Response {
 }
 
 // ParseCallback
-
 func TestParseCallback_Success(t *testing.T) {
 	client := new(mockHTTPClient)
 	svc := newTestMpesaService(client)
@@ -136,7 +135,6 @@ func TestParseCallback_NoMetadata(t *testing.T) {
 }
 
 // InitiateSTKPush
-
 func TestInitiateSTKPush_Success(t *testing.T) {
 	client := new(mockHTTPClient)
 	svc := newTestMpesaService(client)
@@ -219,7 +217,6 @@ func TestInitiateSTKPush_STKRejected(t *testing.T) {
 }
 
 // generatePassword
-
 func TestGeneratePassword(t *testing.T) {
 	client := new(mockHTTPClient)
 	svc := newTestMpesaService(client)
@@ -233,7 +230,6 @@ func TestGeneratePassword(t *testing.T) {
 }
 
 // formatPhoneNumber
-
 func TestFormatPhoneNumber(t *testing.T) {
 	tests := []struct {
 		name     string

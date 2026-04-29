@@ -21,20 +21,20 @@ import (
 )
 
 type PaymentService struct {
-	db       *repository.DB
-	queries  *repository.Queries
+	db       PaymentDB
+	queries  PaymentQuerier
 	mpesa    *MpesaService
 	email    *notifications.EmailService
 	validate *validator.Validate
 	trans    ut.Translator
 }
 
-func NewPaymentService(db *repository.DB, mpesa *MpesaService, email *notifications.EmailService) *PaymentService {
+func NewPaymentService(db PaymentDB, queries PaymentQuerier, mpesa *MpesaService, email *notifications.EmailService) *PaymentService {
 	validate, trans := newValidator()
 
 	return &PaymentService{
 		db:       db,
-		queries:  db.Queries(),
+		queries:  queries,
 		mpesa:    mpesa,
 		email:    email,
 		validate: validate,
@@ -150,6 +150,11 @@ func (s *PaymentService) InitiatePayment(ctx context.Context, userID string, inp
 	)
 	if err != nil {
 		return nil, response.ErrNotFound
+	}
+
+	available := ticketType.Quantity - ticketType.QuantitySold
+	if input.Quantity > available {
+		return nil, response.ErrInsufficientTickets
 	}
 
 	// Calculate total
