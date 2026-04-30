@@ -60,3 +60,7 @@ func GetUserID(ctx context.Context) (string, bool) {
 	userID, ok := ctx.Value(contextKeyUserID).(string)
 	return userID, ok
 }
+
+func SetUserID(ctx context.Context, userID string) context.Context {
+	return context.WithValue(ctx, contextKeyUserID, userID)
+}

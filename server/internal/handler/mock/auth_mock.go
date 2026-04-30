@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// AuthService mock
 type AuthService struct {
 	mock.Mock
 }
