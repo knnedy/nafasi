@@ -11,6 +11,7 @@ type Config struct {
 	DBUrl               string
 	JWTSecret           string
 	Port                string
+	APIVersion          string
 	Env                 string
 	ClientURL           string
 	MpesaConsumerKey    string
@@ -41,6 +42,7 @@ func Load() (*Config, error) {
 	required := map[string]*string{
 		"DATABASE_URL":          &cfg.DBUrl,
 		"JWT_SECRET":            &cfg.JWTSecret,
+		"APIVersion":            &cfg.APIVersion,
 		"CLIENT_URL":            &cfg.ClientURL,
 		"MPESA_CONSUMER_KEY":    &cfg.MpesaConsumerKey,
 		"MPESA_CONSUMER_SECRET": &cfg.MpesaConsumerSecret,

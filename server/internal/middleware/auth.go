@@ -15,6 +15,7 @@ type contextKey string
 
 const (
 	contextKeyUserID contextKey = "userID"
+	contextKeyRole   contextKey = "user_role"
 )
 
 type AuthMiddleware struct {
@@ -55,12 +56,36 @@ func (am *AuthMiddleware) Authenticate(next http.Handler) http.Handler {
 	})
 }
 
+// RequireRole blocks requests where the authenticated user does not have the required role
+func (am *AuthMiddleware) RequireRole(role string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			userRole, ok := r.Context().Value(contextKeyRole).(string)
+			if !ok || userRole != role {
+				response.WriteError(w, response.ErrForbidden)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // GetUserID retrieves the authenticated user ID from the context
 func GetUserID(ctx context.Context) (string, bool) {
 	userID, ok := ctx.Value(contextKeyUserID).(string)
 	return userID, ok
 }
 
+// GetUserRole retrieves the authenticated user role from context
+func GetUserRole(ctx context.Context) (string, bool) {
+	role, ok := ctx.Value(contextKeyRole).(string)
+	return role, ok
+}
+
 func SetUserID(ctx context.Context, userID string) context.Context {
 	return context.WithValue(ctx, contextKeyUserID, userID)
+}
+
+func SetUserRole(ctx context.Context, role string) context.Context {
+	return context.WithValue(ctx, contextKeyRole, role)
 }

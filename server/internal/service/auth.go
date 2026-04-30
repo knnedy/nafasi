@@ -69,7 +69,7 @@ type AuthResult struct {
 // generateAuthTokens is a shared helper that generates both tokens and saves the refresh token
 func (s *AuthService) generateAuthTokens(ctx context.Context, user repository.User) (AuthResult, error) {
 	// generate access token
-	accessToken, err := s.tokens.GenerateAccessToken(user.ID.String())
+	accessToken, err := s.tokens.GenerateAccessToken(user.ID.String(), string(user.Role))
 	if err != nil {
 		return AuthResult{}, response.ErrInternal
 	}
