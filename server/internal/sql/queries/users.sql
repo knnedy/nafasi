@@ -3,9 +3,10 @@ INSERT INTO "users" (
     "name",
     "email",
     "password",
-    "role"
+    "role",
+    "is_verified"
 ) VALUES (
-    $1, $2, $3, $4
+    $1, $2, $3, $4, $5
 ) RETURNING *;
 
 -- name: GetUserById :one
@@ -14,11 +15,17 @@ SELECT * FROM "users" WHERE "id" = $1;
 -- name: GetUserByEmail :one
 SELECT * FROM "users" WHERE "email" = $1;
 
+-- name: GetPendingOrganisers :many
+SELECT * FROM "users"
+WHERE "role" = 'ORGANISER'
+AND "is_verified" = FALSE
+ORDER BY "created_at" ASC;
+
 -- name: UpdateUserProfile :one
 UPDATE "users"
 SET
-    "name" = $2,
-    "email" = $3,
+    "name"       = $2,
+    "email"      = $3,
     "updated_at" = NOW()
 WHERE "id" = $1
 RETURNING *;
@@ -26,7 +33,7 @@ RETURNING *;
 -- name: UpdateUserPassword :one
 UPDATE "users"
 SET
-    "password" = $2,
+    "password"   = $2,
     "updated_at" = NOW()
 WHERE "id" = $1
 RETURNING *;
@@ -36,6 +43,14 @@ UPDATE "users"
 SET
     "avatar_url" = $2,
     "updated_at" = NOW()
+WHERE "id" = $1
+RETURNING *;
+
+-- name: UpdateUserVerification :one
+UPDATE "users"
+SET
+    "is_verified" = $2,
+    "updated_at"  = NOW()
 WHERE "id" = $1
 RETURNING *;
 
