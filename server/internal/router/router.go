@@ -13,6 +13,8 @@ import (
 	"github.com/knnedy/nafasi/internal/token"
 )
 
+const base = "/api/v1"
+
 func New(
 	db *repository.DB,
 	tokens *token.TokenManager,
@@ -31,12 +33,11 @@ func New(
 	r.Use(chimiddleware.Recoverer)
 	r.Use(middleware.Logger)
 
-	// swagger docs
-	r.Get("/swagger/*", httpSwagger.Handler())
-
 	authMiddleware := middleware.NewAuthMiddleware(tokens)
 
-	r.Route("/api/v1", func(r chi.Router) {
+	r.Route(base, func(r chi.Router) {
+		// swagger docs
+		r.Get("/swagger/*", httpSwagger.Handler())
 
 		// Public routes
 		r.Route("/auth", func(r chi.Router) {
@@ -45,7 +46,6 @@ func New(
 			r.Post("/refresh", auth.RefreshAccessToken)
 			r.Post("/forgot-password", auth.ForgotPassword)
 			r.Post("/reset-password", auth.ResetPassword)
-			r.Post("/logout", auth.Logout)
 		})
 
 		// mpesa callback — public, Safaricom has no JWT
@@ -56,8 +56,8 @@ func New(
 			r.Get("/published", event.GetPublished)
 			r.Get("/upcoming", event.GetUpcoming)
 			r.Get("/organiser/{organiserID}", event.GetByOrganiser)
-			r.Get("/{eventID}", event.GetById)
 			r.Get("/slug/{slug}", event.GetBySlug)
+			r.Get("/{eventID}", event.GetById)
 
 			// ticket types — public read
 			r.Get("/{eventID}/ticket-types", ticketType.GetByEvent)
@@ -85,6 +85,8 @@ func New(
 		//  Authenticated routes
 		r.Group(func(r chi.Router) {
 			r.Use(authMiddleware.Authenticate)
+
+			r.Post("/auth/logout", auth.Logout)
 
 			// users
 			r.Route("/users", func(r chi.Router) {
