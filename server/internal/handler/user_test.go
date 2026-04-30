@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/knnedy/nafasi/internal/handler"
-	handlermock "github.com/knnedy/nafasi/internal/handler/mock"
+	"github.com/knnedy/nafasi/internal/handler/mock"
 	"github.com/knnedy/nafasi/internal/middleware"
 	"github.com/knnedy/nafasi/internal/repository"
 	"github.com/knnedy/nafasi/internal/response"
@@ -35,7 +35,7 @@ func withUserID(r *http.Request, userID string) *http.Request {
 
 // GetMe
 func TestGetMeHandler_Success(t *testing.T) {
-	svc := new(handlermock.UserService)
+	svc := new(mock.UserService)
 	h := handler.NewUserHandler(svc)
 
 	userID := uuid.New().String()
@@ -59,7 +59,7 @@ func TestGetMeHandler_Success(t *testing.T) {
 }
 
 func TestGetMeHandler_NotFound(t *testing.T) {
-	svc := new(handlermock.UserService)
+	svc := new(mock.UserService)
 	h := handler.NewUserHandler(svc)
 
 	userID := uuid.New().String()
@@ -78,7 +78,7 @@ func TestGetMeHandler_NotFound(t *testing.T) {
 
 // UpdateProfile
 func TestUpdateProfileHandler_Success(t *testing.T) {
-	svc := new(handlermock.UserService)
+	svc := new(mock.UserService)
 	h := handler.NewUserHandler(svc)
 
 	userID := uuid.New().String()
@@ -104,7 +104,7 @@ func TestUpdateProfileHandler_Success(t *testing.T) {
 }
 
 func TestUpdateProfileHandler_InvalidBody(t *testing.T) {
-	svc := new(handlermock.UserService)
+	svc := new(mock.UserService)
 	h := handler.NewUserHandler(svc)
 
 	userID := uuid.New().String()
@@ -119,7 +119,7 @@ func TestUpdateProfileHandler_InvalidBody(t *testing.T) {
 }
 
 func TestUpdateProfileHandler_EmailTaken(t *testing.T) {
-	svc := new(handlermock.UserService)
+	svc := new(mock.UserService)
 	h := handler.NewUserHandler(svc)
 
 	userID := uuid.New().String()
@@ -143,7 +143,7 @@ func TestUpdateProfileHandler_EmailTaken(t *testing.T) {
 
 // UpdatePassword
 func TestUpdatePasswordHandler_Success(t *testing.T) {
-	svc := new(handlermock.UserService)
+	svc := new(mock.UserService)
 	h := handler.NewUserHandler(svc)
 
 	userID := uuid.New().String()
@@ -166,7 +166,7 @@ func TestUpdatePasswordHandler_Success(t *testing.T) {
 }
 
 func TestUpdatePasswordHandler_WrongCurrentPassword(t *testing.T) {
-	svc := new(handlermock.UserService)
+	svc := new(mock.UserService)
 	h := handler.NewUserHandler(svc)
 
 	userID := uuid.New().String()
@@ -189,7 +189,7 @@ func TestUpdatePasswordHandler_WrongCurrentPassword(t *testing.T) {
 }
 
 func TestUpdatePasswordHandler_InvalidBody(t *testing.T) {
-	svc := new(handlermock.UserService)
+	svc := new(mock.UserService)
 	h := handler.NewUserHandler(svc)
 
 	userID := uuid.New().String()
@@ -205,7 +205,7 @@ func TestUpdatePasswordHandler_InvalidBody(t *testing.T) {
 
 // UpdateAvatar
 func TestUpdateAvatarHandler_Success(t *testing.T) {
-	svc := new(handlermock.UserService)
+	svc := new(mock.UserService)
 	h := handler.NewUserHandler(svc)
 
 	userID := uuid.New().String()
@@ -227,7 +227,7 @@ func TestUpdateAvatarHandler_Success(t *testing.T) {
 }
 
 func TestUpdateAvatarHandler_InvalidBody(t *testing.T) {
-	svc := new(handlermock.UserService)
+	svc := new(mock.UserService)
 	h := handler.NewUserHandler(svc)
 
 	userID := uuid.New().String()
@@ -243,7 +243,7 @@ func TestUpdateAvatarHandler_InvalidBody(t *testing.T) {
 
 // DeleteMe
 func TestDeleteMeHandler_Success(t *testing.T) {
-	svc := new(handlermock.UserService)
+	svc := new(mock.UserService)
 	h := handler.NewUserHandler(svc)
 
 	userID := uuid.New().String()
@@ -261,7 +261,7 @@ func TestDeleteMeHandler_Success(t *testing.T) {
 }
 
 func TestDeleteMeHandler_NotFound(t *testing.T) {
-	svc := new(handlermock.UserService)
+	svc := new(mock.UserService)
 	h := handler.NewUserHandler(svc)
 
 	userID := uuid.New().String()
@@ -279,7 +279,7 @@ func TestDeleteMeHandler_NotFound(t *testing.T) {
 }
 
 func TestDeleteMeHandler_DatabaseError(t *testing.T) {
-	svc := new(handlermock.UserService)
+	svc := new(mock.UserService)
 	h := handler.NewUserHandler(svc)
 
 	userID := uuid.New().String()
