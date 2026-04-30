@@ -123,7 +123,7 @@ func (h *AuthHandler) RefreshAccessToken(w http.ResponseWriter, r *http.Request)
 	// read refresh token from httponly cookie
 	cookie, err := r.Cookie("refresh_token")
 	if err != nil {
-		response.WriteError(w, err)
+		response.WriteError(w, response.ErrUnauthorized)
 		return
 	}
 
@@ -208,7 +208,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	// read refresh token from httponly cookie
 	cookie, err := r.Cookie("refresh_token")
 	if err != nil {
-		response.WriteError(w, err)
+		response.WriteError(w, response.ErrUnauthorized)
 		return
 	}
 
