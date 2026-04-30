@@ -47,6 +47,11 @@ func (h *CheckInHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.QRCode == "" {
+		response.WriteError(w, response.ErrInvalidInput)
+		return
+	}
+
 	result, err := h.checkIn.CheckIn(r.Context(), organiserID, req.QRCode)
 	if err != nil {
 		response.WriteError(w, err)
