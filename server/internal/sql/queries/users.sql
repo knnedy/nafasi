@@ -1,58 +1,50 @@
--- name: CreateUser :one
-INSERT INTO "users" (
-    "name",
-    "email",
-    "password",
-    "role",
-    "is_verified"
-) VALUES (
-    $1, $2, $3, $4, $5
-) RETURNING *;
+-- name: GetAllUsers :many
+SELECT * FROM "users"
+ORDER BY "created_at" DESC
+LIMIT $1 OFFSET $2;
 
--- name: GetUserById :one
-SELECT * FROM "users" WHERE "id" = $1;
+-- name: GetUsersByRole :many
+SELECT * FROM "users"
+WHERE "role" = $1
+ORDER BY "created_at" DESC
+LIMIT $2 OFFSET $3;
 
--- name: GetUserByEmail :one
-SELECT * FROM "users" WHERE "email" = $1;
-
--- name: GetPendingOrganisers :many
+-- name: GetApprovedOrganisers :many
 SELECT * FROM "users"
 WHERE "role" = 'ORGANISER'
-AND "is_verified" = FALSE
-ORDER BY "created_at" ASC;
+AND "is_verified" = TRUE
+AND "is_banned" = FALSE
+ORDER BY "created_at" DESC;
 
--- name: UpdateUserProfile :one
+-- name: GetBannedUsers :many
+SELECT * FROM "users"
+WHERE "is_banned" = TRUE
+ORDER BY "banned_at" DESC;
+
+-- name: BanUser :one
 UPDATE "users"
 SET
-    "name"       = $2,
-    "email"      = $3,
+    "is_banned"  = TRUE,
+    "ban_reason" = $2,
+    "banned_at"  = NOW(),
     "updated_at" = NOW()
 WHERE "id" = $1
 RETURNING *;
 
--- name: UpdateUserPassword :one
+-- name: UnbanUser :one
 UPDATE "users"
 SET
-    "password"   = $2,
+    "is_banned"  = FALSE,
+    "ban_reason" = NULL,
+    "banned_at"  = NULL,
     "updated_at" = NOW()
 WHERE "id" = $1
 RETURNING *;
 
--- name: UpdateUserAvatar :one
+-- name: PromoteToAdmin :one
 UPDATE "users"
 SET
-    "avatar_url" = $2,
+    "role"       = 'ADMIN',
     "updated_at" = NOW()
 WHERE "id" = $1
 RETURNING *;
-
--- name: UpdateUserVerification :one
-UPDATE "users"
-SET
-    "is_verified" = $2,
-    "updated_at"  = NOW()
-WHERE "id" = $1
-RETURNING *;
-
--- name: DeleteUser :exec
-DELETE FROM "users" WHERE "id" = $1;
