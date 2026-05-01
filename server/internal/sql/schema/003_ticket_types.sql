@@ -1,8 +1,11 @@
 -- +goose Up
+CREATE TYPE ticket_type_status AS ENUM ('ACTIVE', 'DELETED');
+
 CREATE TABLE "ticket_types" (
     "id"            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "event_id"      UUID NOT NULL,
     "name"          TEXT NOT NULL,
+    "status"        ticket_type_status NOT NULL DEFAULT 'ACTIVE',
     "description"   TEXT,
     "price"         BIGINT NOT NULL DEFAULT 0,
     "currency"      CHAR(3) NOT NULL DEFAULT 'KES',
@@ -23,3 +26,4 @@ CREATE INDEX "idx_ticket_types_event_id" ON "ticket_types"("event_id");
 -- +goose Down
 DROP INDEX "idx_ticket_types_event_id";
 DROP TABLE "ticket_types";
+DROP TYPE "ticket_type_status";

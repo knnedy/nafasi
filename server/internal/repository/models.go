@@ -18,6 +18,7 @@ const (
 	EventStatusPUBLISHED EventStatus = "PUBLISHED"
 	EventStatusCANCELLED EventStatus = "CANCELLED"
 	EventStatusCOMPLETED EventStatus = "COMPLETED"
+	EventStatusDELETED   EventStatus = "DELETED"
 )
 
 func (e *EventStatus) Scan(src interface{}) error {
@@ -143,6 +144,48 @@ func (ns NullPaymentMethod) Value() (driver.Value, error) {
 	return string(ns.PaymentMethod), nil
 }
 
+type TicketTypeStatus string
+
+const (
+	TicketTypeStatusACTIVE  TicketTypeStatus = "ACTIVE"
+	TicketTypeStatusDELETED TicketTypeStatus = "DELETED"
+)
+
+func (e *TicketTypeStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TicketTypeStatus(s)
+	case string:
+		*e = TicketTypeStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TicketTypeStatus: %T", src)
+	}
+	return nil
+}
+
+type NullTicketTypeStatus struct {
+	TicketTypeStatus TicketTypeStatus
+	Valid            bool // Valid is true if TicketTypeStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTicketTypeStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.TicketTypeStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TicketTypeStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTicketTypeStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TicketTypeStatus), nil
+}
+
 type UserRole string
 
 const (
@@ -184,6 +227,49 @@ func (ns NullUserRole) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.UserRole), nil
+}
+
+type UserStatus string
+
+const (
+	UserStatusACTIVE  UserStatus = "ACTIVE"
+	UserStatusBANNED  UserStatus = "BANNED"
+	UserStatusDELETED UserStatus = "DELETED"
+)
+
+func (e *UserStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = UserStatus(s)
+	case string:
+		*e = UserStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for UserStatus: %T", src)
+	}
+	return nil
+}
+
+type NullUserStatus struct {
+	UserStatus UserStatus
+	Valid      bool // Valid is true if UserStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullUserStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.UserStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.UserStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullUserStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.UserStatus), nil
 }
 
 type Event struct {
@@ -245,6 +331,7 @@ type TicketType struct {
 	ID           pgtype.UUID
 	EventID      pgtype.UUID
 	Name         string
+	Status       TicketTypeStatus
 	Description  pgtype.Text
 	Price        int64
 	Currency     string
@@ -264,7 +351,9 @@ type User struct {
 	Password   string
 	Role       UserRole
 	IsVerified bool
+	Status     UserStatus
 	AvatarUrl  pgtype.Text
+	BannedAt   pgtype.Timestamp
 	CreatedAt  pgtype.Timestamp
 	UpdatedAt  pgtype.Timestamp
 }

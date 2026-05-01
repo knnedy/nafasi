@@ -22,22 +22,6 @@ SELECT * FROM "events" WHERE "id" = $1;
 -- name: GetEventBySlug :one
 SELECT * FROM "events" WHERE "slug" = $1;
 
--- name: GetEventsByOrganiser :many
-SELECT * FROM "events" 
-WHERE "organiser_id" = $1
-ORDER BY "created_at" DESC;
-
--- name: GetPublishedEvents :many
-SELECT * FROM "events"
-WHERE "status" = 'PUBLISHED'
-ORDER BY "starts_at" ASC;
-
--- name: GetUpcomingEvents :many
-SELECT * FROM "events"
-WHERE "status" = 'PUBLISHED'
-AND "starts_at" > NOW()
-ORDER BY "starts_at" ASC;
-
 -- name: UpdateEvent :one
 UPDATE "events"
 SET
@@ -55,13 +39,10 @@ SET
 WHERE "id" = $1
 RETURNING *;
 
--- name: UpdateEventStatus :one
+-- name: DeleteEvent :one
 UPDATE "events"
 SET
-    "status"     = $2,
+    "status"     = 'DELETED',
     "updated_at" = NOW()
 WHERE "id" = $1
 RETURNING *;
-
--- name: DeleteEvent :exec
-DELETE FROM "events" WHERE "id" = $1;

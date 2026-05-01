@@ -24,7 +24,7 @@ INSERT INTO "ticket_types" (
     "sale_ends"
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9
-) RETURNING id, event_id, name, description, price, currency, quantity, quantity_sold, is_free, sale_starts, sale_ends, created_at, updated_at
+) RETURNING id, event_id, name, status, description, price, currency, quantity, quantity_sold, is_free, sale_starts, sale_ends, created_at, updated_at
 `
 
 type CreateTicketTypeParams struct {
@@ -56,6 +56,7 @@ func (q *Queries) CreateTicketType(ctx context.Context, arg CreateTicketTypePara
 		&i.ID,
 		&i.EventID,
 		&i.Name,
+		&i.Status,
 		&i.Description,
 		&i.Price,
 		&i.Currency,
@@ -68,28 +69,6 @@ func (q *Queries) CreateTicketType(ctx context.Context, arg CreateTicketTypePara
 		&i.UpdatedAt,
 	)
 	return i, err
-}
-
-const decrementQuantitySold = `-- name: DecrementQuantitySold :one
-UPDATE ticket_types
-SET
-    quantity_sold = quantity_sold - $2,
-    updated_at = NOW()
-WHERE id = $1
-  AND quantity_sold >= $2
-RETURNING id
-`
-
-type DecrementQuantitySoldParams struct {
-	ID           pgtype.UUID
-	QuantitySold int32
-}
-
-func (q *Queries) DecrementQuantitySold(ctx context.Context, arg DecrementQuantitySoldParams) (pgtype.UUID, error) {
-	row := q.db.QueryRow(ctx, decrementQuantitySold, arg.ID, arg.QuantitySold)
-	var id pgtype.UUID
-	err := row.Scan(&id)
-	return id, err
 }
 
 const deleteTicketType = `-- name: DeleteTicketType :exec
@@ -101,54 +80,8 @@ func (q *Queries) DeleteTicketType(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
-const getAvailableTicketTypes = `-- name: GetAvailableTicketTypes :many
-SELECT tt.id, tt.event_id, tt.name, tt.description, tt.price, tt.currency, tt.quantity, tt.quantity_sold, tt.is_free, tt.sale_starts, tt.sale_ends, tt.created_at, tt.updated_at
-FROM ticket_types tt
-JOIN events e ON e.id = tt.event_id
-WHERE tt.event_id = $1
-  AND tt.quantity_sold < tt.quantity
-  AND (tt.sale_starts IS NULL OR tt.sale_starts <= NOW())
-  AND (tt.sale_ends IS NULL OR tt.sale_ends >= NOW())
-  AND e.starts_at > NOW()
-ORDER BY tt.price ASC
-`
-
-func (q *Queries) GetAvailableTicketTypes(ctx context.Context, eventID pgtype.UUID) ([]TicketType, error) {
-	rows, err := q.db.Query(ctx, getAvailableTicketTypes, eventID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []TicketType
-	for rows.Next() {
-		var i TicketType
-		if err := rows.Scan(
-			&i.ID,
-			&i.EventID,
-			&i.Name,
-			&i.Description,
-			&i.Price,
-			&i.Currency,
-			&i.Quantity,
-			&i.QuantitySold,
-			&i.IsFree,
-			&i.SaleStarts,
-			&i.SaleEnds,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getTicketTypeById = `-- name: GetTicketTypeById :one
-SELECT id, event_id, name, description, price, currency, quantity, quantity_sold, is_free, sale_starts, sale_ends, created_at, updated_at FROM "ticket_types" WHERE "id" = $1
+SELECT id, event_id, name, status, description, price, currency, quantity, quantity_sold, is_free, sale_starts, sale_ends, created_at, updated_at FROM "ticket_types" WHERE "id" = $1
 `
 
 func (q *Queries) GetTicketTypeById(ctx context.Context, id pgtype.UUID) (TicketType, error) {
@@ -158,6 +91,7 @@ func (q *Queries) GetTicketTypeById(ctx context.Context, id pgtype.UUID) (Ticket
 		&i.ID,
 		&i.EventID,
 		&i.Name,
+		&i.Status,
 		&i.Description,
 		&i.Price,
 		&i.Currency,
@@ -170,68 +104,6 @@ func (q *Queries) GetTicketTypeById(ctx context.Context, id pgtype.UUID) (Ticket
 		&i.UpdatedAt,
 	)
 	return i, err
-}
-
-const getTicketTypesByEvent = `-- name: GetTicketTypesByEvent :many
-SELECT id, event_id, name, description, price, currency, quantity, quantity_sold, is_free, sale_starts, sale_ends, created_at, updated_at FROM "ticket_types"
-WHERE "event_id" = $1
-ORDER BY "price" ASC
-`
-
-func (q *Queries) GetTicketTypesByEvent(ctx context.Context, eventID pgtype.UUID) ([]TicketType, error) {
-	rows, err := q.db.Query(ctx, getTicketTypesByEvent, eventID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []TicketType
-	for rows.Next() {
-		var i TicketType
-		if err := rows.Scan(
-			&i.ID,
-			&i.EventID,
-			&i.Name,
-			&i.Description,
-			&i.Price,
-			&i.Currency,
-			&i.Quantity,
-			&i.QuantitySold,
-			&i.IsFree,
-			&i.SaleStarts,
-			&i.SaleEnds,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const incrementQuantitySold = `-- name: IncrementQuantitySold :one
-UPDATE ticket_types
-SET
-    quantity_sold = quantity_sold + $2,
-    updated_at = NOW()
-WHERE id = $1
-  AND quantity_sold + $2 <= quantity
-RETURNING id
-`
-
-type IncrementQuantitySoldParams struct {
-	ID           pgtype.UUID
-	QuantitySold int32
-}
-
-func (q *Queries) IncrementQuantitySold(ctx context.Context, arg IncrementQuantitySoldParams) (pgtype.UUID, error) {
-	row := q.db.QueryRow(ctx, incrementQuantitySold, arg.ID, arg.QuantitySold)
-	var id pgtype.UUID
-	err := row.Scan(&id)
-	return id, err
 }
 
 const updateTicketType = `-- name: UpdateTicketType :one
@@ -247,7 +119,7 @@ SET
     "sale_ends"   = $9,
     "updated_at"  = NOW()
 WHERE "id" = $1
-RETURNING id, event_id, name, description, price, currency, quantity, quantity_sold, is_free, sale_starts, sale_ends, created_at, updated_at
+RETURNING id, event_id, name, status, description, price, currency, quantity, quantity_sold, is_free, sale_starts, sale_ends, created_at, updated_at
 `
 
 type UpdateTicketTypeParams struct {
@@ -279,6 +151,7 @@ func (q *Queries) UpdateTicketType(ctx context.Context, arg UpdateTicketTypePara
 		&i.ID,
 		&i.EventID,
 		&i.Name,
+		&i.Status,
 		&i.Description,
 		&i.Price,
 		&i.Currency,

@@ -14,6 +14,10 @@ var (
 	ErrEmailAlreadyExists = errors.New("email already exists")
 	ErrInvalidCredentials = errors.New("invalid credentials")
 
+	// User
+	ErrUserBanned           = errors.New("your account has been banned")
+	ErrOrganiserNotVerified = errors.New("your account is pending approval")
+
 	// Permissions
 	ErrForbidden = errors.New("forbidden")
 

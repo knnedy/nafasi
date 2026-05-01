@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TYPE event_status AS ENUM ('DRAFT', 'PUBLISHED', 'CANCELLED', 'COMPLETED');
+CREATE TYPE event_status AS ENUM ('DRAFT', 'PUBLISHED', 'CANCELLED', 'COMPLETED', 'DELETED');
 
 CREATE TABLE "events" (
     "id"           UUID PRIMARY KEY DEFAULT gen_random_uuid(),

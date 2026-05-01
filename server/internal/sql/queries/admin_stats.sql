@@ -1,4 +1,9 @@
--- name: GetPlatformStats :one
+-- name: AdminGetTotalRevenue :one
+SELECT COALESCE(SUM("total_amount"), 0) AS total_revenue
+FROM "orders"
+WHERE "status" = 'PAID';
+
+-- name: AdminGetPlatformStats :one
 SELECT
     (SELECT COUNT(*) FROM "users") AS total_users,
     (SELECT COUNT(*) FROM "users" WHERE "role" = 'ORGANISER') AS total_organisers,
@@ -9,7 +14,7 @@ SELECT
     (SELECT COUNT(*) FROM "orders" WHERE "status" = 'PAID') AS paid_orders,
     (SELECT COALESCE(SUM("total_amount"), 0) FROM "orders" WHERE "status" = 'PAID') AS total_revenue;
 
--- name: GetRecentOrders :many
+-- name: AdminGetRecentOrdersWithDetails :many
 SELECT
     o.*,
     u."name"  AS user_name,
@@ -20,22 +25,3 @@ JOIN "users"  u ON u."id" = o."user_id"
 JOIN "events" e ON e."id" = o."event_id"
 ORDER BY o."created_at" DESC
 LIMIT $1;
-
--- name: GetAllEvents :many
-SELECT
-    e.*,
-    u."name" AS organiser_name
-FROM "events" e
-JOIN "users" u ON u."id" = e."organiser_id"
-ORDER BY e."created_at" DESC
-LIMIT $1 OFFSET $2;
-
--- name: GetEventsByStatus :many
-SELECT
-    e.*,
-    u."name" AS organiser_name
-FROM "events" e
-JOIN "users" u ON u."id" = e."organiser_id"
-WHERE e."status" = $1
-ORDER BY e."created_at" DESC
-LIMIT $2 OFFSET $3;

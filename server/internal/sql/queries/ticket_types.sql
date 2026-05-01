@@ -16,11 +16,6 @@ INSERT INTO "ticket_types" (
 -- name: GetTicketTypeById :one
 SELECT * FROM "ticket_types" WHERE "id" = $1;
 
--- name: GetTicketTypesByEvent :many
-SELECT * FROM "ticket_types"
-WHERE "event_id" = $1
-ORDER BY "price" ASC;
-
 -- name: UpdateTicketType :one
 UPDATE "ticket_types"
 SET
@@ -35,35 +30,6 @@ SET
     "updated_at"  = NOW()
 WHERE "id" = $1
 RETURNING *;
-
--- name: IncrementQuantitySold :one
-UPDATE ticket_types
-SET
-    quantity_sold = quantity_sold + $2,
-    updated_at = NOW()
-WHERE id = $1
-  AND quantity_sold + $2 <= quantity
-RETURNING id;
-
--- name: DecrementQuantitySold :one
-UPDATE ticket_types
-SET
-    quantity_sold = quantity_sold - $2,
-    updated_at = NOW()
-WHERE id = $1
-  AND quantity_sold >= $2
-RETURNING id;
-
--- name: GetAvailableTicketTypes :many
-SELECT tt.*
-FROM ticket_types tt
-JOIN events e ON e.id = tt.event_id
-WHERE tt.event_id = $1
-  AND tt.quantity_sold < tt.quantity
-  AND (tt.sale_starts IS NULL OR tt.sale_starts <= NOW())
-  AND (tt.sale_ends IS NULL OR tt.sale_ends >= NOW())
-  AND e.starts_at > NOW()
-ORDER BY tt.price ASC;
 
 -- name: DeleteTicketType :exec
 DELETE FROM "ticket_types" WHERE "id" = $1;

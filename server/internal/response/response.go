@@ -84,6 +84,17 @@ func WriteError(w http.ResponseWriter, err error) {
 		detail.Code = "INVALID_TOKEN"
 		detail.Message = "invalid or expired token"
 
+	// User
+	case errors.Is(err, ErrUserBanned):
+		status = http.StatusForbidden
+		detail.Code = "USER_BANNED"
+		detail.Message = "your account has been banned"
+
+	case errors.Is(err, ErrOrganiserNotVerified):
+		status = http.StatusForbidden
+		detail.Code = "ORGANISER_NOT_VERIFIED"
+		detail.Message = "your account is pending admin approval"
+
 	// Permissions
 	case errors.Is(err, ErrForbidden):
 		status = http.StatusForbidden

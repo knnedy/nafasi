@@ -54,7 +54,7 @@ func main() {
 	tokens := token.NewTokenManager(cfg.JWTSecret)
 
 	// initialize services
-	emailService := notifications.NewEmailService(cfg.ResendAPIKey, cfg.ResendFromEmail)
+	emailService := notifications.NewEmailService(cfg.ResendAPIKey, cfg.ResendFromEmail, cfg.ClientURL)
 	authService := service.NewAuthService(db.Queries(), tokens, emailService, cfg.ClientURL)
 	userService := service.NewUserService(db.Queries())
 	eventService := service.NewEventService(db.Queries())

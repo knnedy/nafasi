@@ -20,7 +20,7 @@ INSERT INTO "users" (
     "is_verified"
 ) VALUES (
     $1, $2, $3, $4, $5
-) RETURNING id, name, email, password, role, is_verified, avatar_url, created_at, updated_at
+) RETURNING id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at
 `
 
 type CreateUserParams struct {
@@ -47,7 +47,9 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Password,
 		&i.Role,
 		&i.IsVerified,
+		&i.Status,
 		&i.AvatarUrl,
+		&i.BannedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -55,7 +57,11 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const deleteUser = `-- name: DeleteUser :exec
-DELETE FROM "users" WHERE "id" = $1
+UPDATE "users"
+SET
+    "status"     = 'DELETED',
+    "updated_at" = NOW()
+WHERE "id" = $1
 `
 
 func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
@@ -63,45 +69,8 @@ func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
-const getPendingOrganisers = `-- name: GetPendingOrganisers :many
-SELECT id, name, email, password, role, is_verified, avatar_url, created_at, updated_at FROM "users"
-WHERE "role" = 'ORGANISER'
-AND "is_verified" = FALSE
-ORDER BY "created_at" ASC
-`
-
-func (q *Queries) GetPendingOrganisers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.Query(ctx, getPendingOrganisers)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []User
-	for rows.Next() {
-		var i User
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Email,
-			&i.Password,
-			&i.Role,
-			&i.IsVerified,
-			&i.AvatarUrl,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, name, email, password, role, is_verified, avatar_url, created_at, updated_at FROM "users" WHERE "email" = $1
+SELECT id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at FROM "users" WHERE "email" = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -114,7 +83,9 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Password,
 		&i.Role,
 		&i.IsVerified,
+		&i.Status,
 		&i.AvatarUrl,
+		&i.BannedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -122,7 +93,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, name, email, password, role, is_verified, avatar_url, created_at, updated_at FROM "users" WHERE "id" = $1
+SELECT id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at FROM "users" WHERE "id" = $1
 `
 
 func (q *Queries) GetUserById(ctx context.Context, id pgtype.UUID) (User, error) {
@@ -135,7 +106,9 @@ func (q *Queries) GetUserById(ctx context.Context, id pgtype.UUID) (User, error)
 		&i.Password,
 		&i.Role,
 		&i.IsVerified,
+		&i.Status,
 		&i.AvatarUrl,
+		&i.BannedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -148,7 +121,7 @@ SET
     "avatar_url" = $2,
     "updated_at" = NOW()
 WHERE "id" = $1
-RETURNING id, name, email, password, role, is_verified, avatar_url, created_at, updated_at
+RETURNING id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at
 `
 
 type UpdateUserAvatarParams struct {
@@ -166,7 +139,9 @@ func (q *Queries) UpdateUserAvatar(ctx context.Context, arg UpdateUserAvatarPara
 		&i.Password,
 		&i.Role,
 		&i.IsVerified,
+		&i.Status,
 		&i.AvatarUrl,
+		&i.BannedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -179,7 +154,7 @@ SET
     "password"   = $2,
     "updated_at" = NOW()
 WHERE "id" = $1
-RETURNING id, name, email, password, role, is_verified, avatar_url, created_at, updated_at
+RETURNING id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at
 `
 
 type UpdateUserPasswordParams struct {
@@ -197,7 +172,9 @@ func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPassword
 		&i.Password,
 		&i.Role,
 		&i.IsVerified,
+		&i.Status,
 		&i.AvatarUrl,
+		&i.BannedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -211,7 +188,7 @@ SET
     "email"      = $3,
     "updated_at" = NOW()
 WHERE "id" = $1
-RETURNING id, name, email, password, role, is_verified, avatar_url, created_at, updated_at
+RETURNING id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at
 `
 
 type UpdateUserProfileParams struct {
@@ -230,38 +207,9 @@ func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfilePa
 		&i.Password,
 		&i.Role,
 		&i.IsVerified,
+		&i.Status,
 		&i.AvatarUrl,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const updateUserVerification = `-- name: UpdateUserVerification :one
-UPDATE "users"
-SET
-    "is_verified" = $2,
-    "updated_at"  = NOW()
-WHERE "id" = $1
-RETURNING id, name, email, password, role, is_verified, avatar_url, created_at, updated_at
-`
-
-type UpdateUserVerificationParams struct {
-	ID         pgtype.UUID
-	IsVerified bool
-}
-
-func (q *Queries) UpdateUserVerification(ctx context.Context, arg UpdateUserVerificationParams) (User, error) {
-	row := q.db.QueryRow(ctx, updateUserVerification, arg.ID, arg.IsVerified)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Email,
-		&i.Password,
-		&i.Role,
-		&i.IsVerified,
-		&i.AvatarUrl,
+		&i.BannedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

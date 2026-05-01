@@ -41,14 +41,20 @@ func NewAuthService(db AuthQuerier, tokens *token.TokenManager, email *notificat
 }
 
 type RegisterInput struct {
-	Name     string `validate:"required,min=2,max=100"`
-	Email    string `validate:"required,email"`
+	Name     string `json:"name"     validate:"required,min=2,max=100"`
+	Email    string `json:"email"    validate:"required,email"`
+	Password string `json:"password" validate:"required,min=8,max=100,has_upper,has_lower,has_number,has_special"`
+}
+
+type RegisterOrganiserInput struct {
+	Name     string `json:"name"     validate:"required,min=2,max=100"`
+	Email    string `json:"email"    validate:"required,email"`
 	Password string `json:"password" validate:"required,min=8,max=100,has_upper,has_lower,has_number,has_special"`
 }
 
 type LoginInput struct {
-	Email    string `validate:"required,email"`
-	Password string `validate:"required"`
+	Email    string `json:"email"    validate:"required,email"`
+	Password string `json:"password" validate:"required"`
 }
 
 type ForgotPasswordInput struct {
@@ -66,15 +72,15 @@ type AuthResult struct {
 	RefreshToken string
 }
 
-// generateAuthTokens is a shared helper that generates both tokens and saves the refresh token
 func (s *AuthService) generateAuthTokens(ctx context.Context, user repository.User) (AuthResult, error) {
-	// generate access token
-	accessToken, err := s.tokens.GenerateAccessToken(user.ID.String(), string(user.Role))
+	accessToken, err := s.tokens.GenerateAccessToken(
+		uuid.UUID(user.ID.Bytes).String(),
+		string(user.Role),
+	)
 	if err != nil {
 		return AuthResult{}, response.ErrInternal
 	}
 
-	// generate refresh token
 	refreshToken, err := s.tokens.GenerateRefreshToken(
 		uuid.UUID(user.ID.Bytes),
 	)
@@ -82,7 +88,6 @@ func (s *AuthService) generateAuthTokens(ctx context.Context, user repository.Us
 		return AuthResult{}, response.ErrInternal
 	}
 
-	// save refresh token to DB
 	_, err = s.db.CreateRefreshToken(ctx, repository.CreateRefreshTokenParams{
 		UserID:    pgtype.UUID{Bytes: refreshToken.UserID, Valid: true},
 		Token:     refreshToken.Token,
@@ -100,28 +105,26 @@ func (s *AuthService) generateAuthTokens(ctx context.Context, user repository.Us
 }
 
 func (s *AuthService) Register(ctx context.Context, input RegisterInput) (AuthResult, error) {
-	// validate input
 	if err := s.validate.Struct(input); err != nil {
 		return AuthResult{}, formatValidationError(err, s.trans)
 	}
 
-	// check if email already exists
 	_, err := s.db.GetUserByEmail(ctx, input.Email)
 	if err == nil {
 		return AuthResult{}, response.ErrEmailAlreadyExists
 	}
 
-	// hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return AuthResult{}, response.ErrInternal
 	}
 
-	// create user
 	user, err := s.db.CreateUser(ctx, repository.CreateUserParams{
-		Name:     input.Name,
-		Email:    input.Email,
-		Password: string(hashedPassword),
+		Name:       input.Name,
+		Email:      input.Email,
+		Password:   string(hashedPassword),
+		Role:       repository.UserRoleATTENDEE,
+		IsVerified: true,
 	})
 	if err != nil {
 		return AuthResult{}, response.ErrDatabase
@@ -130,21 +133,64 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (AuthRe
 	return s.generateAuthTokens(ctx, user)
 }
 
-func (s *AuthService) Login(ctx context.Context, input LoginInput) (AuthResult, error) {
-	// validate input
+func (s *AuthService) RegisterOrganiser(ctx context.Context, input RegisterOrganiserInput) (AuthResult, error) {
 	if err := s.validate.Struct(input); err != nil {
 		return AuthResult{}, formatValidationError(err, s.trans)
 	}
 
-	// get user by email
+	_, err := s.db.GetUserByEmail(ctx, input.Email)
+	if err == nil {
+		return AuthResult{}, response.ErrEmailAlreadyExists
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return AuthResult{}, response.ErrInternal
+	}
+
+	user, err := s.db.CreateUser(ctx, repository.CreateUserParams{
+		Name:       input.Name,
+		Email:      input.Email,
+		Password:   string(hashedPassword),
+		Role:       repository.UserRoleORGANISER,
+		IsVerified: false,
+	})
+	if err != nil {
+		return AuthResult{}, response.ErrDatabase
+	}
+
+	// notify organiser their account is pending approval
+	// non-critical — log and continue if email fails
+	if err := s.email.SendOrganiserApprovalPending(user.Email, user.Name); err != nil {
+		slog.Error("failed to send organiser pending approval email",
+			"user_id", uuid.UUID(user.ID.Bytes).String(),
+			"err", err,
+		)
+	}
+
+	// return user but no tokens — organiser cannot log in until approved
+	return AuthResult{User: user}, nil
+}
+
+func (s *AuthService) Login(ctx context.Context, input LoginInput) (AuthResult, error) {
+	if err := s.validate.Struct(input); err != nil {
+		return AuthResult{}, formatValidationError(err, s.trans)
+	}
+
 	user, err := s.db.GetUserByEmail(ctx, input.Email)
 	if err != nil {
 		return AuthResult{}, response.ErrInvalidCredentials
 	}
 
-	// compare password
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
-	if err != nil {
+	if user.IsBanned {
+		return AuthResult{}, response.ErrUserBanned
+	}
+
+	if user.Role == repository.UserRoleORGANISER && !user.IsVerified {
+		return AuthResult{}, response.ErrOrganiserNotVerified
+	}
+
+	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
 		return AuthResult{}, response.ErrInvalidCredentials
 	}
 
@@ -152,21 +198,27 @@ func (s *AuthService) Login(ctx context.Context, input LoginInput) (AuthResult, 
 }
 
 func (s *AuthService) RefreshAccessToken(ctx context.Context, refreshToken string) (AuthResult, error) {
-	// validate refresh token exists and is not revoked or expired
 	dbToken, err := s.db.GetRefreshToken(ctx, refreshToken)
 	if err != nil {
 		return AuthResult{}, response.ErrInvalidToken
 	}
 
-	// revoke current refresh token - rotation
 	if err := s.db.RevokeRefreshToken(ctx, refreshToken); err != nil {
 		return AuthResult{}, response.ErrDatabase
 	}
 
-	// get user
 	user, err := s.db.GetUserById(ctx, dbToken.UserID)
 	if err != nil {
 		return AuthResult{}, response.ErrNotFound
+	}
+
+	// re-check ban and verification on refresh
+	if user.IsBanned {
+		return AuthResult{}, response.ErrUserBanned
+	}
+
+	if user.Role == repository.UserRoleORGANISER && !user.IsVerified {
+		return AuthResult{}, response.ErrOrganiserNotVerified
 	}
 
 	return s.generateAuthTokens(ctx, user)
@@ -177,35 +229,30 @@ func (s *AuthService) ForgotPassword(ctx context.Context, input ForgotPasswordIn
 		return formatValidationError(err, s.trans)
 	}
 
-	// check if user exists
 	user, err := s.db.GetUserByEmail(ctx, input.Email)
 	if err != nil {
-		// for security, don't reveal if email doesn't exist
+		// don't reveal whether email exists
 		return nil
 	}
 
-	// delete any existing reset tokens for this user
 	if err := s.db.DeleteUserPasswordResetTokens(ctx, user.ID); err != nil {
 		return response.ErrDatabase
 	}
 
-	// generate reset token
 	tokenBytes := make([]byte, 32)
 	if _, err := rand.Read(tokenBytes); err != nil {
 		return response.ErrInternal
 	}
 	resetToken := hex.EncodeToString(tokenBytes)
 
-	// save reset token to DB - expires in 1 hour
 	if _, err := s.db.CreatePasswordResetToken(ctx, repository.CreatePasswordResetTokenParams{
 		UserID:    user.ID,
 		Token:     resetToken,
-		ExpiresAt: pgtype.Timestamp{Time: time.Now().Add(1 * time.Hour), Valid: true},
+		ExpiresAt: pgtype.Timestamp{Time: time.Now().Add(time.Hour), Valid: true},
 	}); err != nil {
 		return response.ErrDatabase
 	}
 
-	// send reset email
 	resetURL := fmt.Sprintf("%s/reset-password?token=%s", s.clientURL, resetToken)
 	if err := s.email.SendPasswordReset(user.Email, resetURL); err != nil {
 		slog.Error("failed to send password reset email",
@@ -222,19 +269,16 @@ func (s *AuthService) ResetPassword(ctx context.Context, input ResetPasswordInpu
 		return formatValidationError(err, s.trans)
 	}
 
-	// validate reset token
 	resetToken, err := s.db.GetPasswordResetToken(ctx, input.Token)
 	if err != nil || resetToken.ExpiresAt.Time.Before(time.Now()) {
 		return response.ErrInvalidToken
 	}
 
-	// hash new password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return response.ErrInternal
 	}
 
-	// update user's password
 	if _, err := s.db.UpdateUserPassword(ctx, repository.UpdateUserPasswordParams{
 		ID:       resetToken.UserID,
 		Password: string(hashedPassword),
@@ -242,12 +286,10 @@ func (s *AuthService) ResetPassword(ctx context.Context, input ResetPasswordInpu
 		return response.ErrDatabase
 	}
 
-	// mark reset token as used
 	if err := s.db.MarkPasswordResetTokenUsed(ctx, input.Token); err != nil {
 		return response.ErrDatabase
 	}
 
-	// revoke all existing refresh tokens for this user (force logout)
 	if err := s.db.RevokeAllUserTokens(ctx, resetToken.UserID); err != nil {
 		return response.ErrDatabase
 	}
@@ -256,7 +298,6 @@ func (s *AuthService) ResetPassword(ctx context.Context, input ResetPasswordInpu
 }
 
 func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
-	// revoke refresh token
 	if err := s.db.RevokeRefreshToken(ctx, refreshToken); err != nil {
 		return response.ErrDatabase
 	}

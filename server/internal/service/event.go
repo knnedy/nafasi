@@ -287,6 +287,35 @@ func (s *EventService) UpdateEventStatus(ctx context.Context, eventID, organiser
 	return updated, nil
 }
 
+func (s *EventService) CancelEvent(ctx context.Context, eventID, organiserID string) (repository.Event, error) {
+	parsedEventID, err := uuid.Parse(eventID)
+	if err != nil {
+		return repository.Event{}, response.ErrNotFound
+	}
+
+	// verify event exists and belongs to organiser
+	event, err := s.db.GetEventById(ctx, pgtype.UUID{Bytes: parsedEventID, Valid: true})
+	if err != nil {
+		return repository.Event{}, response.ErrNotFound
+	}
+
+	parsedOrganiserID, err := uuid.Parse(organiserID)
+	if err != nil {
+		return repository.Event{}, response.ErrNotFound
+	}
+
+	if event.OrganiserID.Bytes != parsedOrganiserID {
+		return repository.Event{}, response.ErrForbidden
+	}
+
+	cancelledEvent, err := s.db.CancelEvent(ctx, event.ID)
+	if err != nil {
+		return repository.Event{}, response.ErrDatabase
+	}
+
+	return cancelledEvent, nil
+}
+
 func (s *EventService) DeleteEvent(ctx context.Context, eventID, organiserID string) error {
 	parsedEventID, err := uuid.Parse(eventID)
 	if err != nil {

@@ -26,61 +26,27 @@ SELECT * FROM "orders"
 WHERE "event_id" = $1
 ORDER BY "created_at" DESC;
 
--- name: GetOrderByPaymentRef :one
-SELECT * FROM "orders"
-WHERE "payment_ref" = $1;
-
--- name: GetOrderByQRCode :one
-SELECT * FROM "orders"
-WHERE "qr_code" = $1;
-
--- name: UpdateOrderStatus :one
-UPDATE "orders"
-SET
-    "status"     = $2,
-    "updated_at" = NOW()
-WHERE "id" = $1
-RETURNING *;
-
--- name: UpdateOrderPayment :one
-UPDATE "orders"
-SET
-    "status"         = $2,
-    "payment_method" = $3,
-    "payment_ref"    = $4,
-    "updated_at"     = NOW()
-WHERE "id" = $1
-RETURNING *;
-
--- name: UpdateOrderQRCode :one
-UPDATE "orders"
-SET
-    "qr_code"    = $2,
-    "updated_at" = NOW()
-WHERE "id" = $1
-RETURNING *;
-
--- name: CheckInOrder :one
-UPDATE "orders"
-SET
-    "checked_in"    = TRUE,
-    "checked_in_at" = NOW(),
-    "updated_at"    = NOW()
-WHERE "id" = $1
-AND "checked_in" = FALSE
-RETURNING *;
-
--- name: GetCheckedInOrders :many
-SELECT * FROM "orders"
-WHERE "event_id" = $1
-AND "checked_in" = TRUE
-ORDER BY "checked_in_at" ASC;
-
 -- name: GetOrdersByEventAndStatus :many
 SELECT * FROM "orders"
 WHERE "event_id" = $1
 AND "status" = $2
 ORDER BY "created_at" DESC;
+
+-- -- name: GetTotalRevenue :one
+-- SELECT COALESCE(SUM("total_amount"), 0) AS total_revenue
+-- FROM "orders"
+-- WHERE "status" = 'PAID';
+
+-- -- name: GetLatestOrders :many
+-- SELECT * FROM "orders"
+-- ORDER BY "created_at" DESC
+-- LIMIT $1;
+
+-- -- name: GetOrdersByStatus :many
+-- SELECT * FROM "orders"
+-- WHERE "status" = $1
+-- ORDER BY "created_at" DESC
+-- LIMIT $2 OFFSET $3;
 
 -- name: DeleteOrder :exec
 DELETE FROM "orders" WHERE "id" = $1;

@@ -81,13 +81,36 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event
 	return i, err
 }
 
-const deleteEvent = `-- name: DeleteEvent :exec
-DELETE FROM "events" WHERE "id" = $1
+const deleteEvent = `-- name: DeleteEvent :one
+UPDATE "events"
+SET
+    "status"     = 'DELETED',
+    "updated_at" = NOW()
+WHERE "id" = $1
+RETURNING id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
 `
 
-func (q *Queries) DeleteEvent(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, deleteEvent, id)
-	return err
+func (q *Queries) DeleteEvent(ctx context.Context, id pgtype.UUID) (Event, error) {
+	row := q.db.QueryRow(ctx, deleteEvent, id)
+	var i Event
+	err := row.Scan(
+		&i.ID,
+		&i.OrganiserID,
+		&i.Title,
+		&i.Slug,
+		&i.Description,
+		&i.Location,
+		&i.Venue,
+		&i.BannerUrl,
+		&i.StartsAt,
+		&i.EndsAt,
+		&i.Status,
+		&i.IsOnline,
+		&i.OnlineUrl,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const getEventById = `-- name: GetEventById :one
@@ -144,133 +167,6 @@ func (q *Queries) GetEventBySlug(ctx context.Context, slug string) (Event, error
 	return i, err
 }
 
-const getEventsByOrganiser = `-- name: GetEventsByOrganiser :many
-SELECT id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events" 
-WHERE "organiser_id" = $1
-ORDER BY "created_at" DESC
-`
-
-func (q *Queries) GetEventsByOrganiser(ctx context.Context, organiserID pgtype.UUID) ([]Event, error) {
-	rows, err := q.db.Query(ctx, getEventsByOrganiser, organiserID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Event
-	for rows.Next() {
-		var i Event
-		if err := rows.Scan(
-			&i.ID,
-			&i.OrganiserID,
-			&i.Title,
-			&i.Slug,
-			&i.Description,
-			&i.Location,
-			&i.Venue,
-			&i.BannerUrl,
-			&i.StartsAt,
-			&i.EndsAt,
-			&i.Status,
-			&i.IsOnline,
-			&i.OnlineUrl,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getPublishedEvents = `-- name: GetPublishedEvents :many
-SELECT id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events"
-WHERE "status" = 'PUBLISHED'
-ORDER BY "starts_at" ASC
-`
-
-func (q *Queries) GetPublishedEvents(ctx context.Context) ([]Event, error) {
-	rows, err := q.db.Query(ctx, getPublishedEvents)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Event
-	for rows.Next() {
-		var i Event
-		if err := rows.Scan(
-			&i.ID,
-			&i.OrganiserID,
-			&i.Title,
-			&i.Slug,
-			&i.Description,
-			&i.Location,
-			&i.Venue,
-			&i.BannerUrl,
-			&i.StartsAt,
-			&i.EndsAt,
-			&i.Status,
-			&i.IsOnline,
-			&i.OnlineUrl,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getUpcomingEvents = `-- name: GetUpcomingEvents :many
-SELECT id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events"
-WHERE "status" = 'PUBLISHED'
-AND "starts_at" > NOW()
-ORDER BY "starts_at" ASC
-`
-
-func (q *Queries) GetUpcomingEvents(ctx context.Context) ([]Event, error) {
-	rows, err := q.db.Query(ctx, getUpcomingEvents)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Event
-	for rows.Next() {
-		var i Event
-		if err := rows.Scan(
-			&i.ID,
-			&i.OrganiserID,
-			&i.Title,
-			&i.Slug,
-			&i.Description,
-			&i.Location,
-			&i.Venue,
-			&i.BannerUrl,
-			&i.StartsAt,
-			&i.EndsAt,
-			&i.Status,
-			&i.IsOnline,
-			&i.OnlineUrl,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const updateEvent = `-- name: UpdateEvent :one
 UPDATE "events"
 SET
@@ -317,43 +213,6 @@ func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) (Event
 		arg.IsOnline,
 		arg.OnlineUrl,
 	)
-	var i Event
-	err := row.Scan(
-		&i.ID,
-		&i.OrganiserID,
-		&i.Title,
-		&i.Slug,
-		&i.Description,
-		&i.Location,
-		&i.Venue,
-		&i.BannerUrl,
-		&i.StartsAt,
-		&i.EndsAt,
-		&i.Status,
-		&i.IsOnline,
-		&i.OnlineUrl,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const updateEventStatus = `-- name: UpdateEventStatus :one
-UPDATE "events"
-SET
-    "status"     = $2,
-    "updated_at" = NOW()
-WHERE "id" = $1
-RETURNING id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
-`
-
-type UpdateEventStatusParams struct {
-	ID     pgtype.UUID
-	Status EventStatus
-}
-
-func (q *Queries) UpdateEventStatus(ctx context.Context, arg UpdateEventStatusParams) (Event, error) {
-	row := q.db.QueryRow(ctx, updateEventStatus, arg.ID, arg.Status)
 	var i Event
 	err := row.Scan(
 		&i.ID,

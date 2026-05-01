@@ -11,41 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const checkInOrder = `-- name: CheckInOrder :one
-UPDATE "orders"
-SET
-    "checked_in"    = TRUE,
-    "checked_in_at" = NOW(),
-    "updated_at"    = NOW()
-WHERE "id" = $1
-AND "checked_in" = FALSE
-RETURNING id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount, currency, status, payment_method, payment_ref, qr_code, checked_in, checked_in_at, created_at, updated_at
-`
-
-func (q *Queries) CheckInOrder(ctx context.Context, id pgtype.UUID) (Order, error) {
-	row := q.db.QueryRow(ctx, checkInOrder, id)
-	var i Order
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.EventID,
-		&i.TicketTypeID,
-		&i.Quantity,
-		&i.UnitPrice,
-		&i.TotalAmount,
-		&i.Currency,
-		&i.Status,
-		&i.PaymentMethod,
-		&i.PaymentRef,
-		&i.QrCode,
-		&i.CheckedIn,
-		&i.CheckedInAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const createOrder = `-- name: CreateOrder :one
 INSERT INTO "orders" (
     "user_id",
@@ -109,56 +74,28 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order
 }
 
 const deleteOrder = `-- name: DeleteOrder :exec
+
+
+
 DELETE FROM "orders" WHERE "id" = $1
 `
 
+// -- name: GetTotalRevenue :one
+// SELECT COALESCE(SUM("total_amount"), 0) AS total_revenue
+// FROM "orders"
+// WHERE "status" = 'PAID';
+// -- name: GetLatestOrders :many
+// SELECT * FROM "orders"
+// ORDER BY "created_at" DESC
+// LIMIT $1;
+// -- name: GetOrdersByStatus :many
+// SELECT * FROM "orders"
+// WHERE "status" = $1
+// ORDER BY "created_at" DESC
+// LIMIT $2 OFFSET $3;
 func (q *Queries) DeleteOrder(ctx context.Context, id pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, deleteOrder, id)
 	return err
-}
-
-const getCheckedInOrders = `-- name: GetCheckedInOrders :many
-SELECT id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount, currency, status, payment_method, payment_ref, qr_code, checked_in, checked_in_at, created_at, updated_at FROM "orders"
-WHERE "event_id" = $1
-AND "checked_in" = TRUE
-ORDER BY "checked_in_at" ASC
-`
-
-func (q *Queries) GetCheckedInOrders(ctx context.Context, eventID pgtype.UUID) ([]Order, error) {
-	rows, err := q.db.Query(ctx, getCheckedInOrders, eventID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Order
-	for rows.Next() {
-		var i Order
-		if err := rows.Scan(
-			&i.ID,
-			&i.UserID,
-			&i.EventID,
-			&i.TicketTypeID,
-			&i.Quantity,
-			&i.UnitPrice,
-			&i.TotalAmount,
-			&i.Currency,
-			&i.Status,
-			&i.PaymentMethod,
-			&i.PaymentRef,
-			&i.QrCode,
-			&i.CheckedIn,
-			&i.CheckedInAt,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const getOrderById = `-- name: GetOrderById :one
@@ -167,64 +104,6 @@ SELECT id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount
 
 func (q *Queries) GetOrderById(ctx context.Context, id pgtype.UUID) (Order, error) {
 	row := q.db.QueryRow(ctx, getOrderById, id)
-	var i Order
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.EventID,
-		&i.TicketTypeID,
-		&i.Quantity,
-		&i.UnitPrice,
-		&i.TotalAmount,
-		&i.Currency,
-		&i.Status,
-		&i.PaymentMethod,
-		&i.PaymentRef,
-		&i.QrCode,
-		&i.CheckedIn,
-		&i.CheckedInAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getOrderByPaymentRef = `-- name: GetOrderByPaymentRef :one
-SELECT id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount, currency, status, payment_method, payment_ref, qr_code, checked_in, checked_in_at, created_at, updated_at FROM "orders"
-WHERE "payment_ref" = $1
-`
-
-func (q *Queries) GetOrderByPaymentRef(ctx context.Context, paymentRef pgtype.Text) (Order, error) {
-	row := q.db.QueryRow(ctx, getOrderByPaymentRef, paymentRef)
-	var i Order
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.EventID,
-		&i.TicketTypeID,
-		&i.Quantity,
-		&i.UnitPrice,
-		&i.TotalAmount,
-		&i.Currency,
-		&i.Status,
-		&i.PaymentMethod,
-		&i.PaymentRef,
-		&i.QrCode,
-		&i.CheckedIn,
-		&i.CheckedInAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getOrderByQRCode = `-- name: GetOrderByQRCode :one
-SELECT id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount, currency, status, payment_method, payment_ref, qr_code, checked_in, checked_in_at, created_at, updated_at FROM "orders"
-WHERE "qr_code" = $1
-`
-
-func (q *Queries) GetOrderByQRCode(ctx context.Context, qrCode pgtype.Text) (Order, error) {
-	row := q.db.QueryRow(ctx, getOrderByQRCode, qrCode)
 	var i Order
 	err := row.Scan(
 		&i.ID,
@@ -380,127 +259,4 @@ func (q *Queries) GetOrdersByUser(ctx context.Context, userID pgtype.UUID) ([]Or
 		return nil, err
 	}
 	return items, nil
-}
-
-const updateOrderPayment = `-- name: UpdateOrderPayment :one
-UPDATE "orders"
-SET
-    "status"         = $2,
-    "payment_method" = $3,
-    "payment_ref"    = $4,
-    "updated_at"     = NOW()
-WHERE "id" = $1
-RETURNING id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount, currency, status, payment_method, payment_ref, qr_code, checked_in, checked_in_at, created_at, updated_at
-`
-
-type UpdateOrderPaymentParams struct {
-	ID            pgtype.UUID
-	Status        OrderStatus
-	PaymentMethod NullPaymentMethod
-	PaymentRef    pgtype.Text
-}
-
-func (q *Queries) UpdateOrderPayment(ctx context.Context, arg UpdateOrderPaymentParams) (Order, error) {
-	row := q.db.QueryRow(ctx, updateOrderPayment,
-		arg.ID,
-		arg.Status,
-		arg.PaymentMethod,
-		arg.PaymentRef,
-	)
-	var i Order
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.EventID,
-		&i.TicketTypeID,
-		&i.Quantity,
-		&i.UnitPrice,
-		&i.TotalAmount,
-		&i.Currency,
-		&i.Status,
-		&i.PaymentMethod,
-		&i.PaymentRef,
-		&i.QrCode,
-		&i.CheckedIn,
-		&i.CheckedInAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const updateOrderQRCode = `-- name: UpdateOrderQRCode :one
-UPDATE "orders"
-SET
-    "qr_code"    = $2,
-    "updated_at" = NOW()
-WHERE "id" = $1
-RETURNING id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount, currency, status, payment_method, payment_ref, qr_code, checked_in, checked_in_at, created_at, updated_at
-`
-
-type UpdateOrderQRCodeParams struct {
-	ID     pgtype.UUID
-	QrCode pgtype.Text
-}
-
-func (q *Queries) UpdateOrderQRCode(ctx context.Context, arg UpdateOrderQRCodeParams) (Order, error) {
-	row := q.db.QueryRow(ctx, updateOrderQRCode, arg.ID, arg.QrCode)
-	var i Order
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.EventID,
-		&i.TicketTypeID,
-		&i.Quantity,
-		&i.UnitPrice,
-		&i.TotalAmount,
-		&i.Currency,
-		&i.Status,
-		&i.PaymentMethod,
-		&i.PaymentRef,
-		&i.QrCode,
-		&i.CheckedIn,
-		&i.CheckedInAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const updateOrderStatus = `-- name: UpdateOrderStatus :one
-UPDATE "orders"
-SET
-    "status"     = $2,
-    "updated_at" = NOW()
-WHERE "id" = $1
-RETURNING id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount, currency, status, payment_method, payment_ref, qr_code, checked_in, checked_in_at, created_at, updated_at
-`
-
-type UpdateOrderStatusParams struct {
-	ID     pgtype.UUID
-	Status OrderStatus
-}
-
-func (q *Queries) UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusParams) (Order, error) {
-	row := q.db.QueryRow(ctx, updateOrderStatus, arg.ID, arg.Status)
-	var i Order
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.EventID,
-		&i.TicketTypeID,
-		&i.Quantity,
-		&i.UnitPrice,
-		&i.TotalAmount,
-		&i.Currency,
-		&i.Status,
-		&i.PaymentMethod,
-		&i.PaymentRef,
-		&i.QrCode,
-		&i.CheckedIn,
-		&i.CheckedInAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
 }
