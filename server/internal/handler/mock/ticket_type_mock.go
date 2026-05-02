@@ -22,14 +22,9 @@ func (m *TicketTypeService) GetTicketTypeByID(ctx context.Context, ticketTypeID 
 	return args.Get(0).(repository.TicketType), args.Error(1)
 }
 
-func (m *TicketTypeService) GetTicketTypesByEvent(ctx context.Context, eventID string) ([]repository.TicketType, error) {
+func (m *TicketTypeService) GetAvailableTicketTypes(ctx context.Context, eventID string) ([]repository.PublicGetAvailableTicketTypesRow, error) {
 	args := m.Called(ctx, eventID)
-	return args.Get(0).([]repository.TicketType), args.Error(1)
-}
-
-func (m *TicketTypeService) GetAvailableTicketTypes(ctx context.Context, eventID string) ([]repository.TicketType, error) {
-	args := m.Called(ctx, eventID)
-	return args.Get(0).([]repository.TicketType), args.Error(1)
+	return args.Get(0).([]repository.PublicGetAvailableTicketTypesRow), args.Error(1)
 }
 
 func (m *TicketTypeService) UpdateTicketType(ctx context.Context, ticketTypeID, organiserID string, input service.UpdateTicketTypeInput) (repository.TicketType, error) {
@@ -37,7 +32,7 @@ func (m *TicketTypeService) UpdateTicketType(ctx context.Context, ticketTypeID, 
 	return args.Get(0).(repository.TicketType), args.Error(1)
 }
 
-func (m *TicketTypeService) DeleteTicketType(ctx context.Context, ticketTypeID, organiserID string) error {
+func (m *TicketTypeService) DeleteTicketType(ctx context.Context, ticketTypeID, organiserID string) (repository.TicketType, error) {
 	args := m.Called(ctx, ticketTypeID, organiserID)
-	return args.Error(0)
+	return args.Get(0).(repository.TicketType), args.Error(1)
 }

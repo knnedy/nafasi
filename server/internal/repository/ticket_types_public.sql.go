@@ -12,10 +12,18 @@ import (
 )
 
 const publicGetAvailableTicketTypes = `-- name: PublicGetAvailableTicketTypes :many
-SELECT tt.id, tt.event_id, tt.name, tt.status, tt.description, tt.price, tt.currency, tt.quantity, tt.quantity_sold, tt.is_free, tt.sale_starts, tt.sale_ends, tt.created_at, tt.updated_at
+SELECT
+    tt.id,
+    tt.event_id,
+    tt.name,
+    tt.description,
+    tt.price,
+    tt.currency,
+    tt.is_free
 FROM ticket_types tt
 JOIN events e ON e.id = tt.event_id
 WHERE tt.event_id = $1
+  AND tt.status = 'ACTIVE'
   AND tt.quantity_sold < tt.quantity
   AND (tt.sale_starts IS NULL OR tt.sale_starts <= NOW())
   AND (tt.sale_ends IS NULL OR tt.sale_ends >= NOW())
@@ -23,30 +31,33 @@ WHERE tt.event_id = $1
 ORDER BY tt.price ASC
 `
 
-func (q *Queries) PublicGetAvailableTicketTypes(ctx context.Context, eventID pgtype.UUID) ([]TicketType, error) {
+type PublicGetAvailableTicketTypesRow struct {
+	ID          pgtype.UUID
+	EventID     pgtype.UUID
+	Name        string
+	Description pgtype.Text
+	Price       int64
+	Currency    string
+	IsFree      bool
+}
+
+func (q *Queries) PublicGetAvailableTicketTypes(ctx context.Context, eventID pgtype.UUID) ([]PublicGetAvailableTicketTypesRow, error) {
 	rows, err := q.db.Query(ctx, publicGetAvailableTicketTypes, eventID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []TicketType
+	var items []PublicGetAvailableTicketTypesRow
 	for rows.Next() {
-		var i TicketType
+		var i PublicGetAvailableTicketTypesRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.EventID,
 			&i.Name,
-			&i.Status,
 			&i.Description,
 			&i.Price,
 			&i.Currency,
-			&i.Quantity,
-			&i.QuantitySold,
 			&i.IsFree,
-			&i.SaleStarts,
-			&i.SaleEnds,
-			&i.CreatedAt,
-			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}

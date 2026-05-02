@@ -71,13 +71,35 @@ func (q *Queries) CreateTicketType(ctx context.Context, arg CreateTicketTypePara
 	return i, err
 }
 
-const deleteTicketType = `-- name: DeleteTicketType :exec
-DELETE FROM "ticket_types" WHERE "id" = $1
+const deleteTicketType = `-- name: DeleteTicketType :one
+UPDATE "ticket_types"
+SET
+    "status"     = 'DELETED',
+    "updated_at" = NOW()
+WHERE "id" = $1
+RETURNING id, event_id, name, status, description, price, currency, quantity, quantity_sold, is_free, sale_starts, sale_ends, created_at, updated_at
 `
 
-func (q *Queries) DeleteTicketType(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, deleteTicketType, id)
-	return err
+func (q *Queries) DeleteTicketType(ctx context.Context, id pgtype.UUID) (TicketType, error) {
+	row := q.db.QueryRow(ctx, deleteTicketType, id)
+	var i TicketType
+	err := row.Scan(
+		&i.ID,
+		&i.EventID,
+		&i.Name,
+		&i.Status,
+		&i.Description,
+		&i.Price,
+		&i.Currency,
+		&i.Quantity,
+		&i.QuantitySold,
+		&i.IsFree,
+		&i.SaleStarts,
+		&i.SaleEnds,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const getTicketTypeById = `-- name: GetTicketTypeById :one

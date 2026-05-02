@@ -192,21 +192,7 @@ func (s *TicketTypeService) GetTicketTypeByID(ctx context.Context, ticketTypeID 
 	return ticketType, nil
 }
 
-func (s *TicketTypeService) GetTicketTypesByEvent(ctx context.Context, eventID string) ([]repository.TicketType, error) {
-	parsedID, err := uuid.Parse(eventID)
-	if err != nil {
-		return nil, response.ErrInvalidInput
-	}
-
-	ticketTypes, err := s.db.OrganiserGetTicketTypesByEvent(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
-	if err != nil {
-		return nil, response.ErrDatabase
-	}
-
-	return ticketTypes, nil
-}
-
-func (s *TicketTypeService) GetAvailableTicketTypes(ctx context.Context, eventID string) ([]repository.TicketType, error) {
+func (s *TicketTypeService) GetAvailableTicketTypes(ctx context.Context, eventID string) ([]repository.PublicGetAvailableTicketTypesRow, error) {
 	parsedID, err := uuid.Parse(eventID)
 	if err != nil {
 		return nil, response.ErrInvalidInput
@@ -319,17 +305,17 @@ func (s *TicketTypeService) UpdateTicketType(ctx context.Context, ticketTypeID, 
 	return updatedTicketType, nil
 }
 
-func (s *TicketTypeService) DeleteTicketType(ctx context.Context, ticketTypeID, organiserID string) error {
+func (s *TicketTypeService) DeleteTicketType(ctx context.Context, ticketTypeID, organiserID string) (repository.TicketType, error) {
 	// parse ticket type ID
 	parsedTicketTypeID, err := uuid.Parse(ticketTypeID)
 	if err != nil {
-		return response.ErrNotFound
+		return repository.TicketType{}, response.ErrNotFound
 	}
 
 	// parse organiser ID
 	parsedOrganiserID, err := uuid.Parse(organiserID)
 	if err != nil {
-		return response.ErrNotFound
+		return repository.TicketType{}, response.ErrNotFound
 	}
 
 	// fetch ticket type
@@ -338,27 +324,28 @@ func (s *TicketTypeService) DeleteTicketType(ctx context.Context, ticketTypeID, 
 		Valid: true,
 	})
 	if err != nil {
-		return response.ErrNotFound
+		return repository.TicketType{}, response.ErrNotFound
 	}
 
 	// fetch event
 	event, err := s.db.GetEventById(ctx, ticketType.EventID)
 	if err != nil {
-		return response.ErrNotFound
+		return repository.TicketType{}, response.ErrNotFound
 	}
 
 	// ownership check
 	if event.OrganiserID.Bytes != parsedOrganiserID {
-		return response.ErrNotFound
+		return repository.TicketType{}, response.ErrNotFound
 	}
 
 	// delete
-	if err := s.db.DeleteTicketType(ctx, pgtype.UUID{
+	deletedTicketType, err := s.db.DeleteTicketType(ctx, pgtype.UUID{
 		Bytes: parsedTicketTypeID,
 		Valid: true,
-	}); err != nil {
-		return response.ErrDatabase
+	})
+	if err != nil {
+		return repository.TicketType{}, response.ErrDatabase
 	}
 
-	return nil
+	return deletedTicketType, nil
 }

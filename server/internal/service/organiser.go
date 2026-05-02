@@ -183,18 +183,18 @@ func (s *OrganiserService) GetEventOrderStatusBreakdown(ctx context.Context, org
 	return breakdown, nil
 }
 
-func (s *OrganiserService) GetEventTicketsSold(ctx context.Context, organiserID, eventID string) (interface{}, error) {
+func (s *OrganiserService) GetEventTicketsSold(ctx context.Context, organiserID, eventID string) (int64, error) {
 	parsedEventID, err := uuid.Parse(eventID)
 	if err != nil {
-		return nil, response.ErrInvalidInput
+		return 0, response.ErrInvalidInput
 	}
 
 	sold, err := s.db.GetEventTicketsSold(ctx, pgtype.UUID{Bytes: parsedEventID, Valid: true})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return int64(0), nil
+			return 0, nil
 		}
-		return nil, response.ErrDatabase
+		return 0, response.ErrDatabase
 	}
 
 	return sold, nil

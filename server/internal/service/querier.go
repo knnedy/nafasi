@@ -47,11 +47,10 @@ type EventQuerier interface {
 type TicketTypeQuerier interface {
 	CreateTicketType(ctx context.Context, arg repository.CreateTicketTypeParams) (repository.TicketType, error)
 	GetTicketTypeById(ctx context.Context, id pgtype.UUID) (repository.TicketType, error)
-	OrganiserGetTicketTypesByEvent(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error)
-	PublicGetAvailableTicketTypes(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error)
+	PublicGetAvailableTicketTypes(ctx context.Context, eventID pgtype.UUID) ([]repository.PublicGetAvailableTicketTypesRow, error)
 	GetEventById(ctx context.Context, id pgtype.UUID) (repository.Event, error)
 	UpdateTicketType(ctx context.Context, arg repository.UpdateTicketTypeParams) (repository.TicketType, error)
-	DeleteTicketType(ctx context.Context, id pgtype.UUID) error
+	DeleteTicketType(ctx context.Context, id pgtype.UUID) (repository.TicketType, error)
 }
 
 type PaymentQuerier interface {
@@ -89,7 +88,7 @@ type OrganiserQuerier interface {
 	GetEventOrdersCount(ctx context.Context, eventID pgtype.UUID) (int64, error)
 	GetEventCheckedInCount(ctx context.Context, eventID pgtype.UUID) (int64, error)
 	GetEventOrderStatusBreakdown(ctx context.Context, eventID pgtype.UUID) ([]repository.GetEventOrderStatusBreakdownRow, error)
-	GetEventTicketsSold(ctx context.Context, eventID pgtype.UUID) (interface{}, error)
+	GetEventTicketsSold(ctx context.Context, eventID pgtype.UUID) (int64, error)
 	GetRecentEventOrders(ctx context.Context, arg repository.GetRecentEventOrdersParams) ([]repository.Order, error)
 }
 

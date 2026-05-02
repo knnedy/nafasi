@@ -85,15 +85,15 @@ func (q *Queries) GetEventRevenue(ctx context.Context, eventID pgtype.UUID) (int
 }
 
 const getEventTicketsSold = `-- name: GetEventTicketsSold :one
-SELECT COALESCE(SUM(quantity), 0) AS tickets_sold
+SELECT COALESCE(SUM(quantity), 0)::BIGINT AS tickets_sold
 FROM orders
 WHERE event_id = $1
 AND status = 'PAID'
 `
 
-func (q *Queries) GetEventTicketsSold(ctx context.Context, eventID pgtype.UUID) (interface{}, error) {
+func (q *Queries) GetEventTicketsSold(ctx context.Context, eventID pgtype.UUID) (int64, error) {
 	row := q.db.QueryRow(ctx, getEventTicketsSold, eventID)
-	var tickets_sold interface{}
+	var tickets_sold int64
 	err := row.Scan(&tickets_sold)
 	return tickets_sold, err
 }

@@ -281,35 +281,6 @@ func TestGetTicketTypeByID_NotFound(t *testing.T) {
 	db.AssertExpectations(t)
 }
 
-// GetTicketTypesByEvent
-func TestGetTicketTypesByEvent_Success(t *testing.T) {
-	db := new(mock.TicketTypeQueries)
-	svc := newTestTicketTypeService(db)
-
-	eventID := makeEventID()
-
-	db.On("OrganiserGetTicketTypesByEvent", mocktestify.Anything, eventID).
-		Return([]repository.TicketType{
-			{Name: "VIP"},
-			{Name: "Regular"},
-		}, nil)
-
-	ticketTypes, err := svc.GetTicketTypesByEvent(context.Background(), uuid.UUID(eventID.Bytes).String())
-
-	assert.NoError(t, err)
-	assert.Len(t, ticketTypes, 2)
-	db.AssertExpectations(t)
-}
-
-func TestGetTicketTypesByEvent_InvalidID(t *testing.T) {
-	db := new(mock.TicketTypeQueries)
-	svc := newTestTicketTypeService(db)
-
-	_, err := svc.GetTicketTypesByEvent(context.Background(), "not-a-uuid")
-
-	assert.ErrorIs(t, err, response.ErrInvalidInput)
-}
-
 // UpdateTicketType
 func TestUpdateTicketType_Success(t *testing.T) {
 	db := new(mock.TicketTypeQueries)
@@ -389,11 +360,14 @@ func TestDeleteTicketType_Success(t *testing.T) {
 		Return(makeEventWithOrganiser(organiserID), nil)
 
 	db.On("DeleteTicketType", mocktestify.Anything, ticketTypeID).
-		Return(nil)
+		Return(repository.TicketType{
+			ID: ticketTypeID,
+		}, nil)
 
-	err := svc.DeleteTicketType(context.Background(), uuid.UUID(ticketTypeID.Bytes).String(), organiserID)
+	deletedEvent, err := svc.DeleteTicketType(context.Background(), uuid.UUID(ticketTypeID.Bytes).String(), organiserID)
 
 	assert.NoError(t, err)
+	assert.Equal(t, ticketTypeID, deletedEvent.ID)
 	db.AssertExpectations(t)
 }
 
@@ -411,7 +385,7 @@ func TestDeleteTicketType_NotOwner(t *testing.T) {
 	db.On("GetEventById", mocktestify.Anything, eventID).
 		Return(makeEventWithOrganiser(realOwner), nil)
 
-	err := svc.DeleteTicketType(context.Background(), uuid.UUID(ticketTypeID.Bytes).String(), makeOrganiserID())
+	_, err := svc.DeleteTicketType(context.Background(), uuid.UUID(ticketTypeID.Bytes).String(), makeOrganiserID())
 
 	assert.ErrorIs(t, err, response.ErrNotFound)
 	db.AssertExpectations(t)
@@ -426,7 +400,7 @@ func TestDeleteTicketType_NotFound(t *testing.T) {
 	db.On("GetTicketTypeById", mocktestify.Anything, ticketTypeID).
 		Return(repository.TicketType{}, errors.New("not found"))
 
-	err := svc.DeleteTicketType(context.Background(), uuid.UUID(ticketTypeID.Bytes).String(), makeOrganiserID())
+	_, err := svc.DeleteTicketType(context.Background(), uuid.UUID(ticketTypeID.Bytes).String(), makeOrganiserID())
 
 	assert.ErrorIs(t, err, response.ErrNotFound)
 	db.AssertExpectations(t)
@@ -447,9 +421,9 @@ func TestDeleteTicketType_DatabaseError(t *testing.T) {
 		Return(makeEventWithOrganiser(organiserID), nil)
 
 	db.On("DeleteTicketType", mocktestify.Anything, ticketTypeID).
-		Return(errors.New("db error"))
+		Return(repository.TicketType{}, response.ErrDatabase)
 
-	err := svc.DeleteTicketType(context.Background(), uuid.UUID(ticketTypeID.Bytes).String(), organiserID)
+	_, err := svc.DeleteTicketType(context.Background(), uuid.UUID(ticketTypeID.Bytes).String(), organiserID)
 
 	assert.ErrorIs(t, err, response.ErrDatabase)
 	db.AssertExpectations(t)

@@ -36,6 +36,16 @@ type TicketTypeResponse struct {
 	UpdatedAt    string  `json:"updated_at"`
 }
 
+type AvailableTicketTypesRsponse struct {
+	ID          string  `json:"id"`
+	EventID     string  `json:"event_id"`
+	Name        string  `json:"name"`
+	Description *string `json:"description,omitempty"`
+	Price       int64   `json:"price"`
+	Currency    string  `json:"currency"`
+	IsFree      bool    `json:"is_free"`
+}
+
 func toTicketTypeResponse(ticketType repository.TicketType) TicketTypeResponse {
 	var description, saleStarts, saleEnds *string
 
@@ -66,6 +76,24 @@ func toTicketTypeResponse(ticketType repository.TicketType) TicketTypeResponse {
 		SaleEnds:     saleEnds,
 		CreatedAt:    ticketType.CreatedAt.Time.Format(time.RFC3339),
 		UpdatedAt:    ticketType.UpdatedAt.Time.Format(time.RFC3339),
+	}
+}
+
+func toAvailableTicketTypeResponse(ticketType repository.PublicGetAvailableTicketTypesRow) AvailableTicketTypesRsponse {
+	var description *string
+
+	if ticketType.Description.Valid {
+		description = &ticketType.Description.String
+	}
+
+	return AvailableTicketTypesRsponse{
+		ID:          ticketType.ID.String(),
+		EventID:     ticketType.EventID.String(),
+		Name:        ticketType.Name,
+		Description: description,
+		Price:       ticketType.Price,
+		Currency:    ticketType.Currency,
+		IsFree:      ticketType.IsFree,
 	}
 }
 
@@ -141,37 +169,6 @@ func (h *TicketTypeHandler) GetById(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toTicketTypeResponse(ticketType))
 }
 
-// GetByEvent godoc
-// @Summary Get ticket types by event
-// @Description Returns all ticket types for a given event
-// @Tags TicketTypes
-// @Produce json
-// @Param eventID path string true "Event ID"
-// @Success 200 {array} TicketTypeResponse
-// @Failure 404 {object} response.ErrorResponse
-// @Failure 500 {object} response.ErrorResponse
-// @Router /events/{eventID}/ticket-types [get]
-func (h *TicketTypeHandler) GetByEvent(w http.ResponseWriter, r *http.Request) {
-	eventID := chi.URLParam(r, "eventID")
-	if eventID == "" {
-		response.WriteError(w, response.ErrNotFound)
-		return
-	}
-
-	ticketTypes, err := h.ticketType.GetTicketTypesByEvent(r.Context(), eventID)
-	if err != nil {
-		response.WriteError(w, err)
-		return
-	}
-
-	var resp []TicketTypeResponse
-	for _, tt := range ticketTypes {
-		resp = append(resp, toTicketTypeResponse(tt))
-	}
-
-	response.WriteJSON(w, http.StatusOK, resp)
-}
-
 // GetAvailableByEvent godoc
 // @Summary Get available ticket types
 // @Description Returns ticket types that are currently available for purchase
@@ -195,9 +192,9 @@ func (h *TicketTypeHandler) GetAvailableByEvent(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	var resp []TicketTypeResponse
+	var resp []AvailableTicketTypesRsponse
 	for _, tt := range ticketTypes {
-		resp = append(resp, toTicketTypeResponse(tt))
+		resp = append(resp, toAvailableTicketTypeResponse(tt))
 	}
 
 	response.WriteJSON(w, http.StatusOK, resp)
@@ -256,7 +253,7 @@ func (h *TicketTypeHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Security BearerAuth
 // @Param eventID path string true "Event ID"
 // @Param ticketTypeID path string true "Ticket Type ID"
-// @Success 200 {object} map[string]string
+// @Success 204 "No Content"
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 404 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
@@ -275,10 +272,10 @@ func (h *TicketTypeHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.ticketType.DeleteTicketType(r.Context(), ticketTypeID, userID); err != nil {
+	if _, err := h.ticketType.DeleteTicketType(r.Context(), ticketTypeID, userID); err != nil {
 		response.WriteError(w, err)
 		return
 	}
 
-	response.WriteJSON(w, http.StatusOK, nil)
+	w.WriteHeader(http.StatusNoContent)
 }

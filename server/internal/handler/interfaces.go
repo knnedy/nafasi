@@ -40,10 +40,9 @@ type EventServicer interface {
 type TicketTypeServicer interface {
 	CreateTicketType(ctx context.Context, eventID, organiserID string, input service.CreateTicketTypeInput) (repository.TicketType, error)
 	GetTicketTypeByID(ctx context.Context, ticketTypeID string) (repository.TicketType, error)
-	GetTicketTypesByEvent(ctx context.Context, eventID string) ([]repository.TicketType, error)
-	GetAvailableTicketTypes(ctx context.Context, eventID string) ([]repository.TicketType, error)
+	GetAvailableTicketTypes(ctx context.Context, eventID string) ([]repository.PublicGetAvailableTicketTypesRow, error)
 	UpdateTicketType(ctx context.Context, ticketTypeID, organiserID string, input service.UpdateTicketTypeInput) (repository.TicketType, error)
-	DeleteTicketType(ctx context.Context, ticketTypeID, organiserID string) error
+	DeleteTicketType(ctx context.Context, ticketTypeID string, organiserID string) (repository.TicketType, error)
 }
 
 type PaymentServicer interface {

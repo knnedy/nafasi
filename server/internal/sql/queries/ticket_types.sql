@@ -31,5 +31,10 @@ SET
 WHERE "id" = $1
 RETURNING *;
 
--- name: DeleteTicketType :exec
-DELETE FROM "ticket_types" WHERE "id" = $1;
+-- name: DeleteTicketType :one
+UPDATE "ticket_types"
+SET
+    "status"     = 'DELETED',
+    "updated_at" = NOW()
+WHERE "id" = $1
+RETURNING *;

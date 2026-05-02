@@ -25,14 +25,9 @@ func (m *TicketTypeQueries) GetTicketTypeById(ctx context.Context, id pgtype.UUI
 	return args.Get(0).(repository.TicketType), args.Error(1)
 }
 
-func (m *TicketTypeQueries) OrganiserGetTicketTypesByEvent(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error) {
+func (m *TicketTypeQueries) PublicGetAvailableTicketTypes(ctx context.Context, eventID pgtype.UUID) ([]repository.PublicGetAvailableTicketTypesRow, error) {
 	args := m.Called(ctx, eventID)
-	return args.Get(0).([]repository.TicketType), args.Error(1)
-}
-
-func (m *TicketTypeQueries) PublicGetAvailableTicketTypes(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error) {
-	args := m.Called(ctx, eventID)
-	return args.Get(0).([]repository.TicketType), args.Error(1)
+	return args.Get(0).([]repository.PublicGetAvailableTicketTypesRow), args.Error(1)
 }
 
 func (m *TicketTypeQueries) GetEventById(ctx context.Context, id pgtype.UUID) (repository.Event, error) {
@@ -45,7 +40,7 @@ func (m *TicketTypeQueries) UpdateTicketType(ctx context.Context, arg repository
 	return args.Get(0).(repository.TicketType), args.Error(1)
 }
 
-func (m *TicketTypeQueries) DeleteTicketType(ctx context.Context, id pgtype.UUID) error {
+func (m *TicketTypeQueries) DeleteTicketType(ctx context.Context, id pgtype.UUID) (repository.TicketType, error) {
 	args := m.Called(ctx, id)
-	return args.Error(0)
+	return args.Get(0).(repository.TicketType), args.Error(1)
 }

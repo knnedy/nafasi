@@ -35,7 +35,7 @@ WHERE event_id = $1
 GROUP BY status;
 
 -- name: GetEventTicketsSold :one
-SELECT COALESCE(SUM(quantity), 0) AS tickets_sold
+SELECT COALESCE(SUM(quantity), 0)::BIGINT AS tickets_sold
 FROM orders
 WHERE event_id = $1
 AND status = 'PAID';

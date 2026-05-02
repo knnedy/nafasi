@@ -195,53 +195,6 @@ func TestGetTicketTypeByIDHandler_NotFound(t *testing.T) {
 	svc.AssertExpectations(t)
 }
 
-// GetByEvent
-func TestGetTicketTypesByEventHandler_Success(t *testing.T) {
-	svc := new(mock.TicketTypeService)
-	h := handler.NewTicketTypeHandler(svc)
-
-	eventID := uuid.New().String()
-	parsedEventID, _ := uuid.Parse(eventID)
-
-	svc.On("GetTicketTypesByEvent", mocktestify.Anything, eventID).
-		Return([]repository.TicketType{
-			makeTicketTypeResponse(pgtype.UUID{Bytes: parsedEventID, Valid: true}),
-			makeTicketTypeResponse(pgtype.UUID{Bytes: parsedEventID, Valid: true}),
-		}, nil)
-
-	w := httptest.NewRecorder()
-	r := withChiParam(
-		httptest.NewRequest(http.MethodGet, "/api/v1/events/"+eventID+"/ticket-types", nil),
-		"eventID", eventID,
-	)
-
-	h.GetByEvent(w, r)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-	svc.AssertExpectations(t)
-}
-
-func TestGetTicketTypesByEventHandler_Empty(t *testing.T) {
-	svc := new(mock.TicketTypeService)
-	h := handler.NewTicketTypeHandler(svc)
-
-	eventID := uuid.New().String()
-
-	svc.On("GetTicketTypesByEvent", mocktestify.Anything, eventID).
-		Return([]repository.TicketType{}, nil)
-
-	w := httptest.NewRecorder()
-	r := withChiParam(
-		httptest.NewRequest(http.MethodGet, "/api/v1/events/"+eventID+"/ticket-types", nil),
-		"eventID", eventID,
-	)
-
-	h.GetByEvent(w, r)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-	svc.AssertExpectations(t)
-}
-
 // GetAvailableByEvent
 func TestGetAvailableTicketTypesHandler_Success(t *testing.T) {
 	svc := new(mock.TicketTypeService)
@@ -251,8 +204,15 @@ func TestGetAvailableTicketTypesHandler_Success(t *testing.T) {
 	parsedEventID, _ := uuid.Parse(eventID)
 
 	svc.On("GetAvailableTicketTypes", mocktestify.Anything, eventID).
-		Return([]repository.TicketType{
-			makeTicketTypeResponse(pgtype.UUID{Bytes: parsedEventID, Valid: true}),
+		Return([]repository.PublicGetAvailableTicketTypesRow{
+			{
+				ID:       pgtype.UUID{Bytes: uuid.New(), Valid: true},
+				EventID:  pgtype.UUID{Bytes: parsedEventID, Valid: true},
+				Name:     "VIP",
+				Price:    1000,
+				Currency: "KES",
+				IsFree:   false,
+			},
 		}, nil)
 
 	w := httptest.NewRecorder()
@@ -381,7 +341,11 @@ func TestDeleteTicketTypeHandler_Success(t *testing.T) {
 	ticketTypeID := uuid.New().String()
 
 	svc.On("DeleteTicketType", mocktestify.Anything, ticketTypeID, organiserID).
-		Return(nil)
+		Return(repository.TicketType{
+			ID:      pgtype.UUID{Bytes: uuid.New(), Valid: true},
+			EventID: pgtype.UUID{Bytes: uuid.New(), Valid: true},
+			Name:    "VIP",
+		}, nil)
 
 	w := httptest.NewRecorder()
 	r := withUserID(
@@ -397,7 +361,7 @@ func TestDeleteTicketTypeHandler_Success(t *testing.T) {
 
 	h.Delete(w, r)
 
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusNoContent, w.Code)
 	svc.AssertExpectations(t)
 }
 
@@ -410,7 +374,7 @@ func TestDeleteTicketTypeHandler_NotFound(t *testing.T) {
 	ticketTypeID := uuid.New().String()
 
 	svc.On("DeleteTicketType", mocktestify.Anything, ticketTypeID, organiserID).
-		Return(response.ErrNotFound)
+		Return(repository.TicketType{}, response.ErrNotFound)
 
 	w := httptest.NewRecorder()
 	r := withUserID(
@@ -439,7 +403,7 @@ func TestDeleteTicketTypeHandler_Forbidden(t *testing.T) {
 	ticketTypeID := uuid.New().String()
 
 	svc.On("DeleteTicketType", mocktestify.Anything, ticketTypeID, organiserID).
-		Return(response.ErrForbidden)
+		Return(repository.TicketType{}, response.ErrForbidden)
 
 	w := httptest.NewRecorder()
 	r := withUserID(
