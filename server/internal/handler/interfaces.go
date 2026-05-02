@@ -33,7 +33,8 @@ type EventServicer interface {
 	GetUpcomingEvents(ctx context.Context) ([]repository.Event, error)
 	UpdateEvent(ctx context.Context, eventID string, organiserID string, input service.UpdateEventInput) (repository.Event, error)
 	UpdateEventStatus(ctx context.Context, eventID string, organiserID string, input service.UpdateEventStatusInput) (repository.Event, error)
-	DeleteEvent(ctx context.Context, eventID string, organiserID string) error
+	CancelEvent(ctx context.Context, eventID string, organiserID string) (repository.Event, error)
+	DeleteEvent(ctx context.Context, eventID string, organiserID string) (repository.Event, error)
 }
 
 type TicketTypeServicer interface {

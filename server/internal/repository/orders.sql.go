@@ -74,25 +74,9 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order
 }
 
 const deleteOrder = `-- name: DeleteOrder :exec
-
-
-
 DELETE FROM "orders" WHERE "id" = $1
 `
 
-// -- name: GetTotalRevenue :one
-// SELECT COALESCE(SUM("total_amount"), 0) AS total_revenue
-// FROM "orders"
-// WHERE "status" = 'PAID';
-// -- name: GetLatestOrders :many
-// SELECT * FROM "orders"
-// ORDER BY "created_at" DESC
-// LIMIT $1;
-// -- name: GetOrdersByStatus :many
-// SELECT * FROM "orders"
-// WHERE "status" = $1
-// ORDER BY "created_at" DESC
-// LIMIT $2 OFFSET $3;
 func (q *Queries) DeleteOrder(ctx context.Context, id pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, deleteOrder, id)
 	return err

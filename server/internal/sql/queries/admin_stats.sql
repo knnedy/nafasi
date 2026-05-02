@@ -1,5 +1,5 @@
 -- name: AdminGetTotalRevenue :one
-SELECT COALESCE(SUM("total_amount"), 0) AS total_revenue
+SELECT COALESCE(SUM("total_amount"), 0)::BIGINT AS total_revenue
 FROM "orders"
 WHERE "status" = 'PAID';
 

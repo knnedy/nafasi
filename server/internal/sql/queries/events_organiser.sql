@@ -1,8 +1,7 @@
--- name: OrganiserGetEvents :many
+-- name: GetEventsByOrganiser :many
 SELECT * FROM "events" 
 WHERE "organiser_id" = $1
 ORDER BY "created_at" DESC;
-
 
 -- name: UpdateEventStatus :one
 UPDATE "events"

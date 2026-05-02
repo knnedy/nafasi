@@ -36,23 +36,21 @@ type EventQuerier interface {
 	GetEventById(ctx context.Context, id pgtype.UUID) (repository.Event, error)
 	GetEventBySlug(ctx context.Context, slug string) (repository.Event, error)
 	GetEventsByOrganiser(ctx context.Context, organiserID pgtype.UUID) ([]repository.Event, error)
-	GetPublishedEvents(ctx context.Context) ([]repository.Event, error)
-	GetUpcomingEvents(ctx context.Context) ([]repository.Event, error)
+	PublicGetPublishedEvents(ctx context.Context) ([]repository.Event, error)
+	PublicGetUpcomingEvents(ctx context.Context) ([]repository.Event, error)
 	UpdateEvent(ctx context.Context, arg repository.UpdateEventParams) (repository.Event, error)
 	UpdateEventStatus(ctx context.Context, arg repository.UpdateEventStatusParams) (repository.Event, error)
 	CancelEvent(ctx context.Context, id pgtype.UUID) (repository.Event, error)
-	DeleteEvent(ctx context.Context, id pgtype.UUID) error
+	DeleteEvent(ctx context.Context, id pgtype.UUID) (repository.Event, error)
 }
 
 type TicketTypeQuerier interface {
 	CreateTicketType(ctx context.Context, arg repository.CreateTicketTypeParams) (repository.TicketType, error)
 	GetTicketTypeById(ctx context.Context, id pgtype.UUID) (repository.TicketType, error)
-	GetTicketTypesByEvent(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error)
-	GetAvailableTicketTypes(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error)
+	OrganiserGetTicketTypesByEvent(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error)
+	PublicGetAvailableTicketTypes(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error)
 	GetEventById(ctx context.Context, id pgtype.UUID) (repository.Event, error)
 	UpdateTicketType(ctx context.Context, arg repository.UpdateTicketTypeParams) (repository.TicketType, error)
-	IncrementQuantitySold(ctx context.Context, arg repository.IncrementQuantitySoldParams) (pgtype.UUID, error)
-	DecrementQuantitySold(ctx context.Context, arg repository.DecrementQuantitySoldParams) (pgtype.UUID, error)
 	DeleteTicketType(ctx context.Context, id pgtype.UUID) error
 }
 
@@ -75,37 +73,37 @@ type PaymentDB interface {
 }
 
 type CheckInQuerier interface {
-	GetOrderByQRCode(ctx context.Context, qrCode pgtype.Text) (repository.Order, error)
 	GetEventById(ctx context.Context, id pgtype.UUID) (repository.Event, error)
+	GetOrderByQRCode(ctx context.Context, qrCode pgtype.Text) (repository.Order, error)
 	CheckInOrder(ctx context.Context, id pgtype.UUID) (repository.Order, error)
 	GetCheckedInOrders(ctx context.Context, eventID pgtype.UUID) ([]repository.Order, error)
 }
 
 type AdminQuerier interface {
 	// user management
-	GetAllUsers(ctx context.Context, arg repository.GetAllUsersParams) ([]repository.User, error)
-	GetUsersByRole(ctx context.Context, arg repository.GetUsersByRoleParams) ([]repository.User, error)
 	GetUserById(ctx context.Context, id pgtype.UUID) (repository.User, error)
-	GetPendingOrganisers(ctx context.Context) ([]repository.User, error)
-	GetApprovedOrganisers(ctx context.Context) ([]repository.User, error)
-	GetBannedUsers(ctx context.Context) ([]repository.User, error)
-	UpdateUserVerification(ctx context.Context, arg repository.UpdateUserVerificationParams) (repository.User, error)
-	BanUser(ctx context.Context, arg repository.BanUserParams) (repository.User, error)
-	UnbanUser(ctx context.Context, id pgtype.UUID) (repository.User, error)
-	PromoteToAdmin(ctx context.Context, id pgtype.UUID) (repository.User, error)
-	AdminDeleteUser(ctx context.Context, id pgtype.UUID) error
+	AdminGetAllUsers(ctx context.Context, arg repository.AdminGetAllUsersParams) ([]repository.User, error)
+	AdminGetUsersByRole(ctx context.Context, arg repository.AdminGetUsersByRoleParams) ([]repository.User, error)
+	AdminGetUsersByStatus(ctx context.Context, arg repository.AdminGetUsersByStatusParams) ([]repository.User, error)
+	AdminGetUserById(ctx context.Context, id pgtype.UUID) (repository.User, error)
+	AdminGetPendingOrganisers(ctx context.Context) ([]repository.User, error)
+	AdminGetApprovedOrganisers(ctx context.Context) ([]repository.User, error)
+	AdminUpdateUserVerification(ctx context.Context, arg repository.AdminUpdateUserVerificationParams) (repository.User, error)
+	AdminBanUser(ctx context.Context, id pgtype.UUID) (repository.User, error)
+	AdminUnbanUser(ctx context.Context, id pgtype.UUID) (repository.User, error)
+	AdminSetUserRoleToAdmin(ctx context.Context, id pgtype.UUID) (repository.User, error)
+	AdminDeleteUser(ctx context.Context, id pgtype.UUID) (repository.User, error)
 
 	// event management
+	AdminGetAllEvents(ctx context.Context, arg repository.AdminGetAllEventsParams) ([]repository.AdminGetAllEventsRow, error)
+	AdminGetEventsByStatus(ctx context.Context, arg repository.AdminGetEventsByStatusParams) ([]repository.AdminGetEventsByStatusRow, error)
 	AdminCancelEvent(ctx context.Context, id pgtype.UUID) (repository.Event, error)
-	AdminDeleteEvent(ctx context.Context, id pgtype.UUID) error
+	AdminDeleteEvent(ctx context.Context, id pgtype.UUID) (repository.Event, error)
 
 	// order management
 	AdminGetOrdersByStatus(ctx context.Context, arg repository.AdminGetOrdersByStatusParams) ([]repository.Order, error)
-	AdminGetLatestOrders(ctx context.Context, limit int32) ([]repository.Order, error)
-	AdminGetTotalRevenue(ctx context.Context) (pgtype.Numeric, error)
+	AdminGetRecentOrdersWithDetails(ctx context.Context, limit int32) ([]repository.AdminGetRecentOrdersWithDetailsRow, error)
+	AdminGetTotalRevenue(ctx context.Context) (int64, error)
 
 	AdminGetPlatformStats(ctx context.Context) (repository.AdminGetPlatformStatsRow, error)
-	AdminGetRecentOrdersWithDetails(ctx context.Context, limit int32) ([]repository.AdminGetRecentOrdersWithDetailsRow, error)
-	AdminGetAllEvents(ctx context.Context, arg repository.AdminGetAllEventsParams) ([]repository.AdminGetAllEventsRow, error)
-	AdminGetEventsByStatus(ctx context.Context, arg repository.AdminGetEventsByStatusParams) ([]repository.AdminGetEventsByStatusRow, error)
 }

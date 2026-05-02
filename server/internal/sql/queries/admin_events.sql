@@ -25,12 +25,13 @@ SET
 WHERE "id" = $1
 RETURNING *;
 
--- name: AdminDeleteEvent :exec
+-- name: AdminDeleteEvent :one
 UPDATE "events"
 SET
     "status"     = 'DELETED',
     "updated_at" = NOW()
-WHERE "id" = $1;
+WHERE "id" = $1
+RETURNING *;
 
 
 

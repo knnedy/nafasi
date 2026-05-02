@@ -25,12 +25,12 @@ func (m *TicketTypeQueries) GetTicketTypeById(ctx context.Context, id pgtype.UUI
 	return args.Get(0).(repository.TicketType), args.Error(1)
 }
 
-func (m *TicketTypeQueries) GetTicketTypesByEvent(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error) {
+func (m *TicketTypeQueries) OrganiserGetTicketTypesByEvent(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error) {
 	args := m.Called(ctx, eventID)
 	return args.Get(0).([]repository.TicketType), args.Error(1)
 }
 
-func (m *TicketTypeQueries) GetAvailableTicketTypes(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error) {
+func (m *TicketTypeQueries) PublicGetAvailableTicketTypes(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error) {
 	args := m.Called(ctx, eventID)
 	return args.Get(0).([]repository.TicketType), args.Error(1)
 }

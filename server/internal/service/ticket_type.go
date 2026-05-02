@@ -198,7 +198,7 @@ func (s *TicketTypeService) GetTicketTypesByEvent(ctx context.Context, eventID s
 		return nil, response.ErrInvalidInput
 	}
 
-	ticketTypes, err := s.db.GetTicketTypesByEvent(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
+	ticketTypes, err := s.db.OrganiserGetTicketTypesByEvent(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
 	if err != nil {
 		return nil, response.ErrDatabase
 	}
@@ -212,7 +212,7 @@ func (s *TicketTypeService) GetAvailableTicketTypes(ctx context.Context, eventID
 		return nil, response.ErrInvalidInput
 	}
 
-	ticketTypes, err := s.db.GetAvailableTicketTypes(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
+	ticketTypes, err := s.db.PublicGetAvailableTicketTypes(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
 	if err != nil {
 		return nil, response.ErrDatabase
 	}
@@ -221,7 +221,6 @@ func (s *TicketTypeService) GetAvailableTicketTypes(ctx context.Context, eventID
 }
 
 func (s *TicketTypeService) UpdateTicketType(ctx context.Context, ticketTypeID, organiserID string, input UpdateTicketTypeInput) (repository.TicketType, error) {
-
 	// validate input
 	if err := s.validate.Struct(input); err != nil {
 		return repository.TicketType{}, formatValidationError(err, s.trans)

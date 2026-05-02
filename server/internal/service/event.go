@@ -172,7 +172,7 @@ func (s *EventService) GetEventsByOrganiser(ctx context.Context, organiserID str
 }
 
 func (s *EventService) GetPublishedEvents(ctx context.Context) ([]repository.Event, error) {
-	events, err := s.db.GetPublishedEvents(ctx)
+	events, err := s.db.PublicGetPublishedEvents(ctx)
 	if err != nil {
 		return nil, response.ErrDatabase
 	}
@@ -181,7 +181,7 @@ func (s *EventService) GetPublishedEvents(ctx context.Context) ([]repository.Eve
 }
 
 func (s *EventService) GetUpcomingEvents(ctx context.Context) ([]repository.Event, error) {
-	events, err := s.db.GetUpcomingEvents(ctx)
+	events, err := s.db.PublicGetUpcomingEvents(ctx)
 	if err != nil {
 		return nil, response.ErrDatabase
 	}
@@ -316,30 +316,31 @@ func (s *EventService) CancelEvent(ctx context.Context, eventID, organiserID str
 	return cancelledEvent, nil
 }
 
-func (s *EventService) DeleteEvent(ctx context.Context, eventID, organiserID string) error {
+func (s *EventService) DeleteEvent(ctx context.Context, eventID, organiserID string) (repository.Event, error) {
 	parsedEventID, err := uuid.Parse(eventID)
 	if err != nil {
-		return response.ErrNotFound
+		return repository.Event{}, response.ErrNotFound
 	}
 
 	// verify event exists and belongs to organiser
 	event, err := s.db.GetEventById(ctx, pgtype.UUID{Bytes: parsedEventID, Valid: true})
 	if err != nil {
-		return response.ErrNotFound
+		return repository.Event{}, response.ErrNotFound
 	}
 
 	parsedOrganiserID, err := uuid.Parse(organiserID)
 	if err != nil {
-		return response.ErrNotFound
+		return repository.Event{}, response.ErrNotFound
 	}
 
 	if event.OrganiserID.Bytes != parsedOrganiserID {
-		return response.ErrForbidden
+		return repository.Event{}, response.ErrForbidden
 	}
 
-	if err := s.db.DeleteEvent(ctx, pgtype.UUID{Bytes: parsedEventID, Valid: true}); err != nil {
-		return response.ErrDatabase
+	deletedEvent, err := s.db.DeleteEvent(ctx, pgtype.UUID{Bytes: parsedEventID, Valid: true})
+	if err != nil {
+		return repository.Event{}, response.ErrDatabase
 	}
 
-	return nil
+	return deletedEvent, nil
 }

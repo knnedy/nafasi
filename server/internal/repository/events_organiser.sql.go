@@ -11,14 +11,14 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const organiserGetEvents = `-- name: OrganiserGetEvents :many
+const getEventsByOrganiser = `-- name: GetEventsByOrganiser :many
 SELECT id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events" 
 WHERE "organiser_id" = $1
 ORDER BY "created_at" DESC
 `
 
-func (q *Queries) OrganiserGetEvents(ctx context.Context, organiserID pgtype.UUID) ([]Event, error) {
-	rows, err := q.db.Query(ctx, organiserGetEvents, organiserID)
+func (q *Queries) GetEventsByOrganiser(ctx context.Context, organiserID pgtype.UUID) ([]Event, error) {
+	rows, err := q.db.Query(ctx, getEventsByOrganiser, organiserID)
 	if err != nil {
 		return nil, err
 	}

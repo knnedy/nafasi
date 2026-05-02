@@ -55,6 +55,11 @@ func (m *EventQueries) UpdateEventStatus(ctx context.Context, arg repository.Upd
 	return args.Get(0).(repository.Event), args.Error(1)
 }
 
+func (m *EventQueries) CancelEvent(ctx context.Context, id pgtype.UUID) (repository.Event, error) {
+	args := m.Called(ctx, id)
+	return args.Get(0).(repository.Event), args.Error(1)
+}
+
 func (m *EventQueries) DeleteEvent(ctx context.Context, id pgtype.UUID) error {
 	args := m.Called(ctx, id)
 	return args.Error(0)

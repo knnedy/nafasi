@@ -32,21 +32,5 @@ WHERE "event_id" = $1
 AND "status" = $2
 ORDER BY "created_at" DESC;
 
--- -- name: GetTotalRevenue :one
--- SELECT COALESCE(SUM("total_amount"), 0) AS total_revenue
--- FROM "orders"
--- WHERE "status" = 'PAID';
-
--- -- name: GetLatestOrders :many
--- SELECT * FROM "orders"
--- ORDER BY "created_at" DESC
--- LIMIT $1;
-
--- -- name: GetOrdersByStatus :many
--- SELECT * FROM "orders"
--- WHERE "status" = $1
--- ORDER BY "created_at" DESC
--- LIMIT $2 OFFSET $3;
-
 -- name: DeleteOrder :exec
 DELETE FROM "orders" WHERE "id" = $1;

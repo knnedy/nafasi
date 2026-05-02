@@ -3,7 +3,7 @@ SELECT * FROM "users"
 ORDER BY "created_at" DESC
 LIMIT $1 OFFSET $2;
 
--- name: GetUsersByRole :many
+-- name: AdminGetUsersByRole :many
 SELECT * FROM "users"
 WHERE "role" = $1
 ORDER BY "created_at" DESC
@@ -22,10 +22,11 @@ AND "is_verified" = TRUE
 AND "status" = 'ACTIVE'
 ORDER BY "created_at" DESC;
 
--- name: AdminGetBannedUsers :many
+-- name: AdminGetUsersByStatus :many
 SELECT * FROM "users"
-WHERE "is_banned" = TRUE
-ORDER BY "banned_at" DESC;
+WHERE "status" = $1
+ORDER BY "created_at" DESC
+LIMIT $2 OFFSET $3;
 
 -- name: AdminUpdateUserVerification :one
 UPDATE "users"
@@ -53,7 +54,7 @@ SET
 WHERE "id" = $1
 RETURNING *;
 
--- name: PromoteToAdmin :one
+-- name: AdminSetUserRoleToAdmin :one
 UPDATE "users"
 SET
     "role"       = 'ADMIN',
@@ -61,9 +62,10 @@ SET
 WHERE "id" = $1
 RETURNING *;
 
--- name: AdminDeleteUser :exec
+-- name: AdminDeleteUser :one
 UPDATE "users"
 SET
     "status"     = 'DELETED',
     "updated_at" = NOW()
-WHERE "id" = $1;
+WHERE "id" = $1
+RETURNING *;

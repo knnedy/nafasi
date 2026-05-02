@@ -182,7 +182,7 @@ func (s *AuthService) Login(ctx context.Context, input LoginInput) (AuthResult, 
 		return AuthResult{}, response.ErrInvalidCredentials
 	}
 
-	if user.IsBanned {
+	if user.Status == repository.UserStatusBANNED {
 		return AuthResult{}, response.ErrUserBanned
 	}
 
@@ -213,7 +213,7 @@ func (s *AuthService) RefreshAccessToken(ctx context.Context, refreshToken strin
 	}
 
 	// re-check ban and verification on refresh
-	if user.IsBanned {
+	if user.Status == repository.UserStatusBANNED {
 		return AuthResult{}, response.ErrUserBanned
 	}
 

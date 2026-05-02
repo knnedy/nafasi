@@ -40,17 +40,32 @@ func (q *Queries) AdminBanUser(ctx context.Context, id pgtype.UUID) (User, error
 	return i, err
 }
 
-const adminDeleteUser = `-- name: AdminDeleteUser :exec
+const adminDeleteUser = `-- name: AdminDeleteUser :one
 UPDATE "users"
 SET
     "status"     = 'DELETED',
     "updated_at" = NOW()
 WHERE "id" = $1
+RETURNING id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at
 `
 
-func (q *Queries) AdminDeleteUser(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, adminDeleteUser, id)
-	return err
+func (q *Queries) AdminDeleteUser(ctx context.Context, id pgtype.UUID) (User, error) {
+	row := q.db.QueryRow(ctx, adminDeleteUser, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Password,
+		&i.Role,
+		&i.IsVerified,
+		&i.Status,
+		&i.AvatarUrl,
+		&i.BannedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const adminGetAllUsers = `-- name: AdminGetAllUsers :many
@@ -136,44 +151,6 @@ func (q *Queries) AdminGetApprovedOrganisers(ctx context.Context) ([]User, error
 	return items, nil
 }
 
-const adminGetBannedUsers = `-- name: AdminGetBannedUsers :many
-SELECT id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at FROM "users"
-WHERE "is_banned" = TRUE
-ORDER BY "banned_at" DESC
-`
-
-func (q *Queries) AdminGetBannedUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.Query(ctx, adminGetBannedUsers)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []User
-	for rows.Next() {
-		var i User
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Email,
-			&i.Password,
-			&i.Role,
-			&i.IsVerified,
-			&i.Status,
-			&i.AvatarUrl,
-			&i.BannedAt,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const adminGetPendingOrganisers = `-- name: AdminGetPendingOrganisers :many
 SELECT id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at FROM "users"
 WHERE "role" = 'ORGANISER'
@@ -211,6 +188,124 @@ func (q *Queries) AdminGetPendingOrganisers(ctx context.Context) ([]User, error)
 		return nil, err
 	}
 	return items, nil
+}
+
+const adminGetUsersByRole = `-- name: AdminGetUsersByRole :many
+SELECT id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at FROM "users"
+WHERE "role" = $1
+ORDER BY "created_at" DESC
+LIMIT $2 OFFSET $3
+`
+
+type AdminGetUsersByRoleParams struct {
+	Role   UserRole
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) AdminGetUsersByRole(ctx context.Context, arg AdminGetUsersByRoleParams) ([]User, error) {
+	rows, err := q.db.Query(ctx, adminGetUsersByRole, arg.Role, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Email,
+			&i.Password,
+			&i.Role,
+			&i.IsVerified,
+			&i.Status,
+			&i.AvatarUrl,
+			&i.BannedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminGetUsersByStatus = `-- name: AdminGetUsersByStatus :many
+SELECT id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at FROM "users"
+WHERE "status" = $1
+ORDER BY "created_at" DESC
+LIMIT $2 OFFSET $3
+`
+
+type AdminGetUsersByStatusParams struct {
+	Status UserStatus
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) AdminGetUsersByStatus(ctx context.Context, arg AdminGetUsersByStatusParams) ([]User, error) {
+	rows, err := q.db.Query(ctx, adminGetUsersByStatus, arg.Status, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Email,
+			&i.Password,
+			&i.Role,
+			&i.IsVerified,
+			&i.Status,
+			&i.AvatarUrl,
+			&i.BannedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminSetUserRoleToAdmin = `-- name: AdminSetUserRoleToAdmin :one
+UPDATE "users"
+SET
+    "role"       = 'ADMIN',
+    "updated_at" = NOW()
+WHERE "id" = $1
+RETURNING id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at
+`
+
+func (q *Queries) AdminSetUserRoleToAdmin(ctx context.Context, id pgtype.UUID) (User, error) {
+	row := q.db.QueryRow(ctx, adminSetUserRoleToAdmin, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Password,
+		&i.Role,
+		&i.IsVerified,
+		&i.Status,
+		&i.AvatarUrl,
+		&i.BannedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const adminUnbanUser = `-- name: AdminUnbanUser :one
@@ -258,79 +353,6 @@ type AdminUpdateUserVerificationParams struct {
 
 func (q *Queries) AdminUpdateUserVerification(ctx context.Context, arg AdminUpdateUserVerificationParams) (User, error) {
 	row := q.db.QueryRow(ctx, adminUpdateUserVerification, arg.ID, arg.IsVerified)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Email,
-		&i.Password,
-		&i.Role,
-		&i.IsVerified,
-		&i.Status,
-		&i.AvatarUrl,
-		&i.BannedAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getUsersByRole = `-- name: GetUsersByRole :many
-SELECT id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at FROM "users"
-WHERE "role" = $1
-ORDER BY "created_at" DESC
-LIMIT $2 OFFSET $3
-`
-
-type GetUsersByRoleParams struct {
-	Role   UserRole
-	Limit  int32
-	Offset int32
-}
-
-func (q *Queries) GetUsersByRole(ctx context.Context, arg GetUsersByRoleParams) ([]User, error) {
-	rows, err := q.db.Query(ctx, getUsersByRole, arg.Role, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []User
-	for rows.Next() {
-		var i User
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Email,
-			&i.Password,
-			&i.Role,
-			&i.IsVerified,
-			&i.Status,
-			&i.AvatarUrl,
-			&i.BannedAt,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const promoteToAdmin = `-- name: PromoteToAdmin :one
-UPDATE "users"
-SET
-    "role"       = 'ADMIN',
-    "updated_at" = NOW()
-WHERE "id" = $1
-RETURNING id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at
-`
-
-func (q *Queries) PromoteToAdmin(ctx context.Context, id pgtype.UUID) (User, error) {
-	row := q.db.QueryRow(ctx, promoteToAdmin, id)
 	var i User
 	err := row.Scan(
 		&i.ID,

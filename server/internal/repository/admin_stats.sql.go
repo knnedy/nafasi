@@ -126,14 +126,14 @@ func (q *Queries) AdminGetRecentOrdersWithDetails(ctx context.Context, limit int
 }
 
 const adminGetTotalRevenue = `-- name: AdminGetTotalRevenue :one
-SELECT COALESCE(SUM("total_amount"), 0) AS total_revenue
+SELECT COALESCE(SUM("total_amount"), 0)::BIGINT AS total_revenue
 FROM "orders"
 WHERE "status" = 'PAID'
 `
 
-func (q *Queries) AdminGetTotalRevenue(ctx context.Context) (interface{}, error) {
+func (q *Queries) AdminGetTotalRevenue(ctx context.Context) (int64, error) {
 	row := q.db.QueryRow(ctx, adminGetTotalRevenue)
-	var total_revenue interface{}
+	var total_revenue int64
 	err := row.Scan(&total_revenue)
 	return total_revenue, err
 }

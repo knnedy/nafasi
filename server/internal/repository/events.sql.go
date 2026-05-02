@@ -11,6 +11,38 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const cancelEvent = `-- name: CancelEvent :one
+UPDATE "events"
+SET
+    "status"     = 'CANCELLED',
+    "updated_at" = NOW()
+WHERE "id" = $1
+RETURNING id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
+`
+
+func (q *Queries) CancelEvent(ctx context.Context, id pgtype.UUID) (Event, error) {
+	row := q.db.QueryRow(ctx, cancelEvent, id)
+	var i Event
+	err := row.Scan(
+		&i.ID,
+		&i.OrganiserID,
+		&i.Title,
+		&i.Slug,
+		&i.Description,
+		&i.Location,
+		&i.Venue,
+		&i.BannerUrl,
+		&i.StartsAt,
+		&i.EndsAt,
+		&i.Status,
+		&i.IsOnline,
+		&i.OnlineUrl,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createEvent = `-- name: CreateEvent :one
 INSERT INTO "events" (
     "organiser_id",

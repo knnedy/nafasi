@@ -288,7 +288,7 @@ func TestGetTicketTypesByEvent_Success(t *testing.T) {
 
 	eventID := makeEventID()
 
-	db.On("GetTicketTypesByEvent", mocktestify.Anything, eventID).
+	db.On("OrganiserGetTicketTypesByEvent", mocktestify.Anything, eventID).
 		Return([]repository.TicketType{
 			{Name: "VIP"},
 			{Name: "Regular"},

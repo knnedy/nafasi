@@ -43,17 +43,36 @@ func (q *Queries) AdminCancelEvent(ctx context.Context, id pgtype.UUID) (Event, 
 	return i, err
 }
 
-const adminDeleteEvent = `-- name: AdminDeleteEvent :exec
+const adminDeleteEvent = `-- name: AdminDeleteEvent :one
 UPDATE "events"
 SET
     "status"     = 'DELETED',
     "updated_at" = NOW()
 WHERE "id" = $1
+RETURNING id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
 `
 
-func (q *Queries) AdminDeleteEvent(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, adminDeleteEvent, id)
-	return err
+func (q *Queries) AdminDeleteEvent(ctx context.Context, id pgtype.UUID) (Event, error) {
+	row := q.db.QueryRow(ctx, adminDeleteEvent, id)
+	var i Event
+	err := row.Scan(
+		&i.ID,
+		&i.OrganiserID,
+		&i.Title,
+		&i.Slug,
+		&i.Description,
+		&i.Location,
+		&i.Venue,
+		&i.BannerUrl,
+		&i.StartsAt,
+		&i.EndsAt,
+		&i.Status,
+		&i.IsOnline,
+		&i.OnlineUrl,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const adminGetAllEvents = `-- name: AdminGetAllEvents :many
