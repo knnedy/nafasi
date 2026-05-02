@@ -1,9 +1,9 @@
--- name: OrganiserGetTicketTypesByEvent :many
+-- name: GetTicketTypesByEvent :many
 SELECT * FROM "ticket_types"
 WHERE "event_id" = $1
 ORDER BY "price" ASC;
 
--- name: OrganiserGetTicketTypeSalesByEvent :many
+-- name: GetTicketTypeSalesByEvent :many
 SELECT
     id,
     name,
@@ -15,7 +15,7 @@ FROM ticket_types
 WHERE event_id = $1
 ORDER BY price ASC;
 
--- name: OrganiserGetTotalTicketsSold :one
+-- name: GetTotalTicketsSold :one
 SELECT COALESCE(SUM("quantity_sold"), 0)::BIGINT AS total_sold
 FROM "ticket_types"
 WHERE "event_id" = $1;

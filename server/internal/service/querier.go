@@ -79,6 +79,20 @@ type CheckInQuerier interface {
 	GetCheckedInOrders(ctx context.Context, eventID pgtype.UUID) ([]repository.Order, error)
 }
 
+type OrganiserQuerier interface {
+	GetTicketTypesByEvent(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error)
+	GetTicketTypeSalesByEvent(ctx context.Context, eventID pgtype.UUID) ([]repository.GetTicketTypeSalesByEventRow, error)
+	GetTotalTicketsSold(ctx context.Context, eventID pgtype.UUID) (int64, error)
+	GetOrdersByEvent(ctx context.Context, arg repository.GetOrdersByEventParams) ([]repository.Order, error)
+	GetOrdersByEventAndStatus(ctx context.Context, arg repository.GetOrdersByEventAndStatusParams) ([]repository.Order, error)
+	GetEventRevenue(ctx context.Context, eventID pgtype.UUID) (int64, error)
+	GetEventOrdersCount(ctx context.Context, eventID pgtype.UUID) (int64, error)
+	GetEventCheckedInCount(ctx context.Context, eventID pgtype.UUID) (int64, error)
+	GetEventOrderStatusBreakdown(ctx context.Context, eventID pgtype.UUID) ([]repository.GetEventOrderStatusBreakdownRow, error)
+	GetEventTicketsSold(ctx context.Context, eventID pgtype.UUID) (interface{}, error)
+	GetRecentEventOrders(ctx context.Context, arg repository.GetRecentEventOrdersParams) ([]repository.Order, error)
+}
+
 type AdminQuerier interface {
 	// user management
 	GetUserById(ctx context.Context, id pgtype.UUID) (repository.User, error)

@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const organiserGetTicketTypeSalesByEvent = `-- name: OrganiserGetTicketTypeSalesByEvent :many
+const getTicketTypeSalesByEvent = `-- name: GetTicketTypeSalesByEvent :many
 SELECT
     id,
     name,
@@ -24,7 +24,7 @@ WHERE event_id = $1
 ORDER BY price ASC
 `
 
-type OrganiserGetTicketTypeSalesByEventRow struct {
+type GetTicketTypeSalesByEventRow struct {
 	ID           pgtype.UUID
 	Name         string
 	Price        int64
@@ -33,15 +33,15 @@ type OrganiserGetTicketTypeSalesByEventRow struct {
 	Revenue      int32
 }
 
-func (q *Queries) OrganiserGetTicketTypeSalesByEvent(ctx context.Context, eventID pgtype.UUID) ([]OrganiserGetTicketTypeSalesByEventRow, error) {
-	rows, err := q.db.Query(ctx, organiserGetTicketTypeSalesByEvent, eventID)
+func (q *Queries) GetTicketTypeSalesByEvent(ctx context.Context, eventID pgtype.UUID) ([]GetTicketTypeSalesByEventRow, error) {
+	rows, err := q.db.Query(ctx, getTicketTypeSalesByEvent, eventID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []OrganiserGetTicketTypeSalesByEventRow
+	var items []GetTicketTypeSalesByEventRow
 	for rows.Next() {
-		var i OrganiserGetTicketTypeSalesByEventRow
+		var i GetTicketTypeSalesByEventRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -60,14 +60,14 @@ func (q *Queries) OrganiserGetTicketTypeSalesByEvent(ctx context.Context, eventI
 	return items, nil
 }
 
-const organiserGetTicketTypesByEvent = `-- name: OrganiserGetTicketTypesByEvent :many
+const getTicketTypesByEvent = `-- name: GetTicketTypesByEvent :many
 SELECT id, event_id, name, status, description, price, currency, quantity, quantity_sold, is_free, sale_starts, sale_ends, created_at, updated_at FROM "ticket_types"
 WHERE "event_id" = $1
 ORDER BY "price" ASC
 `
 
-func (q *Queries) OrganiserGetTicketTypesByEvent(ctx context.Context, eventID pgtype.UUID) ([]TicketType, error) {
-	rows, err := q.db.Query(ctx, organiserGetTicketTypesByEvent, eventID)
+func (q *Queries) GetTicketTypesByEvent(ctx context.Context, eventID pgtype.UUID) ([]TicketType, error) {
+	rows, err := q.db.Query(ctx, getTicketTypesByEvent, eventID)
 	if err != nil {
 		return nil, err
 	}
@@ -101,14 +101,14 @@ func (q *Queries) OrganiserGetTicketTypesByEvent(ctx context.Context, eventID pg
 	return items, nil
 }
 
-const organiserGetTotalTicketsSold = `-- name: OrganiserGetTotalTicketsSold :one
+const getTotalTicketsSold = `-- name: GetTotalTicketsSold :one
 SELECT COALESCE(SUM("quantity_sold"), 0)::BIGINT AS total_sold
 FROM "ticket_types"
 WHERE "event_id" = $1
 `
 
-func (q *Queries) OrganiserGetTotalTicketsSold(ctx context.Context, eventID pgtype.UUID) (int64, error) {
-	row := q.db.QueryRow(ctx, organiserGetTotalTicketsSold, eventID)
+func (q *Queries) GetTotalTicketsSold(ctx context.Context, eventID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, getTotalTicketsSold, eventID)
 	var total_sold int64
 	err := row.Scan(&total_sold)
 	return total_sold, err
