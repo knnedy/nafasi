@@ -12,11 +12,17 @@ import (
 const publicGetPublishedEvents = `-- name: PublicGetPublishedEvents :many
 SELECT id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events"
 WHERE "status" = 'PUBLISHED'
-ORDER BY "starts_at" ASC
+ORDER BY starts_at DESC
+LIMIT $1 OFFSET $2
 `
 
-func (q *Queries) PublicGetPublishedEvents(ctx context.Context) ([]Event, error) {
-	rows, err := q.db.Query(ctx, publicGetPublishedEvents)
+type PublicGetPublishedEventsParams struct {
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) PublicGetPublishedEvents(ctx context.Context, arg PublicGetPublishedEventsParams) ([]Event, error) {
+	rows, err := q.db.Query(ctx, publicGetPublishedEvents, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -56,10 +62,16 @@ SELECT id, organiser_id, title, slug, description, location, venue, banner_url, 
 WHERE "status" = 'PUBLISHED'
 AND "starts_at" > NOW()
 ORDER BY "starts_at" ASC
+LIMIT $1 OFFSET $2
 `
 
-func (q *Queries) PublicGetUpcomingEvents(ctx context.Context) ([]Event, error) {
-	rows, err := q.db.Query(ctx, publicGetUpcomingEvents)
+type PublicGetUpcomingEventsParams struct {
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) PublicGetUpcomingEvents(ctx context.Context, arg PublicGetUpcomingEventsParams) ([]Event, error) {
+	rows, err := q.db.Query(ctx, publicGetUpcomingEvents, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

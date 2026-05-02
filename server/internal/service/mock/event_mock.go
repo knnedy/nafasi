@@ -35,13 +35,13 @@ func (m *EventQueries) GetEventsByOrganiser(ctx context.Context, organiserID pgt
 	return args.Get(0).([]repository.Event), args.Error(1)
 }
 
-func (m *EventQueries) PublicGetPublishedEvents(ctx context.Context) ([]repository.Event, error) {
-	args := m.Called(ctx)
+func (m *EventQueries) PublicGetPublishedEvents(ctx context.Context, arg repository.PublicGetPublishedEventsParams) ([]repository.Event, error) {
+	args := m.Called(ctx, arg)
 	return args.Get(0).([]repository.Event), args.Error(1)
 }
 
-func (m *EventQueries) PublicGetUpcomingEvents(ctx context.Context) ([]repository.Event, error) {
-	args := m.Called(ctx)
+func (m *EventQueries) PublicGetUpcomingEvents(ctx context.Context, arg repository.PublicGetUpcomingEventsParams) ([]repository.Event, error) {
+	args := m.Called(ctx, arg)
 	return args.Get(0).([]repository.Event), args.Error(1)
 }
 

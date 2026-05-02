@@ -306,7 +306,6 @@ func TestUpdateEvent_NotOwner(t *testing.T) {
 }
 
 // UpdateEventStatus
-
 func TestUpdateEventStatus_Success(t *testing.T) {
 	db := new(mock.EventQueries)
 	svc := newTestEventService(db)

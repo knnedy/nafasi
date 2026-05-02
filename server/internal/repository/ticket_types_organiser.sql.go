@@ -11,6 +11,55 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const organiserGetTicketTypeSalesByEvent = `-- name: OrganiserGetTicketTypeSalesByEvent :many
+SELECT
+    id,
+    name,
+    price,
+    quantity,
+    quantity_sold,
+    (quantity_sold * price) AS revenue
+FROM ticket_types
+WHERE event_id = $1
+ORDER BY price ASC
+`
+
+type OrganiserGetTicketTypeSalesByEventRow struct {
+	ID           pgtype.UUID
+	Name         string
+	Price        int64
+	Quantity     int32
+	QuantitySold int32
+	Revenue      int32
+}
+
+func (q *Queries) OrganiserGetTicketTypeSalesByEvent(ctx context.Context, eventID pgtype.UUID) ([]OrganiserGetTicketTypeSalesByEventRow, error) {
+	rows, err := q.db.Query(ctx, organiserGetTicketTypeSalesByEvent, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []OrganiserGetTicketTypeSalesByEventRow
+	for rows.Next() {
+		var i OrganiserGetTicketTypeSalesByEventRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Price,
+			&i.Quantity,
+			&i.QuantitySold,
+			&i.Revenue,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const organiserGetTicketTypesByEvent = `-- name: OrganiserGetTicketTypesByEvent :many
 SELECT id, event_id, name, status, description, price, currency, quantity, quantity_sold, is_free, sale_starts, sale_ends, created_at, updated_at FROM "ticket_types"
 WHERE "event_id" = $1
@@ -50,4 +99,17 @@ func (q *Queries) OrganiserGetTicketTypesByEvent(ctx context.Context, eventID pg
 		return nil, err
 	}
 	return items, nil
+}
+
+const organiserGetTotalTicketsSold = `-- name: OrganiserGetTotalTicketsSold :one
+SELECT COALESCE(SUM("quantity_sold"), 0)::BIGINT AS total_sold
+FROM "ticket_types"
+WHERE "event_id" = $1
+`
+
+func (q *Queries) OrganiserGetTotalTicketsSold(ctx context.Context, eventID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, organiserGetTotalTicketsSold, eventID)
+	var total_sold int64
+	err := row.Scan(&total_sold)
+	return total_sold, err
 }

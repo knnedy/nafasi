@@ -32,13 +32,13 @@ func (m *EventService) GetEventsByOrganiser(ctx context.Context, organiserID str
 	return args.Get(0).([]repository.Event), args.Error(1)
 }
 
-func (m *EventService) GetPublishedEvents(ctx context.Context) ([]repository.Event, error) {
-	args := m.Called(ctx)
+func (m *EventService) GetPublishedEvents(ctx context.Context, limit int32, offset int32) ([]repository.Event, error) {
+	args := m.Called(ctx, limit, offset)
 	return args.Get(0).([]repository.Event), args.Error(1)
 }
 
-func (m *EventService) GetUpcomingEvents(ctx context.Context) ([]repository.Event, error) {
-	args := m.Called(ctx)
+func (m *EventService) GetUpcomingEvents(ctx context.Context, limit int32, offset int32) ([]repository.Event, error) {
+	args := m.Called(ctx, limit, offset)
 	return args.Get(0).([]repository.Event), args.Error(1)
 }
 
@@ -52,7 +52,12 @@ func (m *EventService) UpdateEventStatus(ctx context.Context, eventID string, or
 	return args.Get(0).(repository.Event), args.Error(1)
 }
 
-func (m *EventService) DeleteEvent(ctx context.Context, eventID string, organiserID string) error {
+func (m *EventService) CancelEvent(ctx context.Context, eventID string, organiserID string) (repository.Event, error) {
 	args := m.Called(ctx, eventID, organiserID)
-	return args.Error(0)
+	return args.Get(0).(repository.Event), args.Error(1)
+}
+
+func (m *EventService) DeleteEvent(ctx context.Context, eventID string, organiserID string) (repository.Event, error) {
+	args := m.Called(ctx, eventID, organiserID)
+	return args.Get(0).(repository.Event), args.Error(1)
 }

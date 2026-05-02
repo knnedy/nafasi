@@ -171,8 +171,11 @@ func (s *EventService) GetEventsByOrganiser(ctx context.Context, organiserID str
 	return events, nil
 }
 
-func (s *EventService) GetPublishedEvents(ctx context.Context) ([]repository.Event, error) {
-	events, err := s.db.PublicGetPublishedEvents(ctx)
+func (s *EventService) GetPublishedEvents(ctx context.Context, limit, offset int32) ([]repository.Event, error) {
+	events, err := s.db.PublicGetPublishedEvents(ctx, repository.PublicGetPublishedEventsParams{
+		Limit:  limit,
+		Offset: offset,
+	})
 	if err != nil {
 		return nil, response.ErrDatabase
 	}
@@ -180,8 +183,11 @@ func (s *EventService) GetPublishedEvents(ctx context.Context) ([]repository.Eve
 	return events, nil
 }
 
-func (s *EventService) GetUpcomingEvents(ctx context.Context) ([]repository.Event, error) {
-	events, err := s.db.PublicGetUpcomingEvents(ctx)
+func (s *EventService) GetUpcomingEvents(ctx context.Context, limit, offset int32) ([]repository.Event, error) {
+	events, err := s.db.PublicGetUpcomingEvents(ctx, repository.PublicGetUpcomingEventsParams{
+		Limit:  limit,
+		Offset: offset,
+	})
 	if err != nil {
 		return nil, response.ErrDatabase
 	}

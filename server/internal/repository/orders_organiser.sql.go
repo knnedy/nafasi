@@ -25,15 +25,94 @@ func (q *Queries) GetEventCheckedInCount(ctx context.Context, eventID pgtype.UUI
 	return checked_in, err
 }
 
-const getEventOrders = `-- name: GetEventOrders :many
-SELECT id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount, currency, status, payment_method, payment_ref, qr_code, checked_in, checked_in_at, created_at, updated_at
+const getEventOrderStatusBreakdown = `-- name: GetEventOrderStatusBreakdown :many
+SELECT status, COUNT(*) AS count
 FROM orders
 WHERE event_id = $1
-ORDER BY created_at DESC
+GROUP BY status
 `
 
-func (q *Queries) GetEventOrders(ctx context.Context, eventID pgtype.UUID) ([]Order, error) {
-	rows, err := q.db.Query(ctx, getEventOrders, eventID)
+type GetEventOrderStatusBreakdownRow struct {
+	Status OrderStatus
+	Count  int64
+}
+
+func (q *Queries) GetEventOrderStatusBreakdown(ctx context.Context, eventID pgtype.UUID) ([]GetEventOrderStatusBreakdownRow, error) {
+	rows, err := q.db.Query(ctx, getEventOrderStatusBreakdown, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetEventOrderStatusBreakdownRow
+	for rows.Next() {
+		var i GetEventOrderStatusBreakdownRow
+		if err := rows.Scan(&i.Status, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getEventOrdersCount = `-- name: GetEventOrdersCount :one
+SELECT COUNT(*) AS total_orders
+FROM orders
+WHERE event_id = $1
+`
+
+func (q *Queries) GetEventOrdersCount(ctx context.Context, eventID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, getEventOrdersCount, eventID)
+	var total_orders int64
+	err := row.Scan(&total_orders)
+	return total_orders, err
+}
+
+const getEventRevenue = `-- name: GetEventRevenue :one
+SELECT COALESCE(SUM(total_amount), 0)::BIGINT AS revenue
+FROM orders
+WHERE event_id = $1
+AND status = 'PAID'
+`
+
+func (q *Queries) GetEventRevenue(ctx context.Context, eventID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, getEventRevenue, eventID)
+	var revenue int64
+	err := row.Scan(&revenue)
+	return revenue, err
+}
+
+const getEventTicketsSold = `-- name: GetEventTicketsSold :one
+SELECT COALESCE(SUM(quantity), 0) AS tickets_sold
+FROM orders
+WHERE event_id = $1
+AND status = 'PAID'
+`
+
+func (q *Queries) GetEventTicketsSold(ctx context.Context, eventID pgtype.UUID) (interface{}, error) {
+	row := q.db.QueryRow(ctx, getEventTicketsSold, eventID)
+	var tickets_sold interface{}
+	err := row.Scan(&tickets_sold)
+	return tickets_sold, err
+}
+
+const getOrdersByEvent = `-- name: GetOrdersByEvent :many
+SELECT id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount, currency, status, payment_method, payment_ref, qr_code, checked_in, checked_in_at, created_at, updated_at FROM "orders"
+WHERE "event_id" = $1
+ORDER BY "created_at" DESC
+LIMIT $2 OFFSET $3
+`
+
+type GetOrdersByEventParams struct {
+	EventID pgtype.UUID
+	Limit   int32
+	Offset  int32
+}
+
+func (q *Queries) GetOrdersByEvent(ctx context.Context, arg GetOrdersByEventParams) ([]Order, error) {
+	rows, err := q.db.Query(ctx, getOrdersByEvent, arg.EventID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -69,29 +148,108 @@ func (q *Queries) GetEventOrders(ctx context.Context, eventID pgtype.UUID) ([]Or
 	return items, nil
 }
 
-const getEventOrdersCount = `-- name: GetEventOrdersCount :one
-SELECT COUNT(*) AS total_orders
-FROM orders
-WHERE event_id = $1
+const getOrdersByEventAndStatus = `-- name: GetOrdersByEventAndStatus :many
+SELECT id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount, currency, status, payment_method, payment_ref, qr_code, checked_in, checked_in_at, created_at, updated_at FROM "orders"
+WHERE "event_id" = $1
+AND "status" = $2
+ORDER BY "created_at" DESC
+LIMIT $3 OFFSET $4
 `
 
-func (q *Queries) GetEventOrdersCount(ctx context.Context, eventID pgtype.UUID) (int64, error) {
-	row := q.db.QueryRow(ctx, getEventOrdersCount, eventID)
-	var total_orders int64
-	err := row.Scan(&total_orders)
-	return total_orders, err
+type GetOrdersByEventAndStatusParams struct {
+	EventID pgtype.UUID
+	Status  OrderStatus
+	Limit   int32
+	Offset  int32
 }
 
-const getEventRevenue = `-- name: GetEventRevenue :one
-SELECT COALESCE(SUM(total_amount), 0) AS revenue
-FROM orders
-WHERE event_id = $1
-AND status = 'PAID'
+func (q *Queries) GetOrdersByEventAndStatus(ctx context.Context, arg GetOrdersByEventAndStatusParams) ([]Order, error) {
+	rows, err := q.db.Query(ctx, getOrdersByEventAndStatus,
+		arg.EventID,
+		arg.Status,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Order
+	for rows.Next() {
+		var i Order
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.EventID,
+			&i.TicketTypeID,
+			&i.Quantity,
+			&i.UnitPrice,
+			&i.TotalAmount,
+			&i.Currency,
+			&i.Status,
+			&i.PaymentMethod,
+			&i.PaymentRef,
+			&i.QrCode,
+			&i.CheckedIn,
+			&i.CheckedInAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRecentEventOrders = `-- name: GetRecentEventOrders :many
+SELECT id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount, currency, status, payment_method, payment_ref, qr_code, checked_in, checked_in_at, created_at, updated_at FROM "orders"
+WHERE "event_id" = $1
+ORDER BY "created_at" DESC
+LIMIT $2
 `
 
-func (q *Queries) GetEventRevenue(ctx context.Context, eventID pgtype.UUID) (interface{}, error) {
-	row := q.db.QueryRow(ctx, getEventRevenue, eventID)
-	var revenue interface{}
-	err := row.Scan(&revenue)
-	return revenue, err
+type GetRecentEventOrdersParams struct {
+	EventID pgtype.UUID
+	Limit   int32
+}
+
+func (q *Queries) GetRecentEventOrders(ctx context.Context, arg GetRecentEventOrdersParams) ([]Order, error) {
+	rows, err := q.db.Query(ctx, getRecentEventOrders, arg.EventID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Order
+	for rows.Next() {
+		var i Order
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.EventID,
+			&i.TicketTypeID,
+			&i.Quantity,
+			&i.UnitPrice,
+			&i.TotalAmount,
+			&i.Currency,
+			&i.Status,
+			&i.PaymentMethod,
+			&i.PaymentRef,
+			&i.QrCode,
+			&i.CheckedIn,
+			&i.CheckedInAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

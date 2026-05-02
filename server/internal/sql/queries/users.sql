@@ -40,9 +40,10 @@ SET
 WHERE "id" = $1
 RETURNING *;
 
--- name: DeleteUser :exec
+-- name: DeleteUser :one
 UPDATE "users"
 SET
     "status"     = 'DELETED',
     "updated_at" = NOW()
-WHERE "id" = $1;
+WHERE "id" = $1
+RETURNING *;

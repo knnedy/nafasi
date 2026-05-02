@@ -249,14 +249,14 @@ func TestDeleteMeHandler_Success(t *testing.T) {
 	userID := uuid.New().String()
 
 	svc.On("DeleteMe", mocktestify.Anything, userID).
-		Return(nil)
+		Return(repository.User{}, nil)
 
 	w := httptest.NewRecorder()
 	r := withUserID(httptest.NewRequest(http.MethodDelete, "/api/v1/users/me", nil), userID)
 
 	h.DeleteMe(w, r)
 
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusNoContent, w.Code)
 	svc.AssertExpectations(t)
 }
 
@@ -267,7 +267,7 @@ func TestDeleteMeHandler_NotFound(t *testing.T) {
 	userID := uuid.New().String()
 
 	svc.On("DeleteMe", mocktestify.Anything, userID).
-		Return(response.ErrNotFound)
+		Return(repository.User{}, response.ErrNotFound)
 
 	w := httptest.NewRecorder()
 	r := withUserID(httptest.NewRequest(http.MethodDelete, "/api/v1/users/me", nil), userID)
@@ -285,7 +285,7 @@ func TestDeleteMeHandler_DatabaseError(t *testing.T) {
 	userID := uuid.New().String()
 
 	svc.On("DeleteMe", mocktestify.Anything, userID).
-		Return(response.ErrDatabase)
+		Return(repository.User{}, response.ErrDatabase)
 
 	w := httptest.NewRecorder()
 	r := withUserID(httptest.NewRequest(http.MethodDelete, "/api/v1/users/me", nil), userID)

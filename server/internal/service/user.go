@@ -151,17 +151,18 @@ func (s *UserService) UpdateAvatar(ctx context.Context, userID string, input Upd
 	return user, nil
 }
 
-func (s *UserService) DeleteMe(ctx context.Context, userID string) error {
+func (s *UserService) DeleteMe(ctx context.Context, userID string) (repository.User, error) {
 	// parse user ID
 	parsedID, err := uuid.Parse(userID)
 	if err != nil {
-		return response.ErrNotFound
+		return repository.User{}, response.ErrNotFound
 	}
 
 	// delete user from DB
-	if err := s.db.DeleteUser(ctx, pgtype.UUID{Bytes: parsedID, Valid: true}); err != nil {
-		return response.ErrDatabase
+	user, err := s.db.DeleteUser(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
+	if err != nil {
+		return repository.User{}, response.ErrDatabase
 	}
 
-	return nil
+	return user, nil
 }

@@ -12,5 +12,5 @@ SELECT
     (SELECT COUNT(*) FROM "events" WHERE "status" = 'PUBLISHED') AS published_events,
     (SELECT COUNT(*) FROM "orders") AS total_orders,
     (SELECT COUNT(*) FROM "orders" WHERE "status" = 'PAID') AS paid_orders,
-    (SELECT COALESCE(SUM("total_amount"), 0) FROM "orders" WHERE "status" = 'PAID') AS total_revenue;
+    (SELECT COALESCE(SUM("total_amount"), 0)::BIGINT AS total_revenue FROM "orders" WHERE "status" = 'PAID') AS total_revenue;
 

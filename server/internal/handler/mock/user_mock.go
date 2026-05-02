@@ -32,7 +32,7 @@ func (m *UserService) UpdateAvatar(ctx context.Context, userID string, input ser
 	return args.Get(0).(repository.User), args.Error(1)
 }
 
-func (m *UserService) DeleteMe(ctx context.Context, userID string) error {
+func (m *UserService) DeleteMe(ctx context.Context, userID string) (repository.User, error) {
 	args := m.Called(ctx, userID)
-	return args.Error(0)
+	return args.Get(0).(repository.User), args.Error(1)
 }

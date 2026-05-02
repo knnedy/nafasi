@@ -287,11 +287,14 @@ func TestDeleteMe_Success(t *testing.T) {
 	userID := makeUserID()
 
 	db.On("DeleteUser", mocktestify.Anything, userID).
-		Return(nil)
+		Return(repository.User{
+			ID: userID,
+		}, nil)
 
-	err := svc.DeleteMe(context.Background(), uuid.UUID(userID.Bytes).String())
+	user, err := svc.DeleteMe(context.Background(), uuid.UUID(userID.Bytes).String())
 
 	assert.NoError(t, err)
+	assert.Equal(t, userID, user.ID)
 	db.AssertExpectations(t)
 }
 
@@ -299,8 +302,9 @@ func TestDeleteMe_InvalidID(t *testing.T) {
 	db := new(mock.UserQueries)
 	svc := newTestUserService(db)
 
-	err := svc.DeleteMe(context.Background(), "not-a-uuid")
+	user, err := svc.DeleteMe(context.Background(), "not-a-uuid")
 
+	assert.Equal(t, repository.User{}, user)
 	assert.ErrorIs(t, err, response.ErrNotFound)
 }
 
@@ -311,10 +315,11 @@ func TestDeleteMe_DatabaseError(t *testing.T) {
 	userID := makeUserID()
 
 	db.On("DeleteUser", mocktestify.Anything, userID).
-		Return(errors.New("db error"))
+		Return(repository.User{}, response.ErrDatabase)
 
-	err := svc.DeleteMe(context.Background(), uuid.UUID(userID.Bytes).String())
+	user, err := svc.DeleteMe(context.Background(), uuid.UUID(userID.Bytes).String())
 
+	assert.Equal(t, repository.User{}, user)
 	assert.ErrorIs(t, err, response.ErrDatabase)
 	db.AssertExpectations(t)
 }

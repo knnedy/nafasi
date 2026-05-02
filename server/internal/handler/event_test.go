@@ -196,9 +196,8 @@ func TestGetPublishedEventsHandler_Success(t *testing.T) {
 
 	organiserID := uuid.New().String()
 
-	svc.On("GetPublishedEvents", mocktestify.Anything).
+	svc.On("GetPublishedEvents", mocktestify.Anything, int32(20), int32(0)).
 		Return([]repository.Event{
-			makeHandlerEvent(organiserID),
 			makeHandlerEvent(organiserID),
 		}, nil)
 
@@ -220,7 +219,7 @@ func TestGetPublishedEventsHandler_Empty(t *testing.T) {
 	svc := new(mock.EventService)
 	h := handler.NewEventHandler(svc)
 
-	svc.On("GetPublishedEvents", mocktestify.Anything).
+	svc.On("GetPublishedEvents", mocktestify.Anything, int32(20), int32(0)).
 		Return([]repository.Event{}, nil)
 
 	w := httptest.NewRecorder()
@@ -239,7 +238,7 @@ func TestGetUpcomingEventsHandler_Success(t *testing.T) {
 
 	organiserID := uuid.New().String()
 
-	svc.On("GetUpcomingEvents", mocktestify.Anything).
+	svc.On("GetUpcomingEvents", mocktestify.Anything, int32(20), int32(0)).
 		Return([]repository.Event{
 			makeHandlerEvent(organiserID),
 		}, nil)
@@ -431,6 +430,85 @@ func TestUpdateEventStatusHandler_Forbidden(t *testing.T) {
 	svc.AssertExpectations(t)
 }
 
+// CancelEvent
+func TestCancelEventHandler_Success(t *testing.T) {
+	svc := new(mock.EventService)
+	h := handler.NewEventHandler(svc)
+
+	organiserID := uuid.New().String()
+	eventID := uuid.New().String()
+
+	svc.On("CancelEvent", mocktestify.Anything, eventID, organiserID).
+		Return(repository.Event{
+			ID:     pgtype.UUID{Bytes: uuid.New(), Valid: true},
+			Status: repository.EventStatusCANCELLED,
+		}, nil)
+
+	w := httptest.NewRecorder()
+	r := withUserID(
+		withChiParam(
+			httptest.NewRequest(http.MethodPatch, "/api/v1/events/"+eventID, nil),
+			"eventID", eventID,
+		),
+		organiserID,
+	)
+
+	h.Cancel(w, r)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	svc.AssertExpectations(t)
+}
+
+func TestCancelEventHandler_Forbidden(t *testing.T) {
+	svc := new(mock.EventService)
+	h := handler.NewEventHandler(svc)
+
+	organiserID := uuid.New().String()
+	eventID := uuid.New().String()
+
+	svc.On("CancelEvent", mocktestify.Anything, eventID, organiserID).
+		Return(repository.Event{}, response.ErrForbidden)
+
+	w := httptest.NewRecorder()
+	r := withUserID(
+		withChiParam(
+			httptest.NewRequest(http.MethodPatch, "/api/v1/events/"+eventID, nil),
+			"eventID", eventID,
+		),
+		organiserID,
+	)
+
+	h.Cancel(w, r)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	svc.AssertExpectations(t)
+}
+
+func TestCancelEventHandler_NotFound(t *testing.T) {
+	svc := new(mock.EventService)
+	h := handler.NewEventHandler(svc)
+
+	organiserID := uuid.New().String()
+	eventID := uuid.New().String()
+
+	svc.On("CancelEvent", mocktestify.Anything, eventID, organiserID).
+		Return(repository.Event{}, response.ErrNotFound)
+
+	w := httptest.NewRecorder()
+	r := withUserID(
+		withChiParam(
+			httptest.NewRequest(http.MethodPatch, "/api/v1/events/"+eventID, nil),
+			"eventID", eventID,
+		),
+		organiserID,
+	)
+
+	h.Cancel(w, r)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	svc.AssertExpectations(t)
+}
+
 // DeleteEvent
 func TestDeleteEventHandler_Success(t *testing.T) {
 	svc := new(mock.EventService)
@@ -440,7 +518,7 @@ func TestDeleteEventHandler_Success(t *testing.T) {
 	eventID := uuid.New().String()
 
 	svc.On("DeleteEvent", mocktestify.Anything, eventID, organiserID).
-		Return(nil)
+		Return(repository.Event{}, nil)
 
 	w := httptest.NewRecorder()
 	r := withUserID(
@@ -453,7 +531,7 @@ func TestDeleteEventHandler_Success(t *testing.T) {
 
 	h.Delete(w, r)
 
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusNoContent, w.Code)
 	svc.AssertExpectations(t)
 }
 
@@ -465,7 +543,7 @@ func TestDeleteEventHandler_Forbidden(t *testing.T) {
 	eventID := uuid.New().String()
 
 	svc.On("DeleteEvent", mocktestify.Anything, eventID, organiserID).
-		Return(response.ErrForbidden)
+		Return(repository.Event{}, response.ErrForbidden)
 
 	w := httptest.NewRecorder()
 	r := withUserID(
@@ -490,7 +568,7 @@ func TestDeleteEventHandler_NotFound(t *testing.T) {
 	eventID := uuid.New().String()
 
 	svc.On("DeleteEvent", mocktestify.Anything, eventID, organiserID).
-		Return(response.ErrNotFound)
+		Return(repository.Event{}, response.ErrNotFound)
 
 	w := httptest.NewRecorder()
 	r := withUserID(

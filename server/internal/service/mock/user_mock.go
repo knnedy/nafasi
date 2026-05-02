@@ -40,7 +40,7 @@ func (m *UserQueries) UpdateUserAvatar(ctx context.Context, arg repository.Updat
 	return args.Get(0).(repository.User), args.Error(1)
 }
 
-func (m *UserQueries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
+func (m *UserQueries) DeleteUser(ctx context.Context, id pgtype.UUID) (repository.User, error) {
 	args := m.Called(ctx, id)
-	return args.Error(0)
+	return args.Get(0).(repository.User), args.Error(1)
 }

@@ -184,11 +184,10 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 // @Tags Users
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]string
+// @Success 204 "No Content"
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /users/me [delete]
-
 func (h *UserHandler) DeleteMe(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -198,10 +197,11 @@ func (h *UserHandler) DeleteMe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// delete user
-	if err := h.user.DeleteMe(r.Context(), userID); err != nil {
+	_, err := h.user.DeleteMe(r.Context(), userID)
+	if err != nil {
 		response.WriteError(w, err)
 		return
 	}
 
-	response.WriteJSON(w, http.StatusOK, nil)
+	w.WriteHeader(http.StatusNoContent)
 }

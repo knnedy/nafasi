@@ -28,7 +28,7 @@ type UserQuerier interface {
 	UpdateUserProfile(ctx context.Context, arg repository.UpdateUserProfileParams) (repository.User, error)
 	UpdateUserPassword(ctx context.Context, arg repository.UpdateUserPasswordParams) (repository.User, error)
 	UpdateUserAvatar(ctx context.Context, arg repository.UpdateUserAvatarParams) (repository.User, error)
-	DeleteUser(ctx context.Context, id pgtype.UUID) error
+	DeleteUser(ctx context.Context, id pgtype.UUID) (repository.User, error)
 }
 
 type EventQuerier interface {
@@ -36,8 +36,8 @@ type EventQuerier interface {
 	GetEventById(ctx context.Context, id pgtype.UUID) (repository.Event, error)
 	GetEventBySlug(ctx context.Context, slug string) (repository.Event, error)
 	GetEventsByOrganiser(ctx context.Context, organiserID pgtype.UUID) ([]repository.Event, error)
-	PublicGetPublishedEvents(ctx context.Context) ([]repository.Event, error)
-	PublicGetUpcomingEvents(ctx context.Context) ([]repository.Event, error)
+	PublicGetPublishedEvents(ctx context.Context, arg repository.PublicGetPublishedEventsParams) ([]repository.Event, error)
+	PublicGetUpcomingEvents(ctx context.Context, arg repository.PublicGetUpcomingEventsParams) ([]repository.Event, error)
 	UpdateEvent(ctx context.Context, arg repository.UpdateEventParams) (repository.Event, error)
 	UpdateEventStatus(ctx context.Context, arg repository.UpdateEventStatusParams) (repository.Event, error)
 	CancelEvent(ctx context.Context, id pgtype.UUID) (repository.Event, error)

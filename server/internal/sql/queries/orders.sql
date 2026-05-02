@@ -21,16 +21,5 @@ SELECT * FROM "orders"
 WHERE "user_id" = $1
 ORDER BY "created_at" DESC;
 
--- name: GetOrdersByEvent :many
-SELECT * FROM "orders"
-WHERE "event_id" = $1
-ORDER BY "created_at" DESC;
-
--- name: GetOrdersByEventAndStatus :many
-SELECT * FROM "orders"
-WHERE "event_id" = $1
-AND "status" = $2
-ORDER BY "created_at" DESC;
-
 -- name: DeleteOrder :exec
 DELETE FROM "orders" WHERE "id" = $1;

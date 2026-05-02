@@ -186,7 +186,9 @@ func (h *EventHandler) GetByOrganiser(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /events/published [get]
 func (h *EventHandler) GetPublished(w http.ResponseWriter, r *http.Request) {
-	events, err := h.event.GetPublishedEvents(r.Context())
+	limit, offset := getPagination(r)
+
+	events, err := h.event.GetPublishedEvents(r.Context(), limit, offset)
 	if err != nil {
 		response.WriteError(w, err)
 		return
@@ -209,7 +211,9 @@ func (h *EventHandler) GetPublished(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /events/upcoming [get]
 func (h *EventHandler) GetUpcoming(w http.ResponseWriter, r *http.Request) {
-	events, err := h.event.GetUpcomingEvents(r.Context())
+	limit, offset := getPagination(r)
+
+	events, err := h.event.GetUpcomingEvents(r.Context(), limit, offset)
 	if err != nil {
 		response.WriteError(w, err)
 		return
@@ -322,7 +326,7 @@ func (h *EventHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 404 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
-// @Router /events/{eventID}/cancel [post]
+// @Router /events/{eventID}/cancel [patch]
 func (h *EventHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -353,11 +357,11 @@ func (h *EventHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Security BearerAuth
 // @Param eventID path string true "Event ID"
-// @Success 200 {object} EventResponse
+// @Success 204 "No Content"
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 404 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
-// @Router /events/{eventID} [post]
+// @Router /events/{eventID} [delete]
 func (h *EventHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	// get authenticated user ID from context
 	userID, ok := middleware.GetUserID(r.Context())
@@ -372,11 +376,11 @@ func (h *EventHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deletedEvent, err := h.event.DeleteEvent(r.Context(), eventID, userID)
+	_, err := h.event.DeleteEvent(r.Context(), eventID, userID)
 	if err != nil {
 		response.WriteError(w, err)
 		return
 	}
 
-	response.WriteJSON(w, http.StatusOK, toEventResponse(deletedEvent))
+	w.WriteHeader(http.StatusNoContent)
 }
