@@ -35,12 +35,12 @@ func (m *EventQueries) GetEventsByOrganiser(ctx context.Context, organiserID pgt
 	return args.Get(0).([]repository.Event), args.Error(1)
 }
 
-func (m *EventQueries) GetPublishedEvents(ctx context.Context) ([]repository.Event, error) {
+func (m *EventQueries) PublicGetPublishedEvents(ctx context.Context) ([]repository.Event, error) {
 	args := m.Called(ctx)
 	return args.Get(0).([]repository.Event), args.Error(1)
 }
 
-func (m *EventQueries) GetUpcomingEvents(ctx context.Context) ([]repository.Event, error) {
+func (m *EventQueries) PublicGetUpcomingEvents(ctx context.Context) ([]repository.Event, error) {
 	args := m.Called(ctx)
 	return args.Get(0).([]repository.Event), args.Error(1)
 }
@@ -60,7 +60,7 @@ func (m *EventQueries) CancelEvent(ctx context.Context, id pgtype.UUID) (reposit
 	return args.Get(0).(repository.Event), args.Error(1)
 }
 
-func (m *EventQueries) DeleteEvent(ctx context.Context, id pgtype.UUID) error {
+func (m *EventQueries) DeleteEvent(ctx context.Context, id pgtype.UUID) (repository.Event, error) {
 	args := m.Called(ctx, id)
-	return args.Error(0)
+	return args.Get(0).(repository.Event), args.Error(1)
 }

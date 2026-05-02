@@ -375,6 +375,72 @@ func TestUpdateEventStatus_InvalidStatus(t *testing.T) {
 	db.AssertExpectations(t)
 }
 
+// CancelEvent
+func TestCancelEvent_Success(t *testing.T) {
+	db := new(mock.EventQueries)
+	svc := newTestEventService(db)
+
+	organiserID := makeOrganiserID()
+	parsedOrgID, _ := uuid.Parse(organiserID)
+	eventID := makeEventID()
+
+	db.On("GetEventById", mocktestify.Anything, eventID).
+		Return(repository.Event{
+			ID:          eventID,
+			OrganiserID: pgtype.UUID{Bytes: parsedOrgID, Valid: true},
+		}, nil)
+
+	db.On("CancelEvent", mocktestify.Anything, eventID).
+		Return(repository.Event{
+			ID: eventID,
+		}, nil)
+
+	deletedEvent, err := svc.CancelEvent(
+		context.Background(),
+		uuid.UUID(eventID.Bytes).String(),
+		organiserID,
+	)
+
+	assert.NoError(t, err)
+	assert.Equal(t, eventID, deletedEvent.ID)
+	db.AssertExpectations(t)
+}
+
+func TestCancelEvent_NotOwner(t *testing.T) {
+	db := new(mock.EventQueries)
+	svc := newTestEventService(db)
+
+	eventID := makeEventID()
+	realOwnerID := makeOrganiserID()
+	parsedOwnerID, _ := uuid.Parse(realOwnerID)
+
+	db.On("GetEventById", mocktestify.Anything, eventID).
+		Return(repository.Event{
+			ID:          eventID,
+			OrganiserID: pgtype.UUID{Bytes: parsedOwnerID, Valid: true},
+		}, nil)
+
+	_, err := svc.CancelEvent(context.Background(), uuid.UUID(eventID.Bytes).String(), makeOrganiserID())
+
+	assert.ErrorIs(t, err, response.ErrForbidden)
+	db.AssertExpectations(t)
+}
+
+func TestCancelEvent_NotFound(t *testing.T) {
+	db := new(mock.EventQueries)
+	svc := newTestEventService(db)
+
+	eventID := makeEventID()
+
+	db.On("GetEventById", mocktestify.Anything, eventID).
+		Return(repository.Event{}, errors.New("not found"))
+
+	_, err := svc.CancelEvent(context.Background(), uuid.UUID(eventID.Bytes).String(), makeOrganiserID())
+
+	assert.ErrorIs(t, err, response.ErrNotFound)
+	db.AssertExpectations(t)
+}
+
 // DeleteEvent
 func TestDeleteEvent_Success(t *testing.T) {
 	db := new(mock.EventQueries)
@@ -391,11 +457,18 @@ func TestDeleteEvent_Success(t *testing.T) {
 		}, nil)
 
 	db.On("DeleteEvent", mocktestify.Anything, eventID).
-		Return(nil)
+		Return(repository.Event{
+			ID: eventID,
+		}, nil)
 
-	err := svc.DeleteEvent(context.Background(), uuid.UUID(eventID.Bytes).String(), organiserID)
+	deletedEvent, err := svc.DeleteEvent(
+		context.Background(),
+		uuid.UUID(eventID.Bytes).String(),
+		organiserID,
+	)
 
 	assert.NoError(t, err)
+	assert.Equal(t, eventID, deletedEvent.ID)
 	db.AssertExpectations(t)
 }
 
@@ -413,7 +486,7 @@ func TestDeleteEvent_NotOwner(t *testing.T) {
 			OrganiserID: pgtype.UUID{Bytes: parsedOwnerID, Valid: true},
 		}, nil)
 
-	err := svc.DeleteEvent(context.Background(), uuid.UUID(eventID.Bytes).String(), makeOrganiserID())
+	_, err := svc.DeleteEvent(context.Background(), uuid.UUID(eventID.Bytes).String(), makeOrganiserID())
 
 	assert.ErrorIs(t, err, response.ErrForbidden)
 	db.AssertExpectations(t)
@@ -428,7 +501,7 @@ func TestDeleteEvent_NotFound(t *testing.T) {
 	db.On("GetEventById", mocktestify.Anything, eventID).
 		Return(repository.Event{}, errors.New("not found"))
 
-	err := svc.DeleteEvent(context.Background(), uuid.UUID(eventID.Bytes).String(), makeOrganiserID())
+	_, err := svc.DeleteEvent(context.Background(), uuid.UUID(eventID.Bytes).String(), makeOrganiserID())
 
 	assert.ErrorIs(t, err, response.ErrNotFound)
 	db.AssertExpectations(t)
