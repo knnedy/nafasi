@@ -157,20 +157,6 @@ func (s *EventService) GetEventBySlug(ctx context.Context, slug string) (reposit
 	return event, nil
 }
 
-func (s *EventService) GetEventsByOrganiser(ctx context.Context, organiserID string) ([]repository.Event, error) {
-	parsedID, err := uuid.Parse(organiserID)
-	if err != nil {
-		return nil, response.ErrInvalidInput
-	}
-
-	events, err := s.db.GetEventsByOrganiser(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
-	if err != nil {
-		return nil, response.ErrDatabase
-	}
-
-	return events, nil
-}
-
 func (s *EventService) GetPublishedEvents(ctx context.Context, limit, offset int32) ([]repository.Event, error) {
 	events, err := s.db.PublicGetPublishedEvents(ctx, repository.PublicGetPublishedEventsParams{
 		Limit:  limit,

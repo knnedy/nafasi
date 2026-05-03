@@ -216,37 +216,6 @@ func TestGetEventBySlug_NotFound(t *testing.T) {
 	db.AssertExpectations(t)
 }
 
-// GetEventsByOrganiser
-func TestGetEventsByOrganiser_Success(t *testing.T) {
-	db := new(mock.EventQueries)
-	svc := newTestEventService(db)
-
-	organiserID := makeOrganiserID()
-	parsedID, _ := uuid.Parse(organiserID)
-	pgOrganiserID := pgtype.UUID{Bytes: parsedID, Valid: true}
-
-	db.On("GetEventsByOrganiser", mocktestify.Anything, pgOrganiserID).
-		Return([]repository.Event{
-			{Title: "Event One"},
-			{Title: "Event Two"},
-		}, nil)
-
-	events, err := svc.GetEventsByOrganiser(context.Background(), organiserID)
-
-	assert.NoError(t, err)
-	assert.Len(t, events, 2)
-	db.AssertExpectations(t)
-}
-
-func TestGetEventsByOrganiser_InvalidID(t *testing.T) {
-	db := new(mock.EventQueries)
-	svc := newTestEventService(db)
-
-	_, err := svc.GetEventsByOrganiser(context.Background(), "not-a-uuid")
-
-	assert.ErrorIs(t, err, response.ErrInvalidInput)
-}
-
 // UpdateEvent
 func TestUpdateEvent_Success(t *testing.T) {
 	db := new(mock.EventQueries)

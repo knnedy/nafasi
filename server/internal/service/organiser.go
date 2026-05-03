@@ -19,6 +19,20 @@ func NewOrganiserService(db OrganiserQuerier) *OrganiserService {
 	return &OrganiserService{db: db}
 }
 
+func (s *OrganiserService) GetEventsByOrganiser(ctx context.Context, organiserID string) ([]repository.Event, error) {
+	parsedID, err := uuid.Parse(organiserID)
+	if err != nil {
+		return nil, response.ErrInvalidInput
+	}
+
+	events, err := s.db.GetEventsByOrganiser(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
+	if err != nil {
+		return nil, response.ErrDatabase
+	}
+
+	return events, nil
+}
+
 func (s *OrganiserService) GetTicketTypesByEvent(ctx context.Context, organiserID, eventID string) ([]repository.TicketType, error) {
 	parsedEventID, err := uuid.Parse(eventID)
 	if err != nil {

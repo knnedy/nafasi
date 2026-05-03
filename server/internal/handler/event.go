@@ -146,37 +146,6 @@ func (h *EventHandler) GetBySlug(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toEventResponse(event))
 }
 
-// GetByOrganiser godoc
-// @Summary Get events by organiser
-// @Description Returns all events created by a specific organiser
-// @Tags Events
-// @Produce json
-// @Param organiserID path string true "Organiser ID"
-// @Success 200 {array} EventResponse
-// @Failure 404 {object} response.ErrorResponse
-// @Failure 500 {object} response.ErrorResponse
-// @Router /events/organiser/{organiserID} [get]
-func (h *EventHandler) GetByOrganiser(w http.ResponseWriter, r *http.Request) {
-	organiserID := chi.URLParam(r, "organiserID")
-	if organiserID == "" {
-		response.WriteError(w, response.ErrNotFound)
-		return
-	}
-
-	events, err := h.event.GetEventsByOrganiser(r.Context(), organiserID)
-	if err != nil {
-		response.WriteError(w, err)
-		return
-	}
-
-	var eventResponses []EventResponse
-	for _, event := range events {
-		eventResponses = append(eventResponses, toEventResponse(event))
-	}
-
-	response.WriteJSON(w, http.StatusOK, eventResponses)
-}
-
 // GetPublished godoc
 // @Summary Get published events
 // @Description Returns all published events

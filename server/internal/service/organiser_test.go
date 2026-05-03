@@ -16,6 +16,37 @@ import (
 	mocktestify "github.com/stretchr/testify/mock"
 )
 
+// GetEventsByOrganiser
+func TestGetEventsByOrganiser_Success(t *testing.T) {
+	db := new(mock.OrganiserQueries)
+	svc := service.NewOrganiserService(db)
+
+	organiserID := makeOrganiserID()
+	parsedID, _ := uuid.Parse(organiserID)
+	pgOrganiserID := pgtype.UUID{Bytes: parsedID, Valid: true}
+
+	db.On("GetEventsByOrganiser", mocktestify.Anything, pgOrganiserID).
+		Return([]repository.Event{
+			{Title: "Event One"},
+			{Title: "Event Two"},
+		}, nil)
+
+	events, err := svc.GetEventsByOrganiser(context.Background(), organiserID)
+
+	assert.NoError(t, err)
+	assert.Len(t, events, 2)
+	db.AssertExpectations(t)
+}
+
+func TestGetEventsByOrganiser_InvalidID(t *testing.T) {
+	db := new(mock.OrganiserQueries)
+	svc := service.NewOrganiserService(db)
+
+	_, err := svc.GetEventsByOrganiser(context.Background(), "not-a-uuid")
+
+	assert.ErrorIs(t, err, response.ErrInvalidInput)
+}
+
 func TestGetTicketTypesByEvent(t *testing.T) {
 	mockDB := new(mock.OrganiserQueries)
 	svc := service.NewOrganiserService(mockDB)

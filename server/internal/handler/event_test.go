@@ -252,30 +252,6 @@ func TestGetUpcomingEventsHandler_Success(t *testing.T) {
 	svc.AssertExpectations(t)
 }
 
-// GetByOrganiser
-func TestGetEventsByOrganiserHandler_Success(t *testing.T) {
-	svc := new(mock.EventService)
-	h := handler.NewEventHandler(svc)
-
-	organiserID := uuid.New().String()
-
-	svc.On("GetEventsByOrganiser", mocktestify.Anything, organiserID).
-		Return([]repository.Event{
-			makeHandlerEvent(organiserID),
-		}, nil)
-
-	w := httptest.NewRecorder()
-	r := withChiParam(
-		httptest.NewRequest(http.MethodGet, "/api/v1/events/organiser/"+organiserID, nil),
-		"organiserID", organiserID,
-	)
-
-	h.GetByOrganiser(w, r)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-	svc.AssertExpectations(t)
-}
-
 // UpdateEvent
 func TestUpdateEventHandler_Success(t *testing.T) {
 	svc := new(mock.EventService)

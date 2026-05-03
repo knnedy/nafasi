@@ -28,7 +28,6 @@ type EventServicer interface {
 	CreateEvent(ctx context.Context, organiserID string, input service.CreateEventInput) (repository.Event, error)
 	GetEventByID(ctx context.Context, eventID string) (repository.Event, error)
 	GetEventBySlug(ctx context.Context, slug string) (repository.Event, error)
-	GetEventsByOrganiser(ctx context.Context, organiserID string) ([]repository.Event, error)
 	GetPublishedEvents(ctx context.Context, limit int32, offset int32) ([]repository.Event, error)
 	GetUpcomingEvents(ctx context.Context, limit int32, offset int32) ([]repository.Event, error)
 	UpdateEvent(ctx context.Context, eventID string, organiserID string, input service.UpdateEventInput) (repository.Event, error)
@@ -54,6 +53,21 @@ type PaymentServicer interface {
 type CheckInServicer interface {
 	CheckIn(ctx context.Context, organiserID string, qrCode string) (*service.CheckInResult, error)
 	GetCheckedInOrders(ctx context.Context, organiserID string, eventID string) ([]repository.Order, error)
+}
+
+type OrganiserServicer interface {
+	GetEventsByOrganiser(ctx context.Context, organiserID string) ([]repository.Event, error)
+	GetTicketTypesByEvent(ctx context.Context, organiserID string, eventID string) ([]repository.TicketType, error)
+	GetTicketTypeSalesByEvent(ctx context.Context, organiserID string, eventID string) ([]repository.GetTicketTypeSalesByEventRow, error)
+	GetTotalTicketsSold(ctx context.Context, organiserID string, eventID string) (int64, error)
+	GetOrdersByEvent(ctx context.Context, organiserID string, eventID string, limit int32, offset int32) ([]repository.Order, error)
+	GetOrdersByEventAndStatus(ctx context.Context, organiserID string, eventID string, status repository.OrderStatus, limit int32, offset int32) ([]repository.Order, error)
+	GetRecentEventOrders(ctx context.Context, organiserID string, eventID string, limit int32) ([]repository.Order, error)
+	GetEventRevenue(ctx context.Context, organiserID string, eventID string) (int64, error)
+	GetEventOrdersCount(ctx context.Context, organiserID string, eventID string) (int64, error)
+	GetEventCheckedInCount(ctx context.Context, organiserID string, eventID string) (int64, error)
+	GetEventOrderStatusBreakdown(ctx context.Context, organiserID string, eventID string) ([]repository.GetEventOrderStatusBreakdownRow, error)
+	GetEventTicketsSold(ctx context.Context, organiserID string, eventID string) (int64, error)
 }
 
 type AdminServicer interface {

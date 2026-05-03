@@ -15,6 +15,11 @@ type OrganiserQueries struct {
 
 var _ service.OrganiserQuerier = (*OrganiserQueries)(nil)
 
+func (m *OrganiserQueries) GetEventsByOrganiser(ctx context.Context, organiserID pgtype.UUID) ([]repository.Event, error) {
+	args := m.Called(ctx, organiserID)
+	return args.Get(0).([]repository.Event), args.Error(1)
+}
+
 func (m *OrganiserQueries) GetTicketTypesByEvent(ctx context.Context, id pgtype.UUID) ([]repository.TicketType, error) {
 	args := m.Called(ctx, id)
 	return args.Get(0).([]repository.TicketType), args.Error(1)

@@ -35,7 +35,6 @@ type EventQuerier interface {
 	CreateEvent(ctx context.Context, arg repository.CreateEventParams) (repository.Event, error)
 	GetEventById(ctx context.Context, id pgtype.UUID) (repository.Event, error)
 	GetEventBySlug(ctx context.Context, slug string) (repository.Event, error)
-	GetEventsByOrganiser(ctx context.Context, organiserID pgtype.UUID) ([]repository.Event, error)
 	PublicGetPublishedEvents(ctx context.Context, arg repository.PublicGetPublishedEventsParams) ([]repository.Event, error)
 	PublicGetUpcomingEvents(ctx context.Context, arg repository.PublicGetUpcomingEventsParams) ([]repository.Event, error)
 	UpdateEvent(ctx context.Context, arg repository.UpdateEventParams) (repository.Event, error)
@@ -79,6 +78,7 @@ type CheckInQuerier interface {
 }
 
 type OrganiserQuerier interface {
+	GetEventsByOrganiser(ctx context.Context, organiserID pgtype.UUID) ([]repository.Event, error)
 	GetTicketTypesByEvent(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error)
 	GetTicketTypeSalesByEvent(ctx context.Context, eventID pgtype.UUID) ([]repository.GetTicketTypeSalesByEventRow, error)
 	GetTotalTicketsSold(ctx context.Context, eventID pgtype.UUID) (int64, error)

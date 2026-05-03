@@ -30,11 +30,6 @@ func (m *EventQueries) GetEventBySlug(ctx context.Context, slug string) (reposit
 	return args.Get(0).(repository.Event), args.Error(1)
 }
 
-func (m *EventQueries) GetEventsByOrganiser(ctx context.Context, organiserID pgtype.UUID) ([]repository.Event, error) {
-	args := m.Called(ctx, organiserID)
-	return args.Get(0).([]repository.Event), args.Error(1)
-}
-
 func (m *EventQueries) PublicGetPublishedEvents(ctx context.Context, arg repository.PublicGetPublishedEventsParams) ([]repository.Event, error) {
 	args := m.Called(ctx, arg)
 	return args.Get(0).([]repository.Event), args.Error(1)
