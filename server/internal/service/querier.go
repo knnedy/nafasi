@@ -39,7 +39,6 @@ type EventQuerier interface {
 	PublicGetUpcomingEvents(ctx context.Context, arg repository.PublicGetUpcomingEventsParams) ([]repository.Event, error)
 	UpdateEvent(ctx context.Context, arg repository.UpdateEventParams) (repository.Event, error)
 	UpdateEventStatus(ctx context.Context, arg repository.UpdateEventStatusParams) (repository.Event, error)
-	CancelEvent(ctx context.Context, id pgtype.UUID) (repository.Event, error)
 	DeleteEvent(ctx context.Context, id pgtype.UUID) (repository.Event, error)
 }
 
@@ -96,11 +95,12 @@ type AdminQuerier interface {
 	// user management
 	GetUserById(ctx context.Context, id pgtype.UUID) (repository.User, error)
 	AdminGetAllUsers(ctx context.Context, arg repository.AdminGetAllUsersParams) ([]repository.User, error)
+	AdminGetUserByRoleAndStatus(ctx context.Context, arg repository.AdminGetUserByRoleAndStatusParams) ([]repository.User, error)
 	AdminGetUsersByRole(ctx context.Context, arg repository.AdminGetUsersByRoleParams) ([]repository.User, error)
 	AdminGetUsersByStatus(ctx context.Context, arg repository.AdminGetUsersByStatusParams) ([]repository.User, error)
-	AdminGetUserById(ctx context.Context, id pgtype.UUID) (repository.User, error)
-	AdminGetPendingOrganisers(ctx context.Context) ([]repository.User, error)
-	AdminGetApprovedOrganisers(ctx context.Context) ([]repository.User, error)
+	AdminGetAllOrganisers(ctx context.Context, arg repository.AdminGetAllOrganisersParams) ([]repository.User, error)
+	AdminGetPendingOrganisers(ctx context.Context, arg repository.AdminGetPendingOrganisersParams) ([]repository.User, error)
+	AdminGetApprovedOrganisers(ctx context.Context, arg repository.AdminGetApprovedOrganisersParams) ([]repository.User, error)
 	AdminUpdateUserVerification(ctx context.Context, arg repository.AdminUpdateUserVerificationParams) (repository.User, error)
 	AdminBanUser(ctx context.Context, id pgtype.UUID) (repository.User, error)
 	AdminUnbanUser(ctx context.Context, id pgtype.UUID) (repository.User, error)

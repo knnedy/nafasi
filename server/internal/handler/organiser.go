@@ -245,14 +245,16 @@ func (h *OrganiserHandler) GetTotalTicketsSold(w http.ResponseWriter, r *http.Re
 
 // GetOrdersByEvent godoc
 // @Summary Get orders for an event
-// @Description Returns paginated orders for a specific event (organiser only)
+// @Description Returns paginated orders for a specific event. Can optionally filter by status (organiser only)
 // @Tags Organiser
 // @Produce json
 // @Security BearerAuth
 // @Param eventID path string true "Event ID"
+// @Param status query string false "Filter by status (PENDING, PAID, FAILED, CANCELLED, REFUNDED)"
 // @Param limit query int false "Limit"
 // @Param offset query int false "Offset"
 // @Success 200 {array} OrganiserOrderResponse
+// @Failure 400 {object} response.ErrorResponse
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 403 {object} response.ErrorResponse
 // @Failure 404 {object} response.ErrorResponse
@@ -271,61 +273,31 @@ func (h *OrganiserHandler) GetOrdersByEvent(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	limit, offset := getPagination(r)
-
-	orders, err := h.organiser.GetOrdersByEvent(r.Context(), organiserID, eventID, limit, offset)
-	if err != nil {
-		response.WriteError(w, err)
-		return
-	}
-
-	var result []OrganiserOrderResponse
-	for _, o := range orders {
-		result = append(result, toOrganiserOrderResponse(o))
-	}
-
-	response.WriteJSON(w, http.StatusOK, result)
-}
-
-// GetOrdersByEventAndStatus godoc
-// @Summary Get orders by status for an event
-// @Description Returns paginated orders filtered by status for an event (organiser only)
-// @Tags Organiser
-// @Produce json
-// @Security BearerAuth
-// @Param eventID path string true "Event ID"
-// @Param status query string true "Status (PENDING, PAID, FAILED, CANCELLED, REFUNDED)"
-// @Param limit query int false "Limit"
-// @Param offset query int false "Offset"
-// @Success 200 {array} OrganiserOrderResponse
-// @Failure 400 {object} response.ErrorResponse
-// @Failure 401 {object} response.ErrorResponse
-// @Failure 403 {object} response.ErrorResponse
-// @Failure 404 {object} response.ErrorResponse
-// @Failure 500 {object} response.ErrorResponse
-// @Router /organiser/events/{eventID}/orders/status [get]
-func (h *OrganiserHandler) GetOrdersByEventAndStatus(w http.ResponseWriter, r *http.Request) {
-	organiserID, ok := middleware.GetUserID(r.Context())
-	if !ok {
-		response.WriteError(w, response.ErrUnauthorized)
-		return
-	}
-
-	eventID := chi.URLParam(r, "eventID")
-	if eventID == "" {
-		response.WriteError(w, response.ErrNotFound)
-		return
-	}
-
 	status := r.URL.Query().Get("status")
-	if status == "" {
-		response.WriteError(w, response.ErrInvalidInput)
-		return
-	}
-
 	limit, offset := getPagination(r)
 
-	orders, err := h.organiser.GetOrdersByEventAndStatus(r.Context(), organiserID, eventID, repository.OrderStatus(status), limit, offset)
+	var orders []repository.Order
+	var err error
+
+	if status != "" {
+		orders, err = h.organiser.GetOrdersByEventAndStatus(
+			r.Context(),
+			organiserID,
+			eventID,
+			repository.OrderStatus(status),
+			limit,
+			offset,
+		)
+	} else {
+		orders, err = h.organiser.GetOrdersByEvent(
+			r.Context(),
+			organiserID,
+			eventID,
+			limit,
+			offset,
+		)
+	}
+
 	if err != nil {
 		response.WriteError(w, err)
 		return

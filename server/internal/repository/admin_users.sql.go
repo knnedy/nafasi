@@ -68,6 +68,50 @@ func (q *Queries) AdminDeleteUser(ctx context.Context, id pgtype.UUID) (User, er
 	return i, err
 }
 
+const adminGetAllOrganisers = `-- name: AdminGetAllOrganisers :many
+SELECT id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at FROM "users"
+WHERE "role" = 'ORGANISER'
+ORDER BY "created_at" DESC
+LIMIT $1 OFFSET $2
+`
+
+type AdminGetAllOrganisersParams struct {
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) AdminGetAllOrganisers(ctx context.Context, arg AdminGetAllOrganisersParams) ([]User, error) {
+	rows, err := q.db.Query(ctx, adminGetAllOrganisers, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Email,
+			&i.Password,
+			&i.Role,
+			&i.IsVerified,
+			&i.Status,
+			&i.AvatarUrl,
+			&i.BannedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const adminGetAllUsers = `-- name: AdminGetAllUsers :many
 SELECT id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at FROM "users"
 ORDER BY "created_at" DESC
@@ -117,10 +161,16 @@ WHERE "role" = 'ORGANISER'
 AND "is_verified" = TRUE
 AND "status" = 'ACTIVE'
 ORDER BY "created_at" DESC
+LIMIT $1 OFFSET $2
 `
 
-func (q *Queries) AdminGetApprovedOrganisers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.Query(ctx, adminGetApprovedOrganisers)
+type AdminGetApprovedOrganisersParams struct {
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) AdminGetApprovedOrganisers(ctx context.Context, arg AdminGetApprovedOrganisersParams) ([]User, error) {
+	rows, err := q.db.Query(ctx, adminGetApprovedOrganisers, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -156,10 +206,68 @@ SELECT id, name, email, password, role, is_verified, status, avatar_url, banned_
 WHERE "role" = 'ORGANISER'
 AND "is_verified" = FALSE
 ORDER BY "created_at" ASC
+LIMIT $1 OFFSET $2
 `
 
-func (q *Queries) AdminGetPendingOrganisers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.Query(ctx, adminGetPendingOrganisers)
+type AdminGetPendingOrganisersParams struct {
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) AdminGetPendingOrganisers(ctx context.Context, arg AdminGetPendingOrganisersParams) ([]User, error) {
+	rows, err := q.db.Query(ctx, adminGetPendingOrganisers, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Email,
+			&i.Password,
+			&i.Role,
+			&i.IsVerified,
+			&i.Status,
+			&i.AvatarUrl,
+			&i.BannedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminGetUserByRoleAndStatus = `-- name: AdminGetUserByRoleAndStatus :many
+SELECT id, name, email, password, role, is_verified, status, avatar_url, banned_at, created_at, updated_at FROM "users"
+WHERE "role" = $1
+AND "status" = $2
+ORDER BY "created_at" DESC
+LIMIT $3 OFFSET $4
+`
+
+type AdminGetUserByRoleAndStatusParams struct {
+	Role   UserRole
+	Status UserStatus
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) AdminGetUserByRoleAndStatus(ctx context.Context, arg AdminGetUserByRoleAndStatusParams) ([]User, error) {
+	rows, err := q.db.Query(ctx, adminGetUserByRoleAndStatus,
+		arg.Role,
+		arg.Status,
+		arg.Limit,
+		arg.Offset,
+	)
 	if err != nil {
 		return nil, err
 	}

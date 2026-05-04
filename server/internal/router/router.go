@@ -6,8 +6,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	_ "github.com/knnedy/nafasi/docs"
 	"github.com/knnedy/nafasi/internal/handler"
 	"github.com/knnedy/nafasi/internal/middleware"
+	"github.com/knnedy/nafasi/internal/repository"
 	"github.com/knnedy/nafasi/internal/token"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
@@ -21,6 +23,8 @@ func New(
 	ticketType *handler.TicketTypeHandler,
 	payment *handler.PaymentHandler,
 	checkin *handler.CheckInHandler,
+	organiser *handler.OrganiserHandler,
+	admin *handler.AdminHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -33,8 +37,10 @@ func New(
 
 	authMiddleware := middleware.NewAuthMiddleware(tokens)
 
-	// swagger outside versioning
-	r.Get("/swagger/*", httpSwagger.Handler())
+	// swagger docs
+	r.Get("/docs/*", httpSwagger.Handler(
+		httpSwagger.URL("/docs/doc.json"),
+	))
 
 	r.Route(fmt.Sprintf("/api/%s", apiVersion), func(r chi.Router) {
 
@@ -51,7 +57,7 @@ func New(
 		// mpesa callback — public, Safaricom has no JWT
 		r.Post("/payments/mpesa/callback", payment.MpesaCallback)
 
-		// events
+		// events — public read + organiser writes
 		r.Route("/events", eventsRouter(event, ticketType, authMiddleware))
 
 		// authenticated routes
@@ -74,10 +80,77 @@ func New(
 
 			// checkin — organiser only
 			r.Route("/checkin", func(r chi.Router) {
-				r.Use(authMiddleware.RequireRole("ORGANISER"))
+				r.Use(authMiddleware.RequireRole(repository.UserRoleORGANISER))
 				r.Post("/", checkin.CheckIn)
 				r.Get("/{eventID}", checkin.GetCheckedInOrders)
 			})
+		})
+
+		// organiser dashboard — organiser only
+		r.Route("/organiser", func(r chi.Router) {
+			r.Use(authMiddleware.Authenticate)
+			r.Use(authMiddleware.RequireRole(repository.UserRoleORGANISER))
+
+			r.Get("/events", organiser.GetEventsByOrganiser)
+
+			r.Route("/events/{eventID}", func(r chi.Router) {
+				r.Get("/ticket-types", organiser.GetTicketTypesByEvent)
+				r.Get("/ticket-types/sales", organiser.GetTicketTypeSalesByEvent)
+				r.Get("/tickets-sold", organiser.GetTotalTicketsSold)
+				r.Get("/revenue", organiser.GetEventRevenue)
+				r.Get("/checkin/count", organiser.GetEventCheckedInCount)
+
+				r.Route("/orders", func(r chi.Router) {
+					r.Get("/", organiser.GetOrdersByEvent)
+					r.Get("/recent", organiser.GetRecentEventOrders)
+					r.Get("/count", organiser.GetEventOrdersCount)
+					r.Get("/breakdown", organiser.GetEventOrderStatusBreakdown)
+				})
+			})
+		})
+
+		// admin — admin only
+		r.Route("/admin", func(r chi.Router) {
+			r.Use(authMiddleware.Authenticate)
+			r.Use(authMiddleware.RequireRole(repository.UserRoleADMIN))
+
+			// user management
+			r.Route("/users", func(r chi.Router) {
+				r.Get("/", admin.GetUsers)
+
+				r.Route("/{userID}", func(r chi.Router) {
+					r.Get("/", admin.GetUserByID)
+					r.Patch("/verification", admin.UpdateOrganiserVerification)
+					r.Patch("/ban", admin.BanUser)
+					r.Patch("/unban", admin.UnbanUser)
+					r.Patch("/promote", admin.PromoteToAdmin)
+					r.Delete("/", admin.DeleteUser)
+				})
+			})
+
+			// organiser management
+			r.Route("/organisers", func(r chi.Router) {
+				r.Get("/", admin.GetOrganisers)
+			})
+
+			// event management
+			r.Route("/events", func(r chi.Router) {
+				r.Get("/", admin.GetEvents)
+
+				r.Route("/{eventID}", func(r chi.Router) {
+					r.Patch("/cancel", admin.CancelEvent)
+					r.Delete("/", admin.DeleteEvent)
+				})
+			})
+
+			// order management
+			r.Route("/orders", func(r chi.Router) {
+				r.Get("/", admin.GetOrdersByStatus)
+				r.Get("/recent", admin.GetRecentOrdersWithDetails)
+			})
+
+			// platform stats
+			r.Get("/stats", admin.GetPlatformStats)
 		})
 	})
 
@@ -93,19 +166,15 @@ func eventsRouter(
 		// public read — static before dynamic
 		r.Get("/published", event.GetPublished)
 		r.Get("/upcoming", event.GetUpcoming)
-		r.Get("/organiser/{organiserID}", event.GetByOrganiser)
 		r.Get("/slug/{slug}", event.GetBySlug)
-		r.Get("/{eventID}", event.GetById)
-
-		// ticket types — static before dynamic
-		r.Get("/{eventID}/ticket-types", ticketType.GetByEvent)
+		r.Get("/{eventID}", event.GetByID)
 		r.Get("/{eventID}/ticket-types/available", ticketType.GetAvailableByEvent)
 		r.Get("/{eventID}/ticket-types/{ticketTypeID}", ticketType.GetById)
 
 		// organiser writes
 		r.Group(func(r chi.Router) {
 			r.Use(authMiddleware.Authenticate)
-			r.Use(authMiddleware.RequireRole("ORGANISER"))
+			r.Use(authMiddleware.RequireRole(repository.UserRoleORGANISER))
 
 			r.Post("/", event.Create)
 			r.Patch("/{eventID}", event.Update)

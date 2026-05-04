@@ -62,6 +62,8 @@ func main() {
 	mpesaService := service.NewMpesaService(cfg)
 	paymentService := service.NewPaymentService(db, db.Queries(), mpesaService, emailService)
 	checkInService := service.NewCheckInService(db.Queries())
+	organiserService := service.NewOrganiserService(db.Queries())
+	adminService := service.NewAdminService(db.Queries())
 
 	// initialize handlers
 	authHandler := handler.NewAuthHandler(authService)
@@ -70,6 +72,8 @@ func main() {
 	ticketTypeHandler := handler.NewTicketTypeHandler(ticketService)
 	paymentHandler := handler.NewPaymentHandler(paymentService)
 	checkInHandler := handler.NewCheckInHandler(checkInService)
+	organiserHandler := handler.NewOrganiserHandler(organiserService)
+	adminHandler := handler.NewAdminHandler(adminService)
 
 	// initialize router
 	r := router.New(
@@ -81,6 +85,8 @@ func main() {
 		ticketTypeHandler,
 		paymentHandler,
 		checkInHandler,
+		organiserHandler,
+		adminHandler,
 	)
 
 	// configure server with timeouts

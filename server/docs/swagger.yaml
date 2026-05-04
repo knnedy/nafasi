@@ -1,285 +1,108 @@
 basePath: /api/v1
 definitions:
-  github_com_knnedy_nafasi_internal_response.ErrorDetail:
+  handler.AdminEventResponse:
     properties:
-      code:
+      banner_url:
         type: string
-      field:
+      created_at:
         type: string
-      message:
+      description:
         type: string
-    type: object
-  github_com_knnedy_nafasi_internal_response.ErrorResponse:
-    properties:
-      error:
-        $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorDetail'
-      success:
+      ends_at:
+        type: string
+      id:
+        type: string
+      is_online:
         type: boolean
+      location:
+        type: string
+      online_url:
+        type: string
+      organiser_id:
+        type: string
+      organiser_name:
+        type: string
+      slug:
+        type: string
+      starts_at:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      venue:
+        type: string
     type: object
-  github_com_knnedy_nafasi_internal_service.CheckInResult:
+  handler.AdminOrderDetailResponse:
     properties:
       checked_in:
         type: boolean
+      created_at:
+        type: string
       event_id:
         type: string
-      message:
+      event_title:
         type: string
-      order_id:
+      id:
+        type: string
+      payment_method:
+        type: string
+      payment_ref:
+        type: string
+      quantity:
+        type: integer
+      status:
+        type: string
+      user_email:
+        type: string
+      user_id:
+        type: string
+      user_name:
+        type: string
+    type: object
+  handler.AdminOrderResponse:
+    properties:
+      checked_in:
+        type: boolean
+      created_at:
+        type: string
+      event_id:
+        type: string
+      id:
+        type: string
+      payment_method:
+        type: string
+      payment_ref:
+        type: string
+      quantity:
+        type: integer
+      status:
         type: string
       user_id:
         type: string
     type: object
-  github_com_knnedy_nafasi_internal_service.CreateEventInput:
+  handler.AdminStatsResponse:
     properties:
-      description:
-        type: string
-      ends_at:
-        type: string
-      is_online:
-        type: boolean
-      location:
-        type: string
-      online_url:
-        type: string
-      starts_at:
-        type: string
-      title:
-        maxLength: 255
-        minLength: 3
-        type: string
-      venue:
-        type: string
-    required:
-    - ends_at
-    - starts_at
-    - title
-    type: object
-  github_com_knnedy_nafasi_internal_service.CreateTicketTypeInput:
-    properties:
-      description:
-        type: string
-      is_free:
-        type: boolean
-      name:
-        maxLength: 100
-        minLength: 2
-        type: string
-      price:
-        type: string
-      quantity:
-        minimum: 1
+      paid_orders:
         type: integer
-      sale_ends:
-        type: string
-      sale_starts:
-        type: string
-    required:
-    - name
-    - price
-    - quantity
-    type: object
-  github_com_knnedy_nafasi_internal_service.ForgotPasswordInput:
-    properties:
-      email:
-        type: string
-    required:
-    - email
-    type: object
-  github_com_knnedy_nafasi_internal_service.InitiatePaymentInput:
-    properties:
-      event_id:
-        type: string
-      payment_method:
-        enum:
-        - MPESA
-        - FREE
-        type: string
-      phone_number:
-        type: string
-      quantity:
-        maximum: 10
-        minimum: 1
+      published_events:
         type: integer
-      ticket_type_id:
-        type: string
-    required:
-    - event_id
-    - payment_method
-    - phone_number
-    - quantity
-    - ticket_type_id
-    type: object
-  github_com_knnedy_nafasi_internal_service.LoginInput:
-    properties:
-      email:
-        type: string
-      password:
-        type: string
-    required:
-    - email
-    - password
-    type: object
-  github_com_knnedy_nafasi_internal_service.MpesaCallback:
-    properties:
-      Body:
-        properties:
-          stkCallback:
-            properties:
-              CallbackMetadata:
-                properties:
-                  Item:
-                    items:
-                      properties:
-                        Name:
-                          type: string
-                        Value: {}
-                      type: object
-                    type: array
-                type: object
-              CheckoutRequestID:
-                type: string
-              MerchantRequestID:
-                type: string
-              ResultCode:
-                type: integer
-              ResultDesc:
-                type: string
-            type: object
-        type: object
-    type: object
-  github_com_knnedy_nafasi_internal_service.PaymentResult:
-    properties:
-      checkout_request_id:
-        type: string
-      message:
-        type: string
-      order_id:
-        type: string
-    type: object
-  github_com_knnedy_nafasi_internal_service.RegisterInput:
-    properties:
-      email:
-        type: string
-      name:
-        maxLength: 100
-        minLength: 2
-        type: string
-      password:
-        maxLength: 100
-        minLength: 8
-        type: string
-    required:
-    - email
-    - name
-    - password
-    type: object
-  github_com_knnedy_nafasi_internal_service.ResetPasswordInput:
-    properties:
-      new_password:
-        maxLength: 100
-        minLength: 8
-        type: string
-      token:
-        type: string
-    required:
-    - new_password
-    - token
-    type: object
-  github_com_knnedy_nafasi_internal_service.UpdateAvatarInput:
-    properties:
-      avatarURL:
-        type: string
-    required:
-    - avatarURL
-    type: object
-  github_com_knnedy_nafasi_internal_service.UpdateEventInput:
-    properties:
-      description:
-        type: string
-      ends_at:
-        type: string
-      is_online:
-        type: boolean
-      location:
-        type: string
-      online_url:
-        type: string
-      starts_at:
-        type: string
-      title:
-        maxLength: 255
-        minLength: 3
-        type: string
-      venue:
-        type: string
-    required:
-    - ends_at
-    - starts_at
-    - title
-    type: object
-  github_com_knnedy_nafasi_internal_service.UpdateEventStatusInput:
-    properties:
-      status:
-        enum:
-        - DRAFT
-        - PUBLISHED
-        - CANCELLED
-        - COMPLETED
-        type: string
-    required:
-    - status
-    type: object
-  github_com_knnedy_nafasi_internal_service.UpdatePasswordInput:
-    properties:
-      currentPassword:
-        maxLength: 100
-        minLength: 8
-        type: string
-      newPassword:
-        maxLength: 100
-        minLength: 8
-        type: string
-    required:
-    - currentPassword
-    - newPassword
-    type: object
-  github_com_knnedy_nafasi_internal_service.UpdateProfileInput:
-    properties:
-      email:
-        type: string
-      name:
-        maxLength: 100
-        minLength: 2
-        type: string
-    required:
-    - email
-    - name
-    type: object
-  github_com_knnedy_nafasi_internal_service.UpdateTicketTypeInput:
-    properties:
-      description:
-        type: string
-      is_free:
-        type: boolean
-      name:
-        maxLength: 100
-        minLength: 2
-        type: string
-      price:
-        type: string
-      quantity:
-        minimum: 1
+      total_attendees:
         type: integer
-      sale_ends:
-        type: string
-      sale_starts:
-        type: string
-    required:
-    - name
-    - price
-    - quantity
+      total_events:
+        type: integer
+      total_orders:
+        type: integer
+      total_organisers:
+        type: integer
+      total_revenue:
+        type: integer
+      total_users:
+        type: integer
     type: object
-  internal_handler.EventResponse:
+  handler.EventResponse:
     properties:
       banner_url:
         type: string
@@ -312,7 +135,7 @@ definitions:
       venue:
         type: string
     type: object
-  internal_handler.OrderResponse:
+  handler.OrderResponse:
     properties:
       checked_in:
         type: boolean
@@ -347,7 +170,39 @@ definitions:
       user_id:
         type: string
     type: object
-  internal_handler.TicketTypeResponse:
+  handler.OrderStatusBreakdownResponse:
+    properties:
+      count:
+        type: integer
+      status:
+        type: string
+    type: object
+  handler.OrganiserOrderResponse:
+    properties:
+      checked_in:
+        type: boolean
+      checked_in_at:
+        type: string
+      created_at:
+        type: string
+      event_id:
+        type: string
+      id:
+        type: string
+      payment_method:
+        type: string
+      payment_ref:
+        type: string
+      quantity:
+        type: integer
+      status:
+        type: string
+      ticket_type_id:
+        type: string
+      user_id:
+        type: string
+    type: object
+  handler.TicketTypeResponse:
     properties:
       created_at:
         type: string
@@ -376,7 +231,27 @@ definitions:
       updated_at:
         type: string
     type: object
-  internal_handler.UserResponse:
+  handler.TicketTypeSalesResponse:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      price:
+        type: integer
+      quantity:
+        type: integer
+      quantity_sold:
+        type: integer
+      revenue:
+        type: integer
+    type: object
+  handler.UpdateOrganiserVerificationInput:
+    properties:
+      is_verified:
+        type: boolean
+    type: object
+  handler.UserResponse:
     properties:
       created_at:
         type: string
@@ -389,17 +264,296 @@ definitions:
       updated_at:
         type: string
     type: object
-  internal_handler.authDataResponse:
+  handler.authDataResponse:
     properties:
       access_token:
         type: string
       user:
-        $ref: '#/definitions/internal_handler.UserResponse'
+        $ref: '#/definitions/handler.UserResponse'
     type: object
-  internal_handler.checkInRequest:
+  handler.checkInRequest:
     properties:
       qr_code:
         type: string
+    type: object
+  response.ErrorDetail:
+    properties:
+      code:
+        type: string
+      field:
+        type: string
+      message:
+        type: string
+    type: object
+  response.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/response.ErrorDetail'
+      success:
+        type: boolean
+    type: object
+  service.CheckInResult:
+    properties:
+      checked_in:
+        type: boolean
+      event_id:
+        type: string
+      message:
+        type: string
+      order_id:
+        type: string
+      user_id:
+        type: string
+    type: object
+  service.CreateEventInput:
+    properties:
+      description:
+        type: string
+      ends_at:
+        type: string
+      is_online:
+        type: boolean
+      location:
+        type: string
+      online_url:
+        type: string
+      starts_at:
+        type: string
+      title:
+        maxLength: 255
+        minLength: 3
+        type: string
+      venue:
+        type: string
+    required:
+    - ends_at
+    - starts_at
+    - title
+    type: object
+  service.CreateTicketTypeInput:
+    properties:
+      description:
+        type: string
+      is_free:
+        type: boolean
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      price:
+        type: string
+      quantity:
+        minimum: 1
+        type: integer
+      sale_ends:
+        type: string
+      sale_starts:
+        type: string
+    required:
+    - name
+    - price
+    - quantity
+    type: object
+  service.ForgotPasswordInput:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  service.InitiatePaymentInput:
+    properties:
+      event_id:
+        type: string
+      payment_method:
+        enum:
+        - MPESA
+        - FREE
+        type: string
+      phone_number:
+        type: string
+      quantity:
+        maximum: 10
+        minimum: 1
+        type: integer
+      ticket_type_id:
+        type: string
+    required:
+    - event_id
+    - payment_method
+    - phone_number
+    - quantity
+    - ticket_type_id
+    type: object
+  service.LoginInput:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  service.MpesaCallback:
+    properties:
+      Body:
+        properties:
+          stkCallback:
+            properties:
+              CallbackMetadata:
+                properties:
+                  Item:
+                    items:
+                      properties:
+                        Name:
+                          type: string
+                        Value: {}
+                      type: object
+                    type: array
+                type: object
+              CheckoutRequestID:
+                type: string
+              MerchantRequestID:
+                type: string
+              ResultCode:
+                type: integer
+              ResultDesc:
+                type: string
+            type: object
+        type: object
+    type: object
+  service.PaymentResult:
+    properties:
+      checkout_request_id:
+        type: string
+      message:
+        type: string
+      order_id:
+        type: string
+    type: object
+  service.RegisterInput:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        maxLength: 100
+        minLength: 8
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  service.ResetPasswordInput:
+    properties:
+      new_password:
+        maxLength: 100
+        minLength: 8
+        type: string
+      token:
+        type: string
+    required:
+    - new_password
+    - token
+    type: object
+  service.UpdateAvatarInput:
+    properties:
+      avatarURL:
+        type: string
+    required:
+    - avatarURL
+    type: object
+  service.UpdateEventInput:
+    properties:
+      description:
+        type: string
+      ends_at:
+        type: string
+      is_online:
+        type: boolean
+      location:
+        type: string
+      online_url:
+        type: string
+      starts_at:
+        type: string
+      title:
+        maxLength: 255
+        minLength: 3
+        type: string
+      venue:
+        type: string
+    required:
+    - ends_at
+    - starts_at
+    - title
+    type: object
+  service.UpdateEventStatusInput:
+    properties:
+      status:
+        enum:
+        - DRAFT
+        - PUBLISHED
+        - CANCELLED
+        - COMPLETED
+        type: string
+    required:
+    - status
+    type: object
+  service.UpdatePasswordInput:
+    properties:
+      currentPassword:
+        maxLength: 100
+        minLength: 8
+        type: string
+      newPassword:
+        maxLength: 100
+        minLength: 8
+        type: string
+    required:
+    - currentPassword
+    - newPassword
+    type: object
+  service.UpdateProfileInput:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - email
+    - name
+    type: object
+  service.UpdateTicketTypeInput:
+    properties:
+      description:
+        type: string
+      is_free:
+        type: boolean
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      price:
+        type: string
+      quantity:
+        minimum: 1
+        type: integer
+      sale_ends:
+        type: string
+      sale_starts:
+        type: string
+    required:
+    - name
+    - price
+    - quantity
     type: object
 info:
   contact: {}
@@ -407,6 +561,554 @@ info:
   title: Nafasi API
   version: "1.0"
 paths:
+  /admin/events:
+    get:
+      description: Returns paginated list of events (admin only). Optional status
+        filter.
+      parameters:
+      - description: Status (DRAFT, PUBLISHED, CANCELLED, COMPLETED)
+        in: query
+        name: status
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.AdminEventResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get events
+      tags:
+      - Admin
+  /admin/events/{eventID}:
+    delete:
+      description: Permanently deletes any event (admin only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete event
+      tags:
+      - Admin
+  /admin/events/{eventID}/cancel:
+    patch:
+      description: Cancels any event (admin only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.EventResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cancel event
+      tags:
+      - Admin
+  /admin/orders:
+    get:
+      description: Returns paginated list of orders filtered by status (admin only)
+      parameters:
+      - description: Status (PENDING, PAID, FAILED, CANCELLED, REFUNDED)
+        in: query
+        name: status
+        required: true
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.AdminOrderResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get orders by status
+      tags:
+      - Admin
+  /admin/orders/recent:
+    get:
+      description: Returns recent orders with user and event details (admin only)
+      parameters:
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.AdminOrderDetailResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get recent orders with details
+      tags:
+      - Admin
+  /admin/organisers:
+    get:
+      description: Returns organisers filtered by approval status (admin only)
+      parameters:
+      - description: Status (pending, approved)
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.UserResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get organisers
+      tags:
+      - Admin
+  /admin/stats:
+    get:
+      description: Returns platform-wide statistics (admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.AdminStatsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get platform stats
+      tags:
+      - Admin
+  /admin/users:
+    get:
+      description: Returns paginated list of users with optional filters (admin only)
+      parameters:
+      - description: Role (ATTENDEE, ORGANISER, ADMIN)
+        in: query
+        name: role
+        type: string
+      - description: Status (ACTIVE, BANNED, DELETED)
+        in: query
+        name: status
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.UserResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get users
+      tags:
+      - Admin
+  /admin/users/{userID}:
+    delete:
+      description: Permanently deletes a user account (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete user
+      tags:
+      - Admin
+    get:
+      description: Returns a single user by ID (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user by ID
+      tags:
+      - Admin
+  /admin/users/{userID}/ban:
+    patch:
+      description: Bans a user account (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Ban user
+      tags:
+      - Admin
+  /admin/users/{userID}/promote:
+    patch:
+      description: Promotes a user to admin role (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Promote user to admin
+      tags:
+      - Admin
+  /admin/users/{userID}/unban:
+    patch:
+      description: Unbans a user account (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Unban user
+      tags:
+      - Admin
+  /admin/users/{userID}/verification:
+    patch:
+      description: Approves or rejects an organiser account (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: Verification payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateOrganiserVerificationInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update organiser verification status
+      tags:
+      - Admin
   /auth/forgot-password:
     post:
       consumes:
@@ -418,7 +1120,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.ForgotPasswordInput'
+          $ref: '#/definitions/service.ForgotPasswordInput'
       produces:
       - application/json
       responses:
@@ -431,11 +1133,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Request password reset
       tags:
       - Auth
@@ -450,26 +1152,26 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.LoginInput'
+          $ref: '#/definitions/service.LoginInput'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.authDataResponse'
+            $ref: '#/definitions/handler.authDataResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Login user
       tags:
       - Auth
@@ -484,11 +1186,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Logout user
       tags:
       - Auth
@@ -502,15 +1204,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.authDataResponse'
+            $ref: '#/definitions/handler.authDataResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Refresh access token
       tags:
       - Auth
@@ -525,22 +1227,22 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.RegisterInput'
+          $ref: '#/definitions/service.RegisterInput'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_handler.authDataResponse'
+            $ref: '#/definitions/handler.authDataResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Register a new user
       tags:
       - Auth
@@ -555,7 +1257,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.ResetPasswordInput'
+          $ref: '#/definitions/service.ResetPasswordInput'
       produces:
       - application/json
       responses:
@@ -568,15 +1270,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Reset user password
       tags:
       - Auth
@@ -591,26 +1293,26 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.checkInRequest'
+          $ref: '#/definitions/handler.checkInRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.CheckInResult'
+            $ref: '#/definitions/service.CheckInResult'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Check in ticket
@@ -632,16 +1334,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.CheckInResult'
+              $ref: '#/definitions/service.CheckInResult'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get checked-in orders
@@ -658,26 +1360,26 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.CreateEventInput'
+          $ref: '#/definitions/service.CreateEventInput'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_handler.EventResponse'
+            $ref: '#/definitions/handler.EventResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create event
@@ -695,24 +1397,20 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
+        "204":
+          description: No Content
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete event
@@ -732,15 +1430,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.EventResponse'
+            $ref: '#/definitions/handler.EventResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Get event by ID
       tags:
       - Events
@@ -759,30 +1457,30 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.UpdateEventInput'
+          $ref: '#/definitions/service.UpdateEventInput'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.EventResponse'
+            $ref: '#/definitions/handler.EventResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update event
@@ -804,64 +1502,36 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.UpdateEventStatusInput'
+          $ref: '#/definitions/service.UpdateEventStatusInput'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.EventResponse'
+            $ref: '#/definitions/handler.EventResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update event status
       tags:
       - Events
   /events/{eventID}/ticket-types:
-    get:
-      description: Returns all ticket types for a given event
-      parameters:
-      - description: Event ID
-        in: path
-        name: eventID
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/internal_handler.TicketTypeResponse'
-            type: array
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
-      summary: Get ticket types by event
-      tags:
-      - TicketTypes
     post:
       consumes:
       - application/json
@@ -877,30 +1547,30 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.CreateTicketTypeInput'
+          $ref: '#/definitions/service.CreateTicketTypeInput'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_handler.TicketTypeResponse'
+            $ref: '#/definitions/handler.TicketTypeResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create ticket type
@@ -923,24 +1593,20 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
+        "204":
+          description: No Content
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete ticket type
@@ -965,15 +1631,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.TicketTypeResponse'
+            $ref: '#/definitions/handler.TicketTypeResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Get ticket type by ID
       tags:
       - TicketTypes
@@ -997,30 +1663,30 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.UpdateTicketTypeInput'
+          $ref: '#/definitions/service.UpdateTicketTypeInput'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.TicketTypeResponse'
+            $ref: '#/definitions/handler.TicketTypeResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update ticket type
@@ -1042,48 +1708,19 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/internal_handler.TicketTypeResponse'
+              $ref: '#/definitions/handler.TicketTypeResponse'
             type: array
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Get available ticket types
       tags:
       - TicketTypes
-  /events/organiser/{organiserID}:
-    get:
-      description: Returns all events created by a specific organiser
-      parameters:
-      - description: Organiser ID
-        in: path
-        name: organiserID
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/internal_handler.EventResponse'
-            type: array
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
-      summary: Get events by organiser
-      tags:
-      - Events
   /events/published:
     get:
       description: Returns all published events
@@ -1094,12 +1731,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/internal_handler.EventResponse'
+              $ref: '#/definitions/handler.EventResponse'
             type: array
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Get published events
       tags:
       - Events
@@ -1118,15 +1755,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.EventResponse'
+            $ref: '#/definitions/handler.EventResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Get event by slug
       tags:
       - Events
@@ -1140,15 +1777,463 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/internal_handler.EventResponse'
+              $ref: '#/definitions/handler.EventResponse'
             type: array
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Get upcoming events
       tags:
       - Events
+  /organiser/events:
+    get:
+      description: Returns all events created by the authenticated organiser
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.EventResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get organiser events
+      tags:
+      - Organiser
+  /organiser/events/{eventID}/checkin/count:
+    get:
+      description: Returns total number of checked in attendees for an event (organiser
+        only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              format: int64
+              type: integer
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get event checked in count
+      tags:
+      - Organiser
+  /organiser/events/{eventID}/orders:
+    get:
+      description: Returns paginated orders for a specific event. Can optionally filter
+        by status (organiser only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      - description: Filter by status (PENDING, PAID, FAILED, CANCELLED, REFUNDED)
+        in: query
+        name: status
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.OrganiserOrderResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get orders for an event
+      tags:
+      - Organiser
+  /organiser/events/{eventID}/orders/breakdown:
+    get:
+      description: Returns order count grouped by status for an event (organiser only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.OrderStatusBreakdownResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get event order status breakdown
+      tags:
+      - Organiser
+  /organiser/events/{eventID}/orders/count:
+    get:
+      description: Returns total number of orders for an event (organiser only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              format: int64
+              type: integer
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get event orders count
+      tags:
+      - Organiser
+  /organiser/events/{eventID}/orders/recent:
+    get:
+      description: Returns the most recent orders for an event (organiser only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.OrganiserOrderResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get recent orders for an event
+      tags:
+      - Organiser
+  /organiser/events/{eventID}/revenue:
+    get:
+      description: Returns total revenue for an event (organiser only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              format: int64
+              type: integer
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get event revenue
+      tags:
+      - Organiser
+  /organiser/events/{eventID}/ticket-types:
+    get:
+      description: Returns all ticket types for a specific event (organiser only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.TicketTypeResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get ticket types for an event
+      tags:
+      - Organiser
+  /organiser/events/{eventID}/ticket-types/sales:
+    get:
+      description: Returns sales breakdown per ticket type for an event (organiser
+        only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.TicketTypeSalesResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get ticket type sales breakdown
+      tags:
+      - Organiser
+  /organiser/events/{eventID}/tickets-sold:
+    get:
+      description: Returns total tickets sold for an event (organiser only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              format: int64
+              type: integer
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get total tickets sold
+      tags:
+      - Organiser
+  /organiser/events/{eventID}/tickets-sold/paid:
+    get:
+      description: Returns total tickets sold from paid orders for an event (organiser
+        only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              format: int64
+              type: integer
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get event tickets sold
+      tags:
+      - Organiser
   /payments/initiate:
     post:
       consumes:
@@ -1160,26 +2245,26 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.InitiatePaymentInput'
+          $ref: '#/definitions/service.InitiatePaymentInput'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.PaymentResult'
+            $ref: '#/definitions/service.PaymentResult'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Initiate payment
@@ -1196,7 +2281,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.MpesaCallback'
+          $ref: '#/definitions/service.MpesaCallback'
       produces:
       - application/json
       responses:
@@ -1209,11 +2294,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       summary: M-Pesa callback
       tags:
       - Payments
@@ -1232,29 +2317,49 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.OrderResponse'
+            $ref: '#/definitions/handler.OrderResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get payment status
       tags:
       - Payments
   /users/me:
+    delete:
+      description: Deletes the authenticated user's account
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete user account
+      tags:
+      - Users
     get:
       description: Returns the authenticated user's profile
       produces:
@@ -1263,15 +2368,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.UserResponse'
+            $ref: '#/definitions/handler.UserResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get current user
@@ -1287,26 +2392,26 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.UpdateProfileInput'
+          $ref: '#/definitions/service.UpdateProfileInput'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.UserResponse'
+            $ref: '#/definitions/handler.UserResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update user profile
@@ -1323,26 +2428,26 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.UpdateAvatarInput'
+          $ref: '#/definitions/service.UpdateAvatarInput'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.UserResponse'
+            $ref: '#/definitions/handler.UserResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update user avatar
@@ -1359,7 +2464,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/github_com_knnedy_nafasi_internal_service.UpdatePasswordInput'
+          $ref: '#/definitions/service.UpdatePasswordInput'
       produces:
       - application/json
       responses:
@@ -1372,15 +2477,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_knnedy_nafasi_internal_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update user password

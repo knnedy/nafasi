@@ -32,7 +32,6 @@ type EventServicer interface {
 	GetUpcomingEvents(ctx context.Context, limit int32, offset int32) ([]repository.Event, error)
 	UpdateEvent(ctx context.Context, eventID string, organiserID string, input service.UpdateEventInput) (repository.Event, error)
 	UpdateEventStatus(ctx context.Context, eventID string, organiserID string, input service.UpdateEventStatusInput) (repository.Event, error)
-	CancelEvent(ctx context.Context, eventID string, organiserID string) (repository.Event, error)
 	DeleteEvent(ctx context.Context, eventID string, organiserID string) (repository.Event, error)
 }
 
@@ -72,11 +71,13 @@ type OrganiserServicer interface {
 
 type AdminServicer interface {
 	AdminGetAllUsers(ctx context.Context, limit, offset int32) ([]repository.User, error)
-	AdminGetUserByRole(ctx context.Context, role repository.UserRole, limit int32, offset int32) ([]repository.User, error)
-	AdminGetUsersByStatus(ctx context.Context, arg repository.AdminGetUsersByStatusParams) ([]repository.User, error)
-	AdminGetUserById(ctx context.Context, targetUserID string) (repository.User, error)
-	AdminGetPendingOrganisers(ctx context.Context) ([]repository.User, error)
-	AdminGetApprovedOrganisers(ctx context.Context) ([]repository.User, error)
+	AdminGetUsersByRoleAndStatus(ctx context.Context, role repository.UserRole, status repository.UserStatus, limit int32, offset int32) ([]repository.User, error)
+	AdminGetUsersByRole(ctx context.Context, role repository.UserRole, limit int32, offset int32) ([]repository.User, error)
+	AdminGetUsersByStatus(ctx context.Context, status repository.UserStatus, limit int32, offset int32) ([]repository.User, error)
+	AdminGetUserByID(ctx context.Context, targetUserID string) (repository.User, error)
+	AdminGetAllOrganisers(ctx context.Context, limit int32, offset int32) ([]repository.User, error)
+	AdminGetPendingOrganisers(ctx context.Context, limit int32, offset int32) ([]repository.User, error)
+	AdminGetApprovedOrganisers(ctx context.Context, limit int32, offset int32) ([]repository.User, error)
 	AdminUpdateUserVerification(ctx context.Context, targetUserID string, isVerified bool) (repository.User, error)
 	AdminBanUser(ctx context.Context, targetUserID string) (repository.User, error)
 	AdminUnbanUser(ctx context.Context, targetUserID string) (repository.User, error)

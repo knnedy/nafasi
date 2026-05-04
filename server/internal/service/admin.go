@@ -40,7 +40,7 @@ func (s *AdminService) AdminGetAllUsers(ctx context.Context, limit, offset int32
 	return users, nil
 }
 
-func (s *AdminService) AdminGetUserByRole(ctx context.Context, role repository.UserRole, limit, offset int32) ([]repository.User, error) {
+func (s *AdminService) AdminGetUsersByRole(ctx context.Context, role repository.UserRole, limit, offset int32) ([]repository.User, error) {
 	users, err := s.db.AdminGetUsersByRole(ctx, repository.AdminGetUsersByRoleParams{
 		Role:   role,
 		Limit:  limit,
@@ -66,13 +66,27 @@ func (s *AdminService) AdminGetUsersByStatus(ctx context.Context, status reposit
 	return users, nil
 }
 
-func (s *AdminService) AdminGetUserById(ctx context.Context, targetUserID string) (repository.User, error) {
+func (s *AdminService) AdminGetUsersByRoleAndStatus(ctx context.Context, role repository.UserRole, status repository.UserStatus, limit, offset int32) ([]repository.User, error) {
+	users, err := s.db.AdminGetUserByRoleAndStatus(ctx, repository.AdminGetUserByRoleAndStatusParams{
+		Role:   role,
+		Status: status,
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		return nil, response.ErrDatabase
+	}
+
+	return users, nil
+}
+
+func (s *AdminService) AdminGetUserByID(ctx context.Context, targetUserID string) (repository.User, error) {
 	targetParsedID, err := uuid.Parse(targetUserID)
 	if err != nil {
 		return repository.User{}, response.ErrInvalidInput
 	}
 
-	targetUser, err := s.db.AdminGetUserById(ctx, pgtype.UUID{Bytes: targetParsedID, Valid: true})
+	targetUser, err := s.db.GetUserById(ctx, pgtype.UUID{Bytes: targetParsedID, Valid: true})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return repository.User{}, response.ErrNotFound
@@ -83,8 +97,23 @@ func (s *AdminService) AdminGetUserById(ctx context.Context, targetUserID string
 	return targetUser, nil
 }
 
-func (s *AdminService) AdminGetPendingOrganisers(ctx context.Context) ([]repository.User, error) {
-	pendingOrganisers, err := s.db.AdminGetPendingOrganisers(ctx)
+func (s *AdminService) AdminGetAllOrganisers(ctx context.Context, limit, offset int32) ([]repository.User, error) {
+	organisers, err := s.db.AdminGetAllOrganisers(ctx, repository.AdminGetAllOrganisersParams{
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		return nil, response.ErrDatabase
+	}
+
+	return organisers, nil
+}
+
+func (s *AdminService) AdminGetPendingOrganisers(ctx context.Context, limit, offset int32) ([]repository.User, error) {
+	pendingOrganisers, err := s.db.AdminGetPendingOrganisers(ctx, repository.AdminGetPendingOrganisersParams{
+		Limit:  limit,
+		Offset: offset,
+	})
 	if err != nil {
 		return nil, response.ErrDatabase
 	}
@@ -92,8 +121,11 @@ func (s *AdminService) AdminGetPendingOrganisers(ctx context.Context) ([]reposit
 	return pendingOrganisers, nil
 }
 
-func (s *AdminService) AdminGetApprovedOrganisers(ctx context.Context) ([]repository.User, error) {
-	approvedOrganisers, err := s.db.AdminGetApprovedOrganisers(ctx)
+func (s *AdminService) AdminGetApprovedOrganisers(ctx context.Context, limit, offset int32) ([]repository.User, error) {
+	approvedOrganisers, err := s.db.AdminGetApprovedOrganisers(ctx, repository.AdminGetApprovedOrganisersParams{
+		Limit:  limit,
+		Offset: offset,
+	})
 	if err != nil {
 		return nil, response.ErrDatabase
 	}

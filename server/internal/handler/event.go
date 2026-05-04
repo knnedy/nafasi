@@ -104,7 +104,7 @@ func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /events/{eventID} [get]
-func (h *EventHandler) GetById(w http.ResponseWriter, r *http.Request) {
+func (h *EventHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	eventID := chi.URLParam(r, "eventID")
 	if eventID == "" {
 		response.WriteError(w, response.ErrNotFound)
@@ -282,41 +282,6 @@ func (h *EventHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.WriteJSON(w, http.StatusOK, toEventResponse(updatedEvent))
-}
-
-// Cancel godoc
-// @Summary Cancel event
-// @Description Cancels an event (organiser only)
-// @Tags Events
-// @Produce json
-// @Security BearerAuth
-// @Param eventID path string true "Event ID"
-// @Success 200 {object} EventResponse
-// @Failure 401 {object} response.ErrorResponse
-// @Failure 404 {object} response.ErrorResponse
-// @Failure 500 {object} response.ErrorResponse
-// @Router /events/{eventID}/cancel [patch]
-func (h *EventHandler) Cancel(w http.ResponseWriter, r *http.Request) {
-	// get authenticated user ID from context
-	userID, ok := middleware.GetUserID(r.Context())
-	if !ok {
-		response.WriteError(w, response.ErrUnauthorized)
-		return
-	}
-
-	eventID := chi.URLParam(r, "eventID")
-	if eventID == "" {
-		response.WriteError(w, response.ErrNotFound)
-		return
-	}
-
-	cancelledEvent, err := h.event.CancelEvent(r.Context(), eventID, userID)
-	if err != nil {
-		response.WriteError(w, err)
-		return
-	}
-
-	response.WriteJSON(w, http.StatusOK, toEventResponse(cancelledEvent))
 }
 
 // Delete godoc

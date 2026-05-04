@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/knnedy/nafasi/internal/repository"
 	"github.com/knnedy/nafasi/internal/response"
 	"github.com/knnedy/nafasi/internal/token"
 )
@@ -15,7 +16,7 @@ type contextKey string
 
 const (
 	contextKeyUserID contextKey = "userID"
-	contextKeyRole   contextKey = "user_role"
+	contextKeyRole   contextKey = "userRole"
 )
 
 type AuthMiddleware struct {
@@ -57,10 +58,10 @@ func (am *AuthMiddleware) Authenticate(next http.Handler) http.Handler {
 }
 
 // RequireRole blocks requests where the authenticated user does not have the required role
-func (am *AuthMiddleware) RequireRole(role string) func(http.Handler) http.Handler {
+func (am *AuthMiddleware) RequireRole(role repository.UserRole) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			userRole, ok := r.Context().Value(contextKeyRole).(string)
+			userRole, ok := r.Context().Value(contextKeyRole).(repository.UserRole)
 			if !ok || userRole != role {
 				response.WriteError(w, response.ErrForbidden)
 				return
@@ -77,8 +78,8 @@ func GetUserID(ctx context.Context) (string, bool) {
 }
 
 // GetUserRole retrieves the authenticated user role from context
-func GetUserRole(ctx context.Context) (string, bool) {
-	role, ok := ctx.Value(contextKeyRole).(string)
+func GetUserRole(ctx context.Context) (repository.UserRole, bool) {
+	role, ok := ctx.Value(contextKeyRole).(repository.UserRole)
 	return role, ok
 }
 
@@ -86,6 +87,6 @@ func SetUserID(ctx context.Context, userID string) context.Context {
 	return context.WithValue(ctx, contextKeyUserID, userID)
 }
 
-func SetUserRole(ctx context.Context, role string) context.Context {
+func SetUserRole(ctx context.Context, role repository.UserRole) context.Context {
 	return context.WithValue(ctx, contextKeyRole, role)
 }

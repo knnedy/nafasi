@@ -27,6 +27,9 @@ test:
 test-service:
 	go test ./internal/service/... -v
 
+test-handler:
+	go test ./internal/handler/... -v
+
 # test with coverage
 
 test-coverage:

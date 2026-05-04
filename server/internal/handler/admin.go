@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"database/sql"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -38,7 +40,11 @@ func getPagination(r *http.Request) (limit, offset int32) {
 	return limit, offset
 }
 
-type AdminGetAllEventsResponse struct {
+type UpdateOrganiserVerificationInput struct {
+	IsVerified bool `json:"is_verified"`
+}
+
+type AdminEventResponse struct {
 	ID            string  `json:"id"`
 	OrganiserID   string  `json:"organiser_id"`
 	Title         string  `json:"title"`
@@ -57,24 +63,59 @@ type AdminGetAllEventsResponse struct {
 	OrganiserName string  `json:"organiser_name"`
 }
 
-type AdminGetEventsByStatusRowResponse struct {
-	ID            string  `json:"id"`
-	OrganiserID   string  `json:"organiser_id"`
-	Title         string  `json:"title"`
-	Slug          string  `json:"slug"`
-	Description   *string `json:"description,omitempty"`
-	Location      *string `json:"location,omitempty"`
-	Venue         *string `json:"venue,omitempty"`
-	BannerUrl     *string `json:"banner_url,omitempty"`
-	StartsAt      string  `json:"starts_at"`
-	EndsAt        string  `json:"ends_at"`
-	Status        string  `json:"status"`
-	IsOnline      bool    `json:"is_online"`
-	OnlineUrl     *string `json:"online_url,omitempty"`
-	CreatedAt     string  `json:"created_at"`
-	UpdatedAt     string  `json:"updated_at"`
-	OrganiserName string  `json:"organiser_name"`
+// Essential helper to prevent pointer aliasing bugs
+func stringPtr(ns sql.NullString) *string {
+	if !ns.Valid {
+		return nil
+	}
+	s := ns.String
+	return &s
 }
+
+func toAdminEventResponseFromAll(event repository.AdminGetAllEventsRow) AdminEventResponse {
+	return AdminEventResponse{
+		ID:            event.ID.String(),
+		OrganiserID:   event.OrganiserID.String(),
+		Title:         event.Title,
+		Slug:          event.Slug,
+		Description:   &event.Description.String,
+		Location:      &event.Location.String,
+		Venue:         &event.Venue.String,
+		BannerUrl:     &event.BannerUrl.String,
+		StartsAt:      event.StartsAt.Time.Format(time.RFC3339),
+		EndsAt:        event.EndsAt.Time.Format(time.RFC3339),
+		Status:        string(event.Status),
+		IsOnline:      event.IsOnline,
+		OnlineUrl:     &event.OnlineUrl.String,
+		CreatedAt:     event.CreatedAt.Time.Format(time.RFC3339),
+		UpdatedAt:     event.UpdatedAt.Time.Format(time.RFC3339),
+		OrganiserName: event.OrganiserName,
+	}
+}
+
+func toAdminEventResponseFromStatus(event repository.AdminGetEventsByStatusRow) AdminEventResponse {
+	return AdminEventResponse{
+		ID:            event.ID.String(),
+		OrganiserID:   event.OrganiserID.String(),
+		Title:         event.Title,
+		Slug:          event.Slug,
+		Description:   &event.Description.String,
+		Location:      &event.Location.String,
+		Venue:         &event.Venue.String,
+		BannerUrl:     &event.BannerUrl.String,
+		StartsAt:      event.StartsAt.Time.Format(time.RFC3339),
+		EndsAt:        event.EndsAt.Time.Format(time.RFC3339),
+		Status:        string(event.Status),
+		IsOnline:      event.IsOnline,
+		OnlineUrl:     &event.OnlineUrl.String,
+		CreatedAt:     event.CreatedAt.Time.Format(time.RFC3339),
+		UpdatedAt:     event.UpdatedAt.Time.Format(time.RFC3339),
+		OrganiserName: event.OrganiserName,
+	}
+}
+
+// func toAdminGetAllEventsResponse(e repository.AdminGetAllEventsRow) AdminEventResponse
+// func toAdminGetEventsByStatusRowResponse(e repository.AdminGetEventsByStatusRow) AdminEventResponse
 
 type AdminOrderResponse struct {
 	ID            string  `json:"id"`
@@ -104,48 +145,6 @@ type AdminStatsResponse struct {
 	TotalOrders     int64 `json:"total_orders"`
 	PaidOrders      int64 `json:"paid_orders"`
 	TotalRevenue    int64 `json:"total_revenue"`
-}
-
-func toAdminGetAllEventsResponse(event repository.AdminGetAllEventsRow) AdminGetAllEventsResponse {
-	return AdminGetAllEventsResponse{
-		ID:            event.ID.String(),
-		OrganiserID:   event.OrganiserID.String(),
-		Title:         event.Title,
-		Slug:          event.Slug,
-		Description:   &event.Description.String,
-		Location:      &event.Location.String,
-		Venue:         &event.Venue.String,
-		BannerUrl:     &event.BannerUrl.String,
-		StartsAt:      event.StartsAt.Time.Format(time.RFC3339),
-		EndsAt:        event.EndsAt.Time.Format(time.RFC3339),
-		Status:        string(event.Status),
-		IsOnline:      event.IsOnline,
-		OnlineUrl:     &event.OnlineUrl.String,
-		CreatedAt:     event.CreatedAt.Time.Format(time.RFC3339),
-		UpdatedAt:     event.UpdatedAt.Time.Format(time.RFC3339),
-		OrganiserName: event.OrganiserName,
-	}
-}
-
-func toAdminGetEventsByStatusRowResponse(event repository.AdminGetEventsByStatusRow) AdminGetEventsByStatusRowResponse {
-	return AdminGetEventsByStatusRowResponse{
-		ID:            event.ID.String(),
-		OrganiserID:   event.OrganiserID.String(),
-		Title:         event.Title,
-		Slug:          event.Slug,
-		Description:   &event.Description.String,
-		Location:      &event.Location.String,
-		Venue:         &event.Venue.String,
-		BannerUrl:     &event.BannerUrl.String,
-		StartsAt:      event.StartsAt.Time.Format(time.RFC3339),
-		EndsAt:        event.EndsAt.Time.Format(time.RFC3339),
-		Status:        string(event.Status),
-		IsOnline:      event.IsOnline,
-		OnlineUrl:     &event.OnlineUrl.String,
-		CreatedAt:     event.CreatedAt.Time.Format(time.RFC3339),
-		UpdatedAt:     event.UpdatedAt.Time.Format(time.RFC3339),
-		OrganiserName: event.OrganiserName,
-	}
 }
 
 func toAdminOrderDetailResponse(order repository.AdminGetRecentOrdersWithDetailsRow) AdminOrderDetailResponse {
@@ -178,61 +177,63 @@ func toAdminOrderDetailResponse(order repository.AdminGetRecentOrdersWithDetails
 
 // user management
 
-// GetAllUsers godoc
-// @Summary Get all users
-// @Description Returns paginated list of all users (admin only)
+// GetUsers godoc
+// @Summary Get users
+// @Description Returns paginated list of users with optional filters (admin only)
 // @Tags Admin
 // @Produce json
 // @Security BearerAuth
+// @Param role query string false "Role (ATTENDEE, ORGANISER, ADMIN)"
+// @Param status query string false "Status (ACTIVE, BANNED, DELETED)"
 // @Param limit query int false "Limit"
 // @Param offset query int false "Offset"
-// @Success 200 {array} AdminUserResponse
-// @Failure 401 {object} response.ErrorResponse
-// @Failure 403 {object} response.ErrorResponse
-// @Failure 500 {object} response.ErrorResponse
-// @Router /admin/users [get]
-func (h *AdminHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	limit, offset := getPagination(r)
-
-	users, err := h.admin.AdminGetAllUsers(r.Context(), limit, offset)
-	if err != nil {
-		response.WriteError(w, err)
-		return
-	}
-
-	var result []UserResponse
-	for _, u := range users {
-		result = append(result, toUserResponse(u))
-	}
-
-	response.WriteJSON(w, http.StatusOK, result)
-}
-
-// GetUsersByRole godoc
-// @Summary Get users by role
-// @Description Returns paginated list of users filtered by role (admin only)
-// @Tags Admin
-// @Produce json
-// @Security BearerAuth
-// @Param role query string true "Role (ATTENDEE, ORGANISER, ADMIN)"
-// @Param limit query int false "Limit"
-// @Param offset query int false "Offset"
-// @Success 200 {array} AdminUserResponse
+// @Success 200 {array} UserResponse
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 403 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
-// @Router /admin/users/role [get]
-func (h *AdminHandler) GetUsersByRole(w http.ResponseWriter, r *http.Request) {
+// @Router /admin/users [get]
+func (h *AdminHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	role := r.URL.Query().Get("role")
-	if role == "" {
-		response.WriteError(w, response.ErrInvalidInput)
-		return
-	}
+	status := r.URL.Query().Get("status")
 
 	limit, offset := getPagination(r)
 
-	users, err := h.admin.AdminGetUserByRole(r.Context(), repository.UserRole(role), limit, offset)
+	var (
+		users []repository.User
+		err   error
+	)
+
+	switch {
+	case role != "" && status != "":
+		users, err = h.admin.AdminGetUsersByRoleAndStatus(
+			r.Context(),
+			repository.UserRole(role),
+			repository.UserStatus(status),
+			limit,
+			offset,
+		)
+
+	case role != "":
+		users, err = h.admin.AdminGetUsersByRole(
+			r.Context(),
+			repository.UserRole(role),
+			limit,
+			offset,
+		)
+
+	case status != "":
+		users, err = h.admin.AdminGetUsersByStatus(
+			r.Context(),
+			repository.UserStatus(status),
+			limit,
+			offset,
+		)
+
+	default:
+		users, err = h.admin.AdminGetAllUsers(r.Context(), limit, offset)
+	}
+
 	if err != nil {
 		response.WriteError(w, err)
 		return
@@ -253,7 +254,7 @@ func (h *AdminHandler) GetUsersByRole(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Security BearerAuth
 // @Param userID path string true "User ID"
-// @Success 200 {object} AdminUserResponse
+// @Success 200 {object} UserResponse
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 403 {object} response.ErrorResponse
 // @Failure 404 {object} response.ErrorResponse
@@ -266,7 +267,7 @@ func (h *AdminHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.admin.AdminGetUserById(r.Context(), userID)
+	user, err := h.admin.AdminGetUserByID(r.Context(), userID)
 	if err != nil {
 		response.WriteError(w, err)
 		return
@@ -275,19 +276,44 @@ func (h *AdminHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toUserResponse(user))
 }
 
-// GetPendingOrganisers godoc
-// @Summary Get pending organisers
-// @Description Returns all organisers awaiting approval (admin only)
+// GetOrganisers godoc
+// @Summary Get organisers
+// @Description Returns organisers filtered by approval status (admin only)
 // @Tags Admin
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {array} AdminUserResponse
+// @Param status query string false "Status (pending, approved)"
+// @Success 200 {array} UserResponse
+// @Failure 400 {object} response.ErrorResponse
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 403 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
-// @Router /admin/organisers/pending [get]
-func (h *AdminHandler) GetPendingOrganisers(w http.ResponseWriter, r *http.Request) {
-	organisers, err := h.admin.AdminGetPendingOrganisers(r.Context())
+// @Router /admin/organisers [get]
+func (h *AdminHandler) GetOrganisers(w http.ResponseWriter, r *http.Request) {
+	status := r.URL.Query().Get("status")
+
+	limit, offset := getPagination(r)
+
+	var (
+		organisers []repository.User
+		err        error
+	)
+
+	switch status {
+	case "pending":
+		organisers, err = h.admin.AdminGetPendingOrganisers(r.Context(), limit, offset)
+
+	case "approved":
+		organisers, err = h.admin.AdminGetApprovedOrganisers(r.Context(), limit, offset)
+
+	case "", "all":
+		organisers, err = h.admin.AdminGetAllOrganisers(r.Context(), limit, offset)
+
+	default:
+		response.WriteError(w, response.ErrInvalidInput)
+		return
+	}
+
 	if err != nil {
 		response.WriteError(w, err)
 		return
@@ -301,82 +327,36 @@ func (h *AdminHandler) GetPendingOrganisers(w http.ResponseWriter, r *http.Reque
 	response.WriteJSON(w, http.StatusOK, result)
 }
 
-// GetApprovedOrganisers godoc
-// @Summary Get approved organisers
-// @Description Returns all approved and active organisers (admin only)
-// @Tags Admin
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {array} AdminUserResponse
-// @Failure 401 {object} response.ErrorResponse
-// @Failure 403 {object} response.ErrorResponse
-// @Failure 500 {object} response.ErrorResponse
-// @Router /admin/organisers/approved [get]
-func (h *AdminHandler) GetApprovedOrganisers(w http.ResponseWriter, r *http.Request) {
-	organisers, err := h.admin.AdminGetApprovedOrganisers(r.Context())
-	if err != nil {
-		response.WriteError(w, err)
-		return
-	}
-
-	var result []UserResponse
-	for _, o := range organisers {
-		result = append(result, toUserResponse(o))
-	}
-
-	response.WriteJSON(w, http.StatusOK, result)
-}
-
-// ApproveOrganiser godoc
-// @Summary Approve organiser
-// @Description Approves an organiser account (admin only)
+// UpdateOrganiserVerification godoc
+// @Summary Update organiser verification status
+// @Description Approves or rejects an organiser account (admin only)
 // @Tags Admin
 // @Produce json
 // @Security BearerAuth
 // @Param userID path string true "User ID"
-// @Success 200 {object} AdminUserResponse
+// @Param body body UpdateOrganiserVerificationInput true "Verification payload"
+// @Success 200 {object} UserResponse
+// @Failure 400 {object} response.ErrorResponse
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 403 {object} response.ErrorResponse
 // @Failure 404 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
-// @Router /admin/users/{userID}/approve [patch]
-func (h *AdminHandler) ApproveOrganiser(w http.ResponseWriter, r *http.Request) {
+// @Router /admin/users/{userID}/verification [patch]
+func (h *AdminHandler) UpdateOrganiserVerification(w http.ResponseWriter, r *http.Request) {
 	userID := chi.URLParam(r, "userID")
 	if userID == "" {
 		response.WriteError(w, response.ErrNotFound)
 		return
 	}
 
-	user, err := h.admin.AdminUpdateUserVerification(r.Context(), userID, true)
-	if err != nil {
-		response.WriteError(w, err)
+	var input UpdateOrganiserVerificationInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.WriteError(w, response.ErrInvalidInput)
 		return
 	}
 
-	response.WriteJSON(w, http.StatusOK, toUserResponse(user))
-}
-
-// RejectOrganiser godoc
-// @Summary Reject organiser
-// @Description Rejects an organiser account (admin only)
-// @Tags Admin
-// @Produce json
-// @Security BearerAuth
-// @Param userID path string true "User ID"
-// @Success 200 {object} AdminUserResponse
-// @Failure 401 {object} response.ErrorResponse
-// @Failure 403 {object} response.ErrorResponse
-// @Failure 404 {object} response.ErrorResponse
-// @Failure 500 {object} response.ErrorResponse
-// @Router /admin/users/{userID}/reject [patch]
-func (h *AdminHandler) RejectOrganiser(w http.ResponseWriter, r *http.Request) {
-	userID := chi.URLParam(r, "userID")
-	if userID == "" {
-		response.WriteError(w, response.ErrNotFound)
-		return
-	}
-
-	user, err := h.admin.AdminUpdateUserVerification(r.Context(), userID, false)
+	user, err := h.admin.AdminUpdateUserVerification(r.Context(), userID, input.IsVerified)
 	if err != nil {
 		response.WriteError(w, err)
 		return
@@ -392,7 +372,7 @@ func (h *AdminHandler) RejectOrganiser(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Security BearerAuth
 // @Param userID path string true "User ID"
-// @Success 200 {object} AdminUserResponse
+// @Success 200 {object} UserResponse
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 403 {object} response.ErrorResponse
 // @Failure 404 {object} response.ErrorResponse
@@ -421,7 +401,7 @@ func (h *AdminHandler) BanUser(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Security BearerAuth
 // @Param userID path string true "User ID"
-// @Success 200 {object} AdminUserResponse
+// @Success 200 {object} UserResponse
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 403 {object} response.ErrorResponse
 // @Failure 404 {object} response.ErrorResponse
@@ -450,7 +430,7 @@ func (h *AdminHandler) UnbanUser(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Security BearerAuth
 // @Param userID path string true "User ID"
-// @Success 200 {object} AdminUserResponse
+// @Success 200 {object} UserResponse
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 403 {object} response.ErrorResponse
 // @Failure 404 {object} response.ErrorResponse
@@ -503,43 +483,13 @@ func (h *AdminHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 // event management
 
-// GetAllEvents godoc
-// @Summary Get all events
-// @Description Returns paginated list of all events (admin only)
+// GetEvents godoc
+// @Summary Get events
+// @Description Returns paginated list of events (admin only). Optional status filter.
 // @Tags Admin
 // @Produce json
 // @Security BearerAuth
-// @Param limit query int false "Limit"
-// @Param offset query int false "Offset"
-// @Success 200 {array} AdminEventResponse
-// @Failure 401 {object} response.ErrorResponse
-// @Failure 403 {object} response.ErrorResponse
-// @Failure 500 {object} response.ErrorResponse
-// @Router /admin/events [get]
-func (h *AdminHandler) GetAllEvents(w http.ResponseWriter, r *http.Request) {
-	limit, offset := getPagination(r)
-
-	events, err := h.admin.AdminGetAllEvents(r.Context(), limit, offset)
-	if err != nil {
-		response.WriteError(w, err)
-		return
-	}
-
-	var result []AdminGetAllEventsResponse
-	for _, e := range events {
-		result = append(result, toAdminGetAllEventsResponse(e))
-	}
-
-	response.WriteJSON(w, http.StatusOK, result)
-}
-
-// GetEventsByStatus godoc
-// @Summary Get events by status
-// @Description Returns paginated list of events filtered by status (admin only)
-// @Tags Admin
-// @Produce json
-// @Security BearerAuth
-// @Param status query string true "Status (DRAFT, PUBLISHED, CANCELLED, COMPLETED)"
+// @Param status query string false "Status (DRAFT, PUBLISHED, CANCELLED, COMPLETED)"
 // @Param limit query int false "Limit"
 // @Param offset query int false "Offset"
 // @Success 200 {array} AdminEventResponse
@@ -547,25 +497,32 @@ func (h *AdminHandler) GetAllEvents(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 403 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
-// @Router /admin/events/status [get]
-func (h *AdminHandler) GetEventsByStatus(w http.ResponseWriter, r *http.Request) {
-	status := r.URL.Query().Get("status")
-	if status == "" {
-		response.WriteError(w, response.ErrInvalidInput)
-		return
-	}
-
+// @Router /admin/events [get]
+func (h *AdminHandler) GetEvents(w http.ResponseWriter, r *http.Request) {
 	limit, offset := getPagination(r)
+	status := r.URL.Query().Get("status")
 
-	events, err := h.admin.AdminGetEventsByStatus(r.Context(), repository.EventStatus(status), limit, offset)
-	if err != nil {
-		response.WriteError(w, err)
-		return
-	}
+	var result []AdminEventResponse
 
-	var result []AdminGetEventsByStatusRowResponse
-	for _, e := range events {
-		result = append(result, toAdminGetEventsByStatusRowResponse(e))
+	if status != "" {
+		events, err := h.admin.AdminGetEventsByStatus(r.Context(), repository.EventStatus(status), limit, offset)
+		if err != nil {
+			response.WriteError(w, err)
+			return
+		}
+		for _, event := range events {
+			// Map event to AdminEventResponse
+			result = append(result, toAdminEventResponseFromStatus(event))
+		}
+	} else {
+		events, err := h.admin.AdminGetAllEvents(r.Context(), limit, offset)
+		if err != nil {
+			response.WriteError(w, err)
+			return
+		}
+		for _, event := range events {
+			result = append(result, toAdminEventResponseFromAll(event))
+		}
 	}
 
 	response.WriteJSON(w, http.StatusOK, result)

@@ -42,7 +42,7 @@ func Load() (*Config, error) {
 	required := map[string]*string{
 		"DATABASE_URL":          &cfg.DBUrl,
 		"JWT_SECRET":            &cfg.JWTSecret,
-		"APIVersion":            &cfg.APIVersion,
+		"API_VERSION":           &cfg.APIVersion,
 		"CLIENT_URL":            &cfg.ClientURL,
 		"MPESA_CONSUMER_KEY":    &cfg.MpesaConsumerKey,
 		"MPESA_CONSUMER_SECRET": &cfg.MpesaConsumerSecret,

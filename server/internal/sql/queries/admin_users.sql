@@ -9,24 +9,39 @@ WHERE "role" = $1
 ORDER BY "created_at" DESC
 LIMIT $2 OFFSET $3;
 
+-- name: AdminGetUsersByStatus :many
+SELECT * FROM "users"
+WHERE "status" = $1
+ORDER BY "created_at" DESC
+LIMIT $2 OFFSET $3;
+
+-- name: AdminGetUserByRoleAndStatus :many
+SELECT * FROM "users"
+WHERE "role" = $1
+AND "status" = $2
+ORDER BY "created_at" DESC
+LIMIT $3 OFFSET $4;
+
+-- name: AdminGetAllOrganisers :many
+SELECT * FROM "users"
+WHERE "role" = 'ORGANISER'
+ORDER BY "created_at" DESC
+LIMIT $1 OFFSET $2;
+
 -- name: AdminGetPendingOrganisers :many
 SELECT * FROM "users"
 WHERE "role" = 'ORGANISER'
 AND "is_verified" = FALSE
-ORDER BY "created_at" ASC;
+ORDER BY "created_at" ASC
+LIMIT $1 OFFSET $2;
 
 -- name: AdminGetApprovedOrganisers :many
 SELECT * FROM "users"
 WHERE "role" = 'ORGANISER'
 AND "is_verified" = TRUE
 AND "status" = 'ACTIVE'
-ORDER BY "created_at" DESC;
-
--- name: AdminGetUsersByStatus :many
-SELECT * FROM "users"
-WHERE "status" = $1
 ORDER BY "created_at" DESC
-LIMIT $2 OFFSET $3;
+LIMIT $1 OFFSET $2;
 
 -- name: AdminUpdateUserVerification :one
 UPDATE "users"

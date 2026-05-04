@@ -39,14 +39,6 @@ SET
 WHERE "id" = $1
 RETURNING *;
 
--- name: CancelEvent :one
-UPDATE "events"
-SET
-    "status"     = 'CANCELLED',
-    "updated_at" = NOW()
-WHERE "id" = $1
-RETURNING *;
-
 -- name: DeleteEvent :one
 UPDATE "events"
 SET
