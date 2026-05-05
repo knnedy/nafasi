@@ -2,15 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Users,
   ArrowRight,
-  Sparkles,
   Shield,
-  Zap,
-  User,
   Mail,
   Eye,
   EyeOff,
@@ -30,17 +25,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 
-const signUpSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+const signInSchema = z.object({
   email: z.email({ message: "Invalid email address" }),
-  password: z
-    .string()
-    .min(8, { message: "Password must be at least 8 characters" })
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
-      message:
-        "Password must contain at least one uppercase letter, one lowercase letter, and one number",
-    }),
-  role: z.enum(["ATTENDEE", "ORGANISER"]),
+  password: z.string().min(1, { message: "Password is required" }),
 });
 
 const mockEvents = [
@@ -67,29 +54,23 @@ const mockEvents = [
   },
 ];
 
-export default function SignUpPage() {
-  const [userRole, setUserRole] =
-    useState<z.infer<typeof signUpSchema>["role"]>("ATTENDEE");
+export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof signUpSchema>>({
-    resolver: zodResolver(signUpSchema),
+  const form = useForm<z.infer<typeof signInSchema>>({
+    resolver: zodResolver(signInSchema),
     defaultValues: {
-      name: "",
       email: "",
       password: "",
-      role: "ATTENDEE",
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof signUpSchema>) => {
+  const onSubmit = async (data: z.infer<typeof signInSchema>) => {
     alert(JSON.stringify(data, null, 2));
   };
-
-  const isAttendee = userRole === "ATTENDEE";
 
   return (
     <div className="min-h-screen flex bg-[#0C0A09] font-sans">
@@ -138,17 +119,13 @@ export default function SignUpPage() {
         <div className="relative z-10 space-y-6">
           <div className="space-y-4">
             <p className="text-orange-400/80 text-xs font-semibold tracking-[0.25em] uppercase">
-              {isAttendee ? "For event lovers" : "For event creators"}
+              Welcome back
             </p>
             <h2 className="text-white font-black text-5xl leading-[1.05] tracking-tight text-balance">
-              {isAttendee
-                ? "Your next\nunforgettable\nexperience awaits."
-                : "Build events\nthat people\nwill talk about."}
+              Your next event is waiting.
             </h2>
             <p className="text-white/40 text-base leading-relaxed max-w-sm">
-              {isAttendee
-                ? "Thousands of events. One platform. No FOMO."
-                : "Powerful tools for organisers who mean business."}
+              Sign back in and pick up where you left off.
             </p>
           </div>
 
@@ -215,7 +192,6 @@ export default function SignUpPage() {
       {/* Vertical divider with ticket notches */}
       <div className="hidden lg:flex flex-col items-center justify-between py-16 relative w-px">
         <div className="absolute inset-0 w-px bg-white/[0.07] mx-auto" />
-        {/* Notches at top and bottom simulating ticket perforations */}
         <div className="w-5 h-5 rounded-full bg-[#0C0A09] border border-white/[0.07] z-10 -ml-2.5" />
         <div className="flex flex-col gap-1.5 z-10">
           {[...Array(12)].map((_, i) => (
@@ -244,75 +220,16 @@ export default function SignUpPage() {
           {/* Heading */}
           <div>
             <h1 className="text-white text-3xl font-black tracking-tight leading-tight">
-              Create your account
+              Welcome back
             </h1>
-          </div>
-
-          {/* Role toggle — pill style */}
-          <div className="bg-white/4 border border-white/8 rounded-xl p-1 flex gap-1">
-            {(["ATTENDEE", "ORGANISER"] as const).map((role) => {
-              const active = userRole === role;
-              return (
-                <button
-                  key={role}
-                  type="button"
-                  onClick={() => setUserRole(role)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                    active
-                      ? "bg-linear-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/20"
-                      : "text-white/40 hover:text-white/70"
-                  }`}>
-                  {role === "ATTENDEE" ? (
-                    <Ticket className="w-4 h-4" />
-                  ) : (
-                    <Users className="w-4 h-4" />
-                  )}
-                  <span className="hidden sm:inline">
-                    {role === "ATTENDEE" ? "Attendee" : "Organiser"}
-                  </span>
-                  <span className="sm:hidden">
-                    {role === "ATTENDEE" ? "Attend" : "Host"}
-                  </span>
-                </button>
-              );
-            })}
+            <p className="text-white/30 text-sm mt-1.5">
+              Sign in to your NAFASI account
+            </p>
           </div>
 
           {/* Form */}
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <FieldGroup>
-              {/* Name */}
-              <Controller
-                name="name"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel
-                      htmlFor="name"
-                      className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-2 block">
-                      Full Name
-                    </FieldLabel>
-                    <div className="relative">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
-                      <Input
-                        {...field}
-                        id="name"
-                        placeholder="Ada Okonkwo"
-                        className="w-full pl-11 h-12 rounded-xl bg-white/4 border border-white/8 text-white placeholder:text-white/20 focus:border-orange-500/50 focus:bg-white/6 focus:ring-2 focus:ring-orange-500/10 transition-all duration-200"
-                        aria-invalid={fieldState.invalid}
-                        required
-                      />
-                    </div>
-                    {fieldState.invalid && (
-                      <FieldError
-                        errors={[fieldState.error]}
-                        className="text-red-400 text-xs mt-1"
-                      />
-                    )}
-                  </Field>
-                )}
-              />
-
               {/* Email */}
               <Controller
                 name="email"
@@ -352,18 +269,25 @@ export default function SignUpPage() {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel
-                      htmlFor="password"
-                      className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-2 block">
-                      Password
-                    </FieldLabel>
+                    <div className="flex items-center justify-between mb-2">
+                      <FieldLabel
+                        htmlFor="password"
+                        className="text-white/60 text-xs font-semibold uppercase tracking-widest block">
+                        Password
+                      </FieldLabel>
+                      <Link
+                        href="/forgot-password"
+                        className="text-orange-400 text-xs font-semibold hover:text-orange-300 hover:underline transition-colors">
+                        Forgot password?
+                      </Link>
+                    </div>
                     <div className="relative">
                       <Shield className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
                       <Input
                         {...field}
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Min. 8 characters"
+                        placeholder="••••••••"
                         className="w-full pl-11 pr-12 h-12 rounded-xl bg-white/4 border border-white/8 text-white placeholder:text-white/20 focus:border-orange-500/50 focus:bg-white/6 focus:ring-2 focus:ring-orange-500/10 transition-all duration-200"
                         aria-invalid={fieldState.invalid}
                         required
@@ -397,11 +321,11 @@ export default function SignUpPage() {
                 {isLoading ? (
                   <>
                     <LoaderCircle className="h-4 w-4 animate-spin" />
-                    Creating account…
+                    Signing in…
                   </>
                 ) : (
                   <>
-                    Create Account
+                    Sign In
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -443,13 +367,13 @@ export default function SignUpPage() {
             Continue with Google
           </button>
 
-          {/* Sign in */}
+          {/* Sign up */}
           <p className="text-center text-white/30 text-sm">
-            Already have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
-              href="/signin"
+              href="/signup"
               className="text-orange-400 font-semibold hover:text-orange-300 hover:underline transition-colors">
-              Sign in
+              Create one
             </Link>
           </p>
         </div>
