@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/knnedy/nafasi/internal/middleware"
 	"github.com/knnedy/nafasi/internal/repository"
 	"github.com/knnedy/nafasi/internal/response"
@@ -21,20 +22,24 @@ func NewUserHandler(user UserServicer) *UserHandler {
 
 // UserResponse is the public representation of a user
 type UserResponse struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Email      string `json:"email"`
+	Role       string `json:"role"`
+	IsVerified bool   `json:"is_verified"`
+	AvatarURL  string `json:"avatar_url,omitempty"`
+	CreatedAt  string `json:"created_at"`
 }
 
 func toUserResponse(user repository.User) UserResponse {
 	return UserResponse{
-		ID:        user.ID.String(),
-		Name:      user.Name,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt.Time.Format(time.RFC3339),
-		UpdatedAt: user.UpdatedAt.Time.Format(time.RFC3339),
+		ID:         uuid.UUID(user.ID.Bytes).String(),
+		Name:       user.Name,
+		Email:      user.Email,
+		Role:       string(user.Role),
+		IsVerified: user.IsVerified,
+		AvatarURL:  user.AvatarUrl.String,
+		CreatedAt:  user.CreatedAt.Time.Format(time.RFC3339),
 	}
 }
 
