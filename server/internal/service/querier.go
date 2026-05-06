@@ -35,11 +35,15 @@ type EventQuerier interface {
 	CreateEvent(ctx context.Context, arg repository.CreateEventParams) (repository.Event, error)
 	GetEventById(ctx context.Context, id pgtype.UUID) (repository.Event, error)
 	GetEventBySlug(ctx context.Context, slug string) (repository.Event, error)
+	GetCategoryByName(ctx context.Context, name string) (repository.EventCategory, error)
 	PublicGetPublishedEvents(ctx context.Context, arg repository.PublicGetPublishedEventsParams) ([]repository.Event, error)
 	PublicGetUpcomingEvents(ctx context.Context, arg repository.PublicGetUpcomingEventsParams) ([]repository.Event, error)
+	GetPublishedEventsByCategory(ctx context.Context, arg repository.GetPublishedEventsByCategoryParams) ([]repository.Event, error)
+	GetUpcomingEventsByCategory(ctx context.Context, arg repository.GetUpcomingEventsByCategoryParams) ([]repository.Event, error)
 	UpdateEvent(ctx context.Context, arg repository.UpdateEventParams) (repository.Event, error)
 	UpdateEventStatus(ctx context.Context, arg repository.UpdateEventStatusParams) (repository.Event, error)
 	DeleteEvent(ctx context.Context, id pgtype.UUID) (repository.Event, error)
+	GetAllCategories(ctx context.Context) ([]repository.EventCategory, error)
 }
 
 type TicketTypeQuerier interface {
@@ -106,6 +110,11 @@ type AdminQuerier interface {
 	AdminUnbanUser(ctx context.Context, id pgtype.UUID) (repository.User, error)
 	AdminSetUserRoleToAdmin(ctx context.Context, id pgtype.UUID) (repository.User, error)
 	AdminDeleteUser(ctx context.Context, id pgtype.UUID) (repository.User, error)
+
+	// event category management
+	CreateCategory(ctx context.Context, arg repository.CreateCategoryParams) (repository.EventCategory, error)
+	UpdateCategory(ctx context.Context, arg repository.UpdateCategoryParams) (repository.EventCategory, error)
+	DeleteCategory(ctx context.Context, id pgtype.UUID) error
 
 	// event management
 	AdminGetAllEvents(ctx context.Context, arg repository.AdminGetAllEventsParams) ([]repository.AdminGetAllEventsRow, error)

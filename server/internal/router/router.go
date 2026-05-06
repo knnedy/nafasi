@@ -57,6 +57,9 @@ func New(
 		// mpesa callback — public, Safaricom has no JWT
 		r.Post("/payments/mpesa/callback", payment.MpesaCallback)
 
+		// event categories — public read
+		r.Get("/event-categories", event.GetEventCategories)
+
 		// events — public read + organiser writes
 		r.Route("/events", eventsRouter(event, ticketType, authMiddleware))
 
@@ -87,71 +90,10 @@ func New(
 		})
 
 		// organiser dashboard — organiser only
-		r.Route("/organiser", func(r chi.Router) {
-			r.Use(authMiddleware.Authenticate)
-			r.Use(authMiddleware.RequireRole(repository.UserRoleORGANISER))
+		r.Route("/organiser", organiserRouter(organiser, authMiddleware))
 
-			r.Get("/events", organiser.GetEventsByOrganiser)
-
-			r.Route("/events/{eventID}", func(r chi.Router) {
-				r.Get("/ticket-types", organiser.GetTicketTypesByEvent)
-				r.Get("/ticket-types/sales", organiser.GetTicketTypeSalesByEvent)
-				r.Get("/tickets-sold", organiser.GetTotalTicketsSold)
-				r.Get("/revenue", organiser.GetEventRevenue)
-				r.Get("/checkin/count", organiser.GetEventCheckedInCount)
-
-				r.Route("/orders", func(r chi.Router) {
-					r.Get("/", organiser.GetOrdersByEvent)
-					r.Get("/recent", organiser.GetRecentEventOrders)
-					r.Get("/count", organiser.GetEventOrdersCount)
-					r.Get("/breakdown", organiser.GetEventOrderStatusBreakdown)
-				})
-			})
-		})
-
-		// admin — admin only
-		r.Route("/admin", func(r chi.Router) {
-			r.Use(authMiddleware.Authenticate)
-			r.Use(authMiddleware.RequireRole(repository.UserRoleADMIN))
-
-			// user management
-			r.Route("/users", func(r chi.Router) {
-				r.Get("/", admin.GetUsers)
-
-				r.Route("/{userID}", func(r chi.Router) {
-					r.Get("/", admin.GetUserByID)
-					r.Patch("/verification", admin.UpdateOrganiserVerification)
-					r.Patch("/ban", admin.BanUser)
-					r.Patch("/unban", admin.UnbanUser)
-					r.Patch("/promote", admin.PromoteToAdmin)
-					r.Delete("/", admin.DeleteUser)
-				})
-			})
-
-			// organiser management
-			r.Route("/organisers", func(r chi.Router) {
-				r.Get("/", admin.GetOrganisers)
-			})
-
-			// event management
-			r.Route("/events", func(r chi.Router) {
-				r.Get("/", admin.GetEvents)
-
-				r.Route("/{eventID}", func(r chi.Router) {
-					r.Patch("/cancel", admin.CancelEvent)
-					r.Delete("/", admin.DeleteEvent)
-				})
-			})
-
-			// order management
-			r.Route("/orders", func(r chi.Router) {
-				r.Get("/", admin.GetOrdersByStatus)
-				r.Get("/recent", admin.GetRecentOrdersWithDetails)
-			})
-
-			// platform stats
-			r.Get("/stats", admin.GetPlatformStats)
-		})
+		// admin dashboard — admin only
+		r.Route("/admin", adminRouter(admin, authMiddleware))
 	})
 
 	return r
@@ -169,7 +111,7 @@ func eventsRouter(
 		r.Get("/slug/{slug}", event.GetBySlug)
 		r.Get("/{eventID}", event.GetByID)
 		r.Get("/{eventID}/ticket-types/available", ticketType.GetAvailableByEvent)
-		r.Get("/{eventID}/ticket-types/{ticketTypeID}", ticketType.GetById)
+		r.Get("/{eventID}/ticket-types/{ticketTypeID}", ticketType.GetByID)
 
 		// organiser writes
 		r.Group(func(r chi.Router) {
@@ -185,5 +127,87 @@ func eventsRouter(
 			r.Patch("/{eventID}/ticket-types/{ticketTypeID}", ticketType.Update)
 			r.Delete("/{eventID}/ticket-types/{ticketTypeID}", ticketType.Delete)
 		})
+	}
+}
+
+func organiserRouter(
+	organiser *handler.OrganiserHandler,
+	authMiddleware *middleware.AuthMiddleware,
+) func(r chi.Router) {
+	return func(r chi.Router) {
+		r.Use(authMiddleware.Authenticate)
+		r.Use(authMiddleware.RequireRole(repository.UserRoleORGANISER))
+
+		r.Get("/events", organiser.GetEventsByOrganiser)
+
+		r.Route("/events/{eventID}", func(r chi.Router) {
+			r.Get("/ticket-types", organiser.GetTicketTypesByEvent)
+			r.Get("/ticket-types/sales", organiser.GetTicketTypeSalesByEvent)
+			r.Get("/tickets-sold", organiser.GetTotalTicketsSold)
+			r.Get("/revenue", organiser.GetEventRevenue)
+			r.Get("/checkin/count", organiser.GetEventCheckedInCount)
+
+			r.Route("/orders", func(r chi.Router) {
+				r.Get("/", organiser.GetOrdersByEvent)
+				r.Get("/recent", organiser.GetRecentEventOrders)
+				r.Get("/count", organiser.GetEventOrdersCount)
+				r.Get("/breakdown", organiser.GetEventOrderStatusBreakdown)
+			})
+		})
+	}
+}
+
+func adminRouter(
+	admin *handler.AdminHandler,
+	authMiddleware *middleware.AuthMiddleware,
+) func(r chi.Router) {
+	return func(r chi.Router) {
+		r.Use(authMiddleware.Authenticate)
+		r.Use(authMiddleware.RequireRole(repository.UserRoleADMIN))
+
+		// user management
+		r.Route("/users", func(r chi.Router) {
+			r.Get("/", admin.GetUsers)
+
+			r.Route("/{userID}", func(r chi.Router) {
+				r.Get("/", admin.GetUserByID)
+				r.Patch("/verification", admin.UpdateOrganiserVerification)
+				r.Patch("/ban", admin.BanUser)
+				r.Patch("/unban", admin.UnbanUser)
+				r.Patch("/promote", admin.PromoteToAdmin)
+				r.Delete("/", admin.DeleteUser)
+			})
+		})
+
+		// organiser management
+		r.Route("/organisers", func(r chi.Router) {
+			r.Get("/", admin.GetOrganisers)
+		})
+
+		// event category management
+		r.Route("/event-categories", func(r chi.Router) {
+			r.Post("/", admin.CreateEventCategory)
+			r.Patch("/{categoryID}", admin.UpdateEventCategory)
+			r.Delete("/{categoryID}", admin.DeleteEventCategory)
+		})
+
+		// event management
+		r.Route("/events", func(r chi.Router) {
+			r.Get("/", admin.GetEvents)
+
+			r.Route("/{eventID}", func(r chi.Router) {
+				r.Patch("/cancel", admin.CancelEvent)
+				r.Delete("/", admin.DeleteEvent)
+			})
+		})
+
+		// order management
+		r.Route("/orders", func(r chi.Router) {
+			r.Get("/", admin.GetOrdersByStatus)
+			r.Get("/recent", admin.GetRecentOrdersWithDetails)
+		})
+
+		// platform stats
+		r.Get("/stats", admin.GetPlatformStats)
 	}
 }

@@ -169,10 +169,46 @@ func (s *EventService) GetPublishedEvents(ctx context.Context, limit, offset int
 	return events, nil
 }
 
+func (s *EventService) GetPublishedEventsByCategory(ctx context.Context, category string, limit, offset int32) ([]repository.Event, error) {
+	eventCategory, err := s.db.GetCategoryByName(ctx, category)
+	if err != nil {
+		return nil, err
+	}
+
+	events, err := s.db.GetPublishedEventsByCategory(ctx, repository.GetPublishedEventsByCategoryParams{
+		CategoryID: pgtype.UUID{Bytes: eventCategory.ID.Bytes, Valid: true},
+		Limit:      limit,
+		Offset:     offset,
+	})
+	if err != nil {
+		return nil, response.ErrDatabase
+	}
+
+	return events, nil
+}
+
 func (s *EventService) GetUpcomingEvents(ctx context.Context, limit, offset int32) ([]repository.Event, error) {
 	events, err := s.db.PublicGetUpcomingEvents(ctx, repository.PublicGetUpcomingEventsParams{
 		Limit:  limit,
 		Offset: offset,
+	})
+	if err != nil {
+		return nil, response.ErrDatabase
+	}
+
+	return events, nil
+}
+
+func (s *EventService) GetUpcomingEventsByCategory(ctx context.Context, category string, limit, offset int32) ([]repository.Event, error) {
+	eventCategory, err := s.db.GetCategoryByName(ctx, category)
+	if err != nil {
+		return nil, err
+	}
+
+	events, err := s.db.GetUpcomingEventsByCategory(ctx, repository.GetUpcomingEventsByCategoryParams{
+		CategoryID: pgtype.UUID{Bytes: eventCategory.ID.Bytes, Valid: true},
+		Limit:      limit,
+		Offset:     offset,
 	})
 	if err != nil {
 		return nil, response.ErrDatabase
@@ -306,4 +342,12 @@ func (s *EventService) DeleteEvent(ctx context.Context, eventID, organiserID str
 	}
 
 	return deletedEvent, nil
+}
+
+func (s *EventService) GetEventCategories(ctx context.Context) ([]repository.EventCategory, error) {
+	eventCategories, err := s.db.GetAllCategories(ctx)
+	if err != nil {
+		return nil, response.ErrDatabase
+	}
+	return eventCategories, nil
 }

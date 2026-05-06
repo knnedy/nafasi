@@ -58,6 +58,24 @@ func toEventResponse(event repository.Event) EventResponse {
 	}
 }
 
+type EventCategoryResponse struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	CreatedAt   string `json:"created_at"`
+	UpdatedAt   string `json:"updated_at"`
+}
+
+func toEventCategoryResponse(category repository.EventCategory) EventCategoryResponse {
+	return EventCategoryResponse{
+		ID:          category.ID.String(),
+		Name:        category.Name,
+		Description: category.Description.String,
+		CreatedAt:   category.CreatedAt.Time.Format(time.RFC3339),
+		UpdatedAt:   category.UpdatedAt.Time.Format(time.RFC3339),
+	}
+}
+
 // Create godoc
 // @Summary Create event
 // @Description Creates a new event (organiser only)
@@ -155,9 +173,20 @@ func (h *EventHandler) GetBySlug(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /events/published [get]
 func (h *EventHandler) GetPublished(w http.ResponseWriter, r *http.Request) {
+	category := r.URL.Query().Get("category")
 	limit, offset := getPagination(r)
 
-	events, err := h.event.GetPublishedEvents(r.Context(), limit, offset)
+	var (
+		events []repository.Event
+		err    error
+	)
+
+	if category != "" {
+		events, err = h.event.GetPublishedEventsByCategory(r.Context(), category, limit, offset)
+	} else {
+		events, err = h.event.GetPublishedEvents(r.Context(), limit, offset)
+	}
+
 	if err != nil {
 		response.WriteError(w, err)
 		return
@@ -180,9 +209,20 @@ func (h *EventHandler) GetPublished(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /events/upcoming [get]
 func (h *EventHandler) GetUpcoming(w http.ResponseWriter, r *http.Request) {
+	category := r.URL.Query().Get("category")
 	limit, offset := getPagination(r)
 
-	events, err := h.event.GetUpcomingEvents(r.Context(), limit, offset)
+	var (
+		events []repository.Event
+		err    error
+	)
+
+	if category != "" {
+		events, err = h.event.GetUpcomingEventsByCategory(r.Context(), category, limit, offset)
+	} else {
+		events, err = h.event.GetUpcomingEvents(r.Context(), limit, offset)
+	}
+
 	if err != nil {
 		response.WriteError(w, err)
 		return
@@ -194,6 +234,30 @@ func (h *EventHandler) GetUpcoming(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.WriteJSON(w, http.StatusOK, eventResponses)
+}
+
+// GetEventCategories godoc
+// @Summary Get event categories
+// @Description Returns a list of all event categories
+// @Tags Events
+// @Produce json
+// @Success 200 {array} EventCategoryResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /events/categories [get]
+func (h *EventHandler) GetEventCategories(w http.ResponseWriter, r *http.Request) {
+	categories, err := h.event.GetEventCategories(r.Context())
+	if err != nil {
+		response.WriteError(w, err)
+		return
+	}
+
+	var eventCategoryResponses []EventCategoryResponse
+	for _, category := range categories {
+		eventCategoryResponses = append(eventCategoryResponses, toEventCategoryResponse(category))
+	}
+
+	response.WriteJSON(w, http.StatusOK, eventCategoryResponses)
 }
 
 // Update godoc

@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -10,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/knnedy/nafasi/internal/repository"
 	"github.com/knnedy/nafasi/internal/response"
+	"github.com/knnedy/nafasi/internal/service"
 )
 
 type AdminHandler struct {
@@ -63,15 +63,6 @@ type AdminEventResponse struct {
 	OrganiserName string  `json:"organiser_name"`
 }
 
-// Essential helper to prevent pointer aliasing bugs
-func stringPtr(ns sql.NullString) *string {
-	if !ns.Valid {
-		return nil
-	}
-	s := ns.String
-	return &s
-}
-
 func toAdminEventResponseFromAll(event repository.AdminGetAllEventsRow) AdminEventResponse {
 	return AdminEventResponse{
 		ID:            event.ID.String(),
@@ -113,9 +104,6 @@ func toAdminEventResponseFromStatus(event repository.AdminGetEventsByStatusRow) 
 		OrganiserName: event.OrganiserName,
 	}
 }
-
-// func toAdminGetAllEventsResponse(e repository.AdminGetAllEventsRow) AdminEventResponse
-// func toAdminGetEventsByStatusRowResponse(e repository.AdminGetEventsByStatusRow) AdminEventResponse
 
 type AdminOrderResponse struct {
 	ID            string  `json:"id"`
@@ -291,7 +279,6 @@ func (h *AdminHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 // @Router /admin/organisers [get]
 func (h *AdminHandler) GetOrganisers(w http.ResponseWriter, r *http.Request) {
 	status := r.URL.Query().Get("status")
-
 	limit, offset := getPagination(r)
 
 	var (
@@ -578,6 +565,99 @@ func (h *AdminHandler) DeleteEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err := h.admin.AdminDeleteEvent(r.Context(), eventID)
+	if err != nil {
+		response.WriteError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// event category management
+
+// CreateEventCategory godoc
+// @Summary Create event category
+// @Description Creates a new event category (admin only)
+// @Tags Admin
+// @Produce json
+// @Security BearerAuth
+// @Param body body service.CreateEventCategoryInput true "Category payload"
+// @Success 200 {object} EventCategoryResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 403 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /admin/events/categories [post]
+func (h *AdminHandler) CreateEventCategory(w http.ResponseWriter, r *http.Request) {
+	var input service.CreateEventCategoryInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.WriteError(w, response.ErrInvalidInput)
+		return
+	}
+
+	createdCategory, err := h.admin.AdminCreateEventCategory(r.Context(), input)
+	if err != nil {
+		response.WriteError(w, err)
+		return
+	}
+
+	response.WriteJSON(w, http.StatusOK, toEventCategoryResponse(createdCategory))
+}
+
+// UpdateEventCategory godoc
+// @Summary Update event category
+// @Description Updates an existing event category (admin only)
+// @Tags Admin
+// @Produce json
+// @Security BearerAuth
+// @Param categoryID path string true "Category ID"
+// @Param body body service.UpdateEventCategoryInput true "Category payload"
+// @Success 200 {object} EventCategoryResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 403 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 422 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /admin/events/categories/{categoryID} [patch]
+func (h *AdminHandler) UpdateEventCategory(w http.ResponseWriter, r *http.Request) {
+	var input service.UpdateEventCategoryInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.WriteError(w, response.ErrInvalidInput)
+		return
+	}
+
+	updatedCategory, err := h.admin.AdminUpdateEventCategory(r.Context(), input)
+	if err != nil {
+		response.WriteError(w, err)
+		return
+	}
+
+	response.WriteJSON(w, http.StatusOK, toEventCategoryResponse(updatedCategory))
+}
+
+// DeleteEventCategory godoc
+// @Summary Delete event category
+// @Description Deletes an event category (admin only)
+// @Tags Admin
+// @Produce json
+// @Security BearerAuth
+// @Param categoryID path string true "Category ID"
+// @Success 204 "No Content"
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 403 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /admin/events/categories/{categoryID} [delete]
+func (h *AdminHandler) DeleteEventCategory(w http.ResponseWriter, r *http.Request) {
+	categoryID := chi.URLParam(r, "categoryID")
+	if categoryID == "" {
+		response.WriteError(w, response.ErrNotFound)
+		return
+	}
+
+	err := h.admin.AdminDeleteEventCategory(r.Context(), categoryID)
 	if err != nil {
 		response.WriteError(w, err)
 		return

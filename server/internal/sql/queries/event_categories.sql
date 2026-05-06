@@ -28,5 +28,4 @@ WHERE "id" = $1
 RETURNING *;
 
 -- name: DeleteCategory :exec
-DELETE FROM "event_categories"
-WHERE "id" = $1;
+DELETE FROM "event_categories" WHERE "id" = $1;

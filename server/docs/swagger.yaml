@@ -102,6 +102,19 @@ definitions:
       total_users:
         type: integer
     type: object
+  handler.EventCategoryResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
   handler.EventResponse:
     properties:
       banner_url:
@@ -305,6 +318,16 @@ definitions:
       user_id:
         type: string
     type: object
+  service.CreateEventCategoryInput:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    required:
+    - description
+    - name
+    type: object
   service.CreateEventInput:
     properties:
       description:
@@ -467,6 +490,16 @@ definitions:
         type: string
     required:
     - avatarURL
+    type: object
+  service.UpdateEventCategoryInput:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    required:
+    - description
+    - name
     type: object
   service.UpdateEventInput:
     properties:
@@ -678,6 +711,133 @@ paths:
       security:
       - BearerAuth: []
       summary: Cancel event
+      tags:
+      - Admin
+  /admin/events/categories:
+    post:
+      description: Creates a new event category (admin only)
+      parameters:
+      - description: Category payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/service.CreateEventCategoryInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.EventCategoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create event category
+      tags:
+      - Admin
+  /admin/events/categories/{categoryID}:
+    delete:
+      description: Deletes an event category (admin only)
+      parameters:
+      - description: Category ID
+        in: path
+        name: categoryID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete event category
+      tags:
+      - Admin
+    patch:
+      description: Updates an existing event category (admin only)
+      parameters:
+      - description: Category ID
+        in: path
+        name: categoryID
+        required: true
+        type: string
+      - description: Category payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/service.UpdateEventCategoryInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.EventCategoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update event category
       tags:
       - Admin
   /admin/orders:
@@ -1721,6 +1881,29 @@ paths:
       summary: Get available ticket types
       tags:
       - TicketTypes
+  /events/categories:
+    get:
+      description: Returns a list of all event categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.EventCategoryResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get event categories
+      tags:
+      - Events
   /events/published:
     get:
       description: Returns all published events

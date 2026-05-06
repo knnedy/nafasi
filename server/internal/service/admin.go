@@ -28,6 +28,16 @@ func NewAdminService(db AdminQuerier) *AdminService {
 	}
 }
 
+type CreateEventCategoryInput struct {
+	Name        string `json:"name" validate:"required"`
+	Description string `json:"description" validate:"required"`
+}
+
+type UpdateEventCategoryInput struct {
+	Name        string `json:"name" validate:"required"`
+	Description string `json:"description" validate:"required"`
+}
+
 func (s *AdminService) AdminGetAllUsers(ctx context.Context, limit, offset int32) ([]repository.User, error) {
 	users, err := s.db.AdminGetAllUsers(ctx, repository.AdminGetAllUsersParams{
 		Limit:  limit,
@@ -278,6 +288,48 @@ func (s *AdminService) AdminDeleteEvent(ctx context.Context, targetEventID strin
 	}
 
 	return deletedEvent, nil
+}
+
+func (s *AdminService) AdminCreateEventCategory(ctx context.Context, input CreateEventCategoryInput) (repository.EventCategory, error) {
+	// Validate input
+	if err := s.validate.Struct(input); err != nil {
+		return repository.EventCategory{}, formatValidationError(err, s.trans)
+	}
+
+	eventCategory, err := s.db.CreateCategory(ctx, repository.CreateCategoryParams{
+		Name:        input.Name,
+		Description: pgtype.Text{String: input.Description, Valid: true},
+	})
+
+	return eventCategory, err
+}
+
+func (s *AdminService) AdminUpdateEventCategory(ctx context.Context, input UpdateEventCategoryInput) (repository.EventCategory, error) {
+	// Validate input
+	if err := s.validate.Struct(input); err != nil {
+		return repository.EventCategory{}, formatValidationError(err, s.trans)
+	}
+
+	eventCategory, err := s.db.UpdateCategory(ctx, repository.UpdateCategoryParams{
+		Name:        input.Name,
+		Description: pgtype.Text{String: input.Description, Valid: true},
+	})
+
+	return eventCategory, err
+}
+
+func (s *AdminService) AdminDeleteEventCategory(ctx context.Context, categoryID string) error {
+	parsedID, err := uuid.Parse(categoryID)
+	if err != nil {
+		return response.ErrInvalidInput
+	}
+
+	err = s.db.DeleteCategory(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
+	if err != nil {
+		return response.ErrDatabase
+	}
+
+	return nil
 }
 
 func (s *AdminService) AdminGetOrdersByStatus(ctx context.Context, status repository.OrderStatus, limit, offset int32) ([]repository.Order, error) {

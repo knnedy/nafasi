@@ -153,7 +153,7 @@ func (h *TicketTypeHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /events/{eventID}/ticket-types/{ticketTypeID} [get]
-func (h *TicketTypeHandler) GetById(w http.ResponseWriter, r *http.Request) {
+func (h *TicketTypeHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	ticketTypeID := chi.URLParam(r, "ticketTypeID")
 	if ticketTypeID == "" {
 		response.WriteError(w, response.ErrNotFound)
