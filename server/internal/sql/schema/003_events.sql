@@ -4,6 +4,7 @@ CREATE TYPE event_status AS ENUM ('DRAFT', 'PUBLISHED', 'CANCELLED', 'COMPLETED'
 CREATE TABLE "events" (
     "id"           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "organiser_id" UUID NOT NULL,
+    "category_id"  UUID,
     "title"        TEXT NOT NULL,
     "slug"         TEXT NOT NULL,
     "description"  TEXT,
@@ -18,14 +19,17 @@ CREATE TABLE "events" (
     "created_at"   TIMESTAMP(3) NOT NULL DEFAULT NOW(),
     "updated_at"   TIMESTAMP(3) NOT NULL DEFAULT NOW(),
     CONSTRAINT "events_slug_key" UNIQUE ("slug"),
-    CONSTRAINT "events_organiser_id_fkey" FOREIGN KEY ("organiser_id") REFERENCES "users"("id") ON DELETE CASCADE
+    CONSTRAINT "events_organiser_id_fkey" FOREIGN KEY ("organiser_id") REFERENCES "users"("id") ON DELETE CASCADE,
+    CONSTRAINT "events_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "event_categories"("id") ON DELETE SET NULL
 );
 
 CREATE INDEX "idx_events_organiser_id" ON "events"("organiser_id");
 CREATE INDEX "idx_events_status" ON "events"("status");
 CREATE INDEX "idx_events_starts_at" ON "events"("starts_at");
+CREATE INDEX "idx_events_category_id" ON "events"("category_id");
 
 -- +goose Down
+DROP INDEX "idx_events_category_id";
 DROP INDEX "idx_events_starts_at";
 DROP INDEX "idx_events_status";
 DROP INDEX "idx_events_organiser_id";
