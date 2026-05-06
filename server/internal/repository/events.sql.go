@@ -27,7 +27,7 @@ INSERT INTO "events" (
     "online_url"
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
-) RETURNING id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
+) RETURNING id, organiser_id, category_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
 `
 
 type CreateEventParams struct {
@@ -64,6 +64,7 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event
 	err := row.Scan(
 		&i.ID,
 		&i.OrganiserID,
+		&i.CategoryID,
 		&i.Title,
 		&i.Slug,
 		&i.Description,
@@ -87,7 +88,7 @@ SET
     "status"     = 'DELETED',
     "updated_at" = NOW()
 WHERE "id" = $1
-RETURNING id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
+RETURNING id, organiser_id, category_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
 `
 
 func (q *Queries) DeleteEvent(ctx context.Context, id pgtype.UUID) (Event, error) {
@@ -96,6 +97,7 @@ func (q *Queries) DeleteEvent(ctx context.Context, id pgtype.UUID) (Event, error
 	err := row.Scan(
 		&i.ID,
 		&i.OrganiserID,
+		&i.CategoryID,
 		&i.Title,
 		&i.Slug,
 		&i.Description,
@@ -114,7 +116,7 @@ func (q *Queries) DeleteEvent(ctx context.Context, id pgtype.UUID) (Event, error
 }
 
 const getEventById = `-- name: GetEventById :one
-SELECT id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events" WHERE "id" = $1
+SELECT id, organiser_id, category_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events" WHERE "id" = $1
 `
 
 func (q *Queries) GetEventById(ctx context.Context, id pgtype.UUID) (Event, error) {
@@ -123,6 +125,7 @@ func (q *Queries) GetEventById(ctx context.Context, id pgtype.UUID) (Event, erro
 	err := row.Scan(
 		&i.ID,
 		&i.OrganiserID,
+		&i.CategoryID,
 		&i.Title,
 		&i.Slug,
 		&i.Description,
@@ -141,7 +144,7 @@ func (q *Queries) GetEventById(ctx context.Context, id pgtype.UUID) (Event, erro
 }
 
 const getEventBySlug = `-- name: GetEventBySlug :one
-SELECT id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events" WHERE "slug" = $1
+SELECT id, organiser_id, category_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events" WHERE "slug" = $1
 `
 
 func (q *Queries) GetEventBySlug(ctx context.Context, slug string) (Event, error) {
@@ -150,6 +153,7 @@ func (q *Queries) GetEventBySlug(ctx context.Context, slug string) (Event, error
 	err := row.Scan(
 		&i.ID,
 		&i.OrganiserID,
+		&i.CategoryID,
 		&i.Title,
 		&i.Slug,
 		&i.Description,
@@ -182,7 +186,7 @@ SET
     "online_url" = $11,
     "updated_at" = NOW()
 WHERE "id" = $1
-RETURNING id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
+RETURNING id, organiser_id, category_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
 `
 
 type UpdateEventParams struct {
@@ -217,6 +221,7 @@ func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) (Event
 	err := row.Scan(
 		&i.ID,
 		&i.OrganiserID,
+		&i.CategoryID,
 		&i.Title,
 		&i.Slug,
 		&i.Description,

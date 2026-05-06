@@ -7,10 +7,115 @@ package repository
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getPublishedEventsByCategory = `-- name: GetPublishedEventsByCategory :many
+SELECT id, organiser_id, category_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events"
+WHERE "category_id" = $1
+AND "status" = 'PUBLISHED'
+ORDER BY "starts_at" DESC
+LIMIT $2 OFFSET $3
+`
+
+type GetPublishedEventsByCategoryParams struct {
+	CategoryID pgtype.UUID
+	Limit      int32
+	Offset     int32
+}
+
+func (q *Queries) GetPublishedEventsByCategory(ctx context.Context, arg GetPublishedEventsByCategoryParams) ([]Event, error) {
+	rows, err := q.db.Query(ctx, getPublishedEventsByCategory, arg.CategoryID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Event
+	for rows.Next() {
+		var i Event
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganiserID,
+			&i.CategoryID,
+			&i.Title,
+			&i.Slug,
+			&i.Description,
+			&i.Location,
+			&i.Venue,
+			&i.BannerUrl,
+			&i.StartsAt,
+			&i.EndsAt,
+			&i.Status,
+			&i.IsOnline,
+			&i.OnlineUrl,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUpcomingEventsByCategory = `-- name: GetUpcomingEventsByCategory :many
+SELECT id, organiser_id, category_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events"
+WHERE "category_id" = $1
+AND "status" = 'PUBLISHED'
+AND "starts_at" > NOW()
+ORDER BY "starts_at" ASC
+LIMIT $2 OFFSET $3
+`
+
+type GetUpcomingEventsByCategoryParams struct {
+	CategoryID pgtype.UUID
+	Limit      int32
+	Offset     int32
+}
+
+func (q *Queries) GetUpcomingEventsByCategory(ctx context.Context, arg GetUpcomingEventsByCategoryParams) ([]Event, error) {
+	rows, err := q.db.Query(ctx, getUpcomingEventsByCategory, arg.CategoryID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Event
+	for rows.Next() {
+		var i Event
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganiserID,
+			&i.CategoryID,
+			&i.Title,
+			&i.Slug,
+			&i.Description,
+			&i.Location,
+			&i.Venue,
+			&i.BannerUrl,
+			&i.StartsAt,
+			&i.EndsAt,
+			&i.Status,
+			&i.IsOnline,
+			&i.OnlineUrl,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const publicGetPublishedEvents = `-- name: PublicGetPublishedEvents :many
-SELECT id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events"
+SELECT id, organiser_id, category_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events"
 WHERE "status" = 'PUBLISHED'
 ORDER BY starts_at DESC
 LIMIT $1 OFFSET $2
@@ -33,6 +138,7 @@ func (q *Queries) PublicGetPublishedEvents(ctx context.Context, arg PublicGetPub
 		if err := rows.Scan(
 			&i.ID,
 			&i.OrganiserID,
+			&i.CategoryID,
 			&i.Title,
 			&i.Slug,
 			&i.Description,
@@ -58,7 +164,7 @@ func (q *Queries) PublicGetPublishedEvents(ctx context.Context, arg PublicGetPub
 }
 
 const publicGetUpcomingEvents = `-- name: PublicGetUpcomingEvents :many
-SELECT id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events"
+SELECT id, organiser_id, category_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events"
 WHERE "status" = 'PUBLISHED'
 AND "starts_at" > NOW()
 ORDER BY "starts_at" ASC
@@ -82,6 +188,7 @@ func (q *Queries) PublicGetUpcomingEvents(ctx context.Context, arg PublicGetUpco
 		if err := rows.Scan(
 			&i.ID,
 			&i.OrganiserID,
+			&i.CategoryID,
 			&i.Title,
 			&i.Slug,
 			&i.Description,

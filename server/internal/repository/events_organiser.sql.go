@@ -12,7 +12,7 @@ import (
 )
 
 const getEventsByOrganiser = `-- name: GetEventsByOrganiser :many
-SELECT id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events" 
+SELECT id, organiser_id, category_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at FROM "events" 
 WHERE "organiser_id" = $1
 ORDER BY "created_at" DESC
 `
@@ -29,6 +29,7 @@ func (q *Queries) GetEventsByOrganiser(ctx context.Context, organiserID pgtype.U
 		if err := rows.Scan(
 			&i.ID,
 			&i.OrganiserID,
+			&i.CategoryID,
 			&i.Title,
 			&i.Slug,
 			&i.Description,
@@ -59,7 +60,7 @@ SET
     "status"     = $2,
     "updated_at" = NOW()
 WHERE "id" = $1
-RETURNING id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
+RETURNING id, organiser_id, category_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
 `
 
 type UpdateEventStatusParams struct {
@@ -73,6 +74,7 @@ func (q *Queries) UpdateEventStatus(ctx context.Context, arg UpdateEventStatusPa
 	err := row.Scan(
 		&i.ID,
 		&i.OrganiserID,
+		&i.CategoryID,
 		&i.Title,
 		&i.Slug,
 		&i.Description,

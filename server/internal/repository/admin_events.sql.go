@@ -17,7 +17,7 @@ SET
     "status"     = 'CANCELLED',
     "updated_at" = NOW()
 WHERE "id" = $1
-RETURNING id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
+RETURNING id, organiser_id, category_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
 `
 
 func (q *Queries) AdminCancelEvent(ctx context.Context, id pgtype.UUID) (Event, error) {
@@ -26,6 +26,7 @@ func (q *Queries) AdminCancelEvent(ctx context.Context, id pgtype.UUID) (Event, 
 	err := row.Scan(
 		&i.ID,
 		&i.OrganiserID,
+		&i.CategoryID,
 		&i.Title,
 		&i.Slug,
 		&i.Description,
@@ -49,7 +50,7 @@ SET
     "status"     = 'DELETED',
     "updated_at" = NOW()
 WHERE "id" = $1
-RETURNING id, organiser_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
+RETURNING id, organiser_id, category_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
 `
 
 func (q *Queries) AdminDeleteEvent(ctx context.Context, id pgtype.UUID) (Event, error) {
@@ -58,6 +59,7 @@ func (q *Queries) AdminDeleteEvent(ctx context.Context, id pgtype.UUID) (Event, 
 	err := row.Scan(
 		&i.ID,
 		&i.OrganiserID,
+		&i.CategoryID,
 		&i.Title,
 		&i.Slug,
 		&i.Description,
@@ -77,7 +79,7 @@ func (q *Queries) AdminDeleteEvent(ctx context.Context, id pgtype.UUID) (Event, 
 
 const adminGetAllEvents = `-- name: AdminGetAllEvents :many
 SELECT
-    e.id, e.organiser_id, e.title, e.slug, e.description, e.location, e.venue, e.banner_url, e.starts_at, e.ends_at, e.status, e.is_online, e.online_url, e.created_at, e.updated_at,
+    e.id, e.organiser_id, e.category_id, e.title, e.slug, e.description, e.location, e.venue, e.banner_url, e.starts_at, e.ends_at, e.status, e.is_online, e.online_url, e.created_at, e.updated_at,
     u."name" AS organiser_name
 FROM "events" e
 JOIN "users"  u ON u."id" = e."organiser_id"
@@ -93,6 +95,7 @@ type AdminGetAllEventsParams struct {
 type AdminGetAllEventsRow struct {
 	ID            pgtype.UUID
 	OrganiserID   pgtype.UUID
+	CategoryID    pgtype.UUID
 	Title         string
 	Slug          string
 	Description   pgtype.Text
@@ -121,6 +124,7 @@ func (q *Queries) AdminGetAllEvents(ctx context.Context, arg AdminGetAllEventsPa
 		if err := rows.Scan(
 			&i.ID,
 			&i.OrganiserID,
+			&i.CategoryID,
 			&i.Title,
 			&i.Slug,
 			&i.Description,
@@ -148,7 +152,7 @@ func (q *Queries) AdminGetAllEvents(ctx context.Context, arg AdminGetAllEventsPa
 
 const adminGetEventsByStatus = `-- name: AdminGetEventsByStatus :many
 SELECT
-    e.id, e.organiser_id, e.title, e.slug, e.description, e.location, e.venue, e.banner_url, e.starts_at, e.ends_at, e.status, e.is_online, e.online_url, e.created_at, e.updated_at,
+    e.id, e.organiser_id, e.category_id, e.title, e.slug, e.description, e.location, e.venue, e.banner_url, e.starts_at, e.ends_at, e.status, e.is_online, e.online_url, e.created_at, e.updated_at,
     u."name" AS organiser_name
 FROM "events" e
 JOIN "users"  u ON u."id" = e."organiser_id"
@@ -166,6 +170,7 @@ type AdminGetEventsByStatusParams struct {
 type AdminGetEventsByStatusRow struct {
 	ID            pgtype.UUID
 	OrganiserID   pgtype.UUID
+	CategoryID    pgtype.UUID
 	Title         string
 	Slug          string
 	Description   pgtype.Text
@@ -194,6 +199,7 @@ func (q *Queries) AdminGetEventsByStatus(ctx context.Context, arg AdminGetEvents
 		if err := rows.Scan(
 			&i.ID,
 			&i.OrganiserID,
+			&i.CategoryID,
 			&i.Title,
 			&i.Slug,
 			&i.Description,

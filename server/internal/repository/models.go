@@ -275,6 +275,7 @@ func (ns NullUserStatus) Value() (driver.Value, error) {
 type Event struct {
 	ID          pgtype.UUID
 	OrganiserID pgtype.UUID
+	CategoryID  pgtype.UUID
 	Title       string
 	Slug        string
 	Description pgtype.Text
@@ -286,6 +287,14 @@ type Event struct {
 	Status      EventStatus
 	IsOnline    bool
 	OnlineUrl   pgtype.Text
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+}
+
+type EventCategory struct {
+	ID          pgtype.UUID
+	Name        string
+	Description pgtype.Text
 	CreatedAt   pgtype.Timestamp
 	UpdatedAt   pgtype.Timestamp
 }
