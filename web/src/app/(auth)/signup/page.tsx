@@ -99,6 +99,7 @@ export default function SignUpPage() {
         name: data.name,
         email: data.email,
         password: data.password,
+        role: data.role,
       });
 
       const json = await res.json();

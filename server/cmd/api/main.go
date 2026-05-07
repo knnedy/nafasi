@@ -78,6 +78,7 @@ func main() {
 	// initialize router
 	r := router.New(
 		cfg.APIVersion,
+		cfg.ClientURL,
 		tokens,
 		authHandler,
 		userHandler,

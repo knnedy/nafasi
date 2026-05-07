@@ -9,6 +9,7 @@ import (
 
 type AuthServicer interface {
 	Register(ctx context.Context, input service.RegisterInput) (service.AuthResult, error)
+	RegisterOrganiser(ctx context.Context, input service.RegisterInput) (service.AuthResult, error)
 	Login(ctx context.Context, input service.LoginInput) (service.AuthResult, error)
 	RefreshAccessToken(ctx context.Context, refreshToken string) (service.AuthResult, error)
 	ForgotPassword(ctx context.Context, input service.ForgotPasswordInput) error

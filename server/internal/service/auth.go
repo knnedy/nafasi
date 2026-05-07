@@ -44,12 +44,7 @@ type RegisterInput struct {
 	Name     string `json:"name"     validate:"required,min=2,max=100"`
 	Email    string `json:"email"    validate:"required,email"`
 	Password string `json:"password" validate:"required,min=8,max=100,has_upper,has_lower,has_number,has_special"`
-}
-
-type RegisterOrganiserInput struct {
-	Name     string `json:"name"     validate:"required,min=2,max=100"`
-	Email    string `json:"email"    validate:"required,email"`
-	Password string `json:"password" validate:"required,min=8,max=100,has_upper,has_lower,has_number,has_special"`
+	Role     string `json:"role"     validate:"required,oneof=ATTENDEE ORGANISER"`
 }
 
 type LoginInput struct {
@@ -133,7 +128,7 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (AuthRe
 	return s.generateAuthTokens(ctx, user)
 }
 
-func (s *AuthService) RegisterOrganiser(ctx context.Context, input RegisterOrganiserInput) (AuthResult, error) {
+func (s *AuthService) RegisterOrganiser(ctx context.Context, input RegisterInput) (AuthResult, error) {
 	if err := s.validate.Struct(input); err != nil {
 		return AuthResult{}, formatValidationError(err, s.trans)
 	}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/knnedy/nafasi/internal/repository"
 	"github.com/knnedy/nafasi/internal/response"
 	"github.com/knnedy/nafasi/internal/service"
 )
@@ -55,7 +56,7 @@ func clearRefreshTokenCookie(w http.ResponseWriter) {
 
 // Register godoc
 // @Summary Register a new user
-// @Description Creates a new user account and returns access + refresh tokens
+// @Description Creates a new attendee or organiser account
 // @Tags Auth
 // @Accept json
 // @Produce json
@@ -66,11 +67,25 @@ func clearRefreshTokenCookie(w http.ResponseWriter) {
 // @Router /auth/register [post]
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var input service.RegisterInput
+
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		response.WriteError(w, response.ErrInvalidInput)
 		return
 	}
 
+	// organiser registration
+	if repository.UserRole(input.Role) == repository.UserRoleORGANISER {
+		result, err := h.auth.RegisterOrganiser(r.Context(), input)
+		if err != nil {
+			response.WriteError(w, err)
+			return
+		}
+
+		response.WriteJSON(w, http.StatusCreated, toAuthDataResponse(result))
+		return
+	}
+
+	// default attendee registration
 	result, err := h.auth.Register(r.Context(), input)
 	if err != nil {
 		response.WriteError(w, err)
@@ -78,6 +93,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setRefreshTokenCookie(w, result.RefreshToken)
+
 	response.WriteJSON(w, http.StatusCreated, toAuthDataResponse(result))
 }
 

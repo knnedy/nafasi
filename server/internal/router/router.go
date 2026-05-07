@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	_ "github.com/knnedy/nafasi/docs"
 	"github.com/knnedy/nafasi/internal/handler"
 	"github.com/knnedy/nafasi/internal/middleware"
@@ -16,6 +17,7 @@ import (
 
 func New(
 	apiVersion string,
+	clientURL string,
 	tokens *token.TokenManager,
 	auth *handler.AuthHandler,
 	user *handler.UserHandler,
@@ -31,6 +33,13 @@ func New(
 	r.Use(chimiddleware.RequestID)
 	r.Use(chimiddleware.RealIP)
 	r.Use(chimiddleware.Recoverer)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{clientURL},
+		AllowedMethods:   []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 	r.Use(chimiddleware.CleanPath)
 	r.Use(chimiddleware.Compress(5))
 	r.Use(middleware.Logger)
