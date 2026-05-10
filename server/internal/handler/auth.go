@@ -32,7 +32,7 @@ func toAuthDataResponse(result service.AuthResult) authDataResponse {
 
 func setRefreshTokenCookie(w http.ResponseWriter, refreshToken string) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     "refresh_token",
+		Name:     "nafasi-auth",
 		Value:    refreshToken,
 		HttpOnly: true,
 		Secure:   true,
@@ -44,7 +44,7 @@ func setRefreshTokenCookie(w http.ResponseWriter, refreshToken string) {
 
 func clearRefreshTokenCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     "refresh_token",
+		Name:     "nafasi-auth",
 		Value:    "",
 		HttpOnly: true,
 		Secure:   true,

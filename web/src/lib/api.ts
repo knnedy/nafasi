@@ -76,7 +76,7 @@ async function fetchWithAuth(
       ).useAuthStore.getState();
       clearAuth();
       if (typeof window !== "undefined") {
-        window.location.href = "/login";
+        window.location.href = "/signin";
       }
       throw new APIError(401, "UNAUTHORIZED", "session expired");
     }
