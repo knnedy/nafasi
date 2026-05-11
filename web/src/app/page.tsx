@@ -292,16 +292,6 @@ function formatTime(iso: string) {
   });
 }
 
-function formatDateFull(iso: string) {
-  return new Date(iso)
-    .toLocaleDateString("en-KE", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    })
-    .toUpperCase();
-}
-
 const ACCENTS = [
   "#F97316",
   "#8B5CF6",
@@ -321,7 +311,7 @@ function categoryName(categoryId: string) {
   return MOCK_CATEGORIES.find((c) => c.id === categoryId)?.name ?? "";
 }
 
-// Event card — poster style
+// Event card
 function EventCard({ event, index }: { event: EventResponse; index: number }) {
   const accent = accentForId(event.id);
   const { day, date, month } = formatDateShort(event.starts_at);
@@ -332,7 +322,6 @@ function EventCard({ event, index }: { event: EventResponse; index: number }) {
       href={`/events/${event.slug}`}
       className="group relative flex flex-col rounded-2xl overflow-hidden border border-white/[0.07] bg-[#111009] hover:border-white/[0.15] transition-all duration-500"
       style={{ animationDelay: `${index * 80}ms` }}>
-      {/* banner / placeholder */}
       <div className="relative h-52 overflow-hidden">
         {event.banner_url ? (
           <Image
@@ -343,7 +332,6 @@ function EventCard({ event, index }: { event: EventResponse; index: number }) {
           />
         ) : (
           <>
-            {/* abstract bg pattern */}
             <div
               className="absolute inset-0"
               style={{ background: "#0e0c0a" }}
@@ -360,7 +348,6 @@ function EventCard({ event, index }: { event: EventResponse; index: number }) {
                 background: `radial-gradient(ellipse at 80% 20%, ${accent} 0%, transparent 55%)`,
               }}
             />
-            {/* large faded title watermark */}
             <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
               <span className="text-[5rem] font-black uppercase tracking-tighter leading-none select-none opacity-[0.04] text-white text-center px-4 line-clamp-2">
                 {event.title}
@@ -368,15 +355,13 @@ function EventCard({ event, index }: { event: EventResponse; index: number }) {
             </div>
           </>
         )}
-        {/* top gradient fade */}
         <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-[#111009]" />
-        {/* accent line */}
         <div
           className="absolute top-0 left-0 right-0 h-[2px]"
           style={{ background: accent }}
         />
 
-        {/* date badge — top right */}
+        {/* date badge */}
         <div className="absolute top-4 right-4 flex flex-col items-center bg-black/70 backdrop-blur-sm border border-white/10 rounded-xl px-3 py-2 min-w-[52px]">
           <span className="text-white/50 text-[9px] font-bold tracking-widest">
             {day}
@@ -388,19 +373,8 @@ function EventCard({ event, index }: { event: EventResponse; index: number }) {
             {month}
           </span>
         </div>
-
-        {/* online badge */}
-        {event.is_online && (
-          <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm border border-white/10 rounded-full px-2.5 py-1">
-            <Wifi className="w-3 h-3 text-emerald-400" />
-            <span className="text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
-              Online
-            </span>
-          </div>
-        )}
       </div>
 
-      {/* body */}
       <div className="flex flex-col flex-1 px-5 pt-4 pb-5 gap-3">
         <div className="flex items-center gap-2">
           {cat && (
@@ -435,16 +409,24 @@ function EventCard({ event, index }: { event: EventResponse; index: number }) {
               />
               <span>{formatTime(event.starts_at)}</span>
             </div>
-            {(event.venue || event.location) && (
-              <div className="flex items-center gap-1.5 text-white/40 text-xs">
-                <MapPin
-                  className="w-3 h-3 shrink-0"
-                  style={{ color: accent }}
-                />
-                <span className="truncate max-w-[160px]">
-                  {event.venue || event.location}
-                </span>
+            {/* online replaces location */}
+            {event.is_online ? (
+              <div className="flex items-center gap-1.5 text-emerald-500/70 text-xs">
+                <Wifi className="w-3 h-3 shrink-0" />
+                <span>Online event</span>
               </div>
+            ) : (
+              (event.venue || event.location) && (
+                <div className="flex items-center gap-1.5 text-white/40 text-xs">
+                  <MapPin
+                    className="w-3 h-3 shrink-0"
+                    style={{ color: accent }}
+                  />
+                  <span className="truncate max-w-[160px]">
+                    {event.venue || event.location}
+                  </span>
+                </div>
+              )
             )}
           </div>
           <div
@@ -458,7 +440,7 @@ function EventCard({ event, index }: { event: EventResponse; index: number }) {
   );
 }
 
-// Upcoming row — setlist style
+// Upcoming row
 function UpcomingRow({
   event,
   index,
@@ -474,12 +456,10 @@ function UpcomingRow({
     <Link
       href={`/events/${event.slug}`}
       className="group flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.06] bg-[#111009] hover:bg-[#161310] hover:border-white/[0.12] transition-all duration-300">
-      {/* index number */}
       <span className="text-white/10 font-black text-sm w-5 text-right shrink-0 group-hover:text-white/20 transition-colors">
         {String(index + 1).padStart(2, "0")}
       </span>
 
-      {/* date block */}
       <div
         className="shrink-0 w-11 h-11 rounded-xl flex flex-col items-center justify-center"
         style={{ background: `${accent}12`, border: `1px solid ${accent}20` }}>
@@ -495,7 +475,6 @@ function UpcomingRow({
         </span>
       </div>
 
-      {/* title + meta */}
       <div className="flex-1 min-w-0">
         <p className="text-white/90 text-sm font-bold truncate leading-tight group-hover:text-white transition-colors tracking-tight">
           {event.title}
@@ -508,24 +487,24 @@ function UpcomingRow({
               {cat}
             </span>
           )}
-          {(event.venue || event.location) && (
-            <span className="text-white/25 text-[10px] flex items-center gap-1">
-              <MapPin className="w-2.5 h-2.5" />
-              <span className="truncate max-w-28">
-                {event.venue || event.location}
-              </span>
-            </span>
-          )}
-          {event.is_online && (
+          {event.is_online ? (
             <span className="text-emerald-500/70 text-[10px] flex items-center gap-1">
               <Wifi className="w-2.5 h-2.5" />
               Online
             </span>
+          ) : (
+            (event.venue || event.location) && (
+              <span className="text-white/25 text-[10px] flex items-center gap-1">
+                <MapPin className="w-2.5 h-2.5" />
+                <span className="truncate max-w-28">
+                  {event.venue || event.location}
+                </span>
+              </span>
+            )
           )}
         </div>
       </div>
 
-      {/* time + arrow */}
       <div className="flex items-center gap-3 shrink-0">
         <span className="text-white/25 text-xs font-medium hidden sm:block">
           {formatTime(event.starts_at)}
@@ -533,29 +512,6 @@ function UpcomingRow({
         <ChevronRight className="w-4 h-4 text-white/15 group-hover:text-white/40 transition-colors" />
       </div>
     </Link>
-  );
-}
-
-// Category pill
-function CategoryPill({
-  category,
-  active,
-  onClick,
-}: {
-  category: EventCategoryResponse | null;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
-        active
-          ? "bg-linear-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/20"
-          : "bg-white/4 border border-white/8 text-white/50 hover:text-white/80 hover:bg-white/[0.07]"
-      }`}>
-      {category ? category.name : "All"}
-    </button>
   );
 }
 
@@ -602,8 +558,6 @@ export default function LandingPage() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
         }}
       />
-
-      {/* ambient glow top-left */}
       <div
         className="fixed top-[-30%] left-[-15%] w-[70%] h-[70%] rounded-full pointer-events-none z-0"
         style={{
@@ -611,7 +565,6 @@ export default function LandingPage() {
             "radial-gradient(ellipse at center, rgba(251,146,60,0.06) 0%, transparent 70%)",
         }}
       />
-      {/* ambient glow bottom-right */}
       <div
         className="fixed bottom-[-20%] right-[-10%] w-[55%] h-[55%] rounded-full pointer-events-none z-0"
         style={{
@@ -719,10 +672,9 @@ export default function LandingPage() {
       </nav>
 
       <div className="relative z-10">
-        {/* hero */}
-        <section className="max-w-7xl mx-auto px-6 pt-20 pb-16">
-          <div className="flex flex-col items-center text-center gap-8">
-            {/* live pill */}
+        {/* hero — compact */}
+        <section className="max-w-7xl mx-auto px-6 pt-12 pb-10">
+          <div className="flex flex-col items-center text-center gap-6">
             <div className="inline-flex items-center gap-2.5 bg-orange-500/8 border border-orange-500/20 rounded-full px-5 py-2">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
@@ -733,102 +685,90 @@ export default function LandingPage() {
               </span>
             </div>
 
-            {/* headline */}
-            <div className="space-y-2 max-w-5xl">
-              <h1 className="text-white font-black text-6xl sm:text-7xl lg:text-[5.5rem] leading-[0.95] tracking-tight">
-                Your next
-              </h1>
-              <h1 className="font-black text-6xl sm:text-7xl lg:text-[5.5rem] leading-[0.95] tracking-tight text-transparent bg-clip-text bg-linear-to-r from-orange-400 via-amber-400 to-orange-500">
-                unforgettable
-              </h1>
-              <h1 className="text-white font-black text-6xl sm:text-7xl lg:text-[5.5rem] leading-[0.95] tracking-tight">
+            <div className="space-y-1 max-w-4xl">
+              <h1 className="text-white font-black text-5xl sm:text-6xl leading-[0.95] tracking-tight">
+                Your next{" "}
+                <span className="text-transparent bg-clip-text bg-linear-to-r from-orange-400 via-amber-400 to-orange-500">
+                  unforgettable
+                </span>{" "}
                 experience.
               </h1>
             </div>
 
-            <p className="text-white/35 text-lg max-w-lg leading-relaxed">
+            <p className="text-white/35 text-base max-w-md leading-relaxed">
               Concerts, conferences, festivals, comedy — all in one place. Book
               tickets in seconds.
             </p>
 
-            {/* stats row */}
-            <div className="flex items-center gap-8 py-4 border-y border-white/[0.06] w-full max-w-md justify-center">
-              {[
-                { value: "2,400+", label: "Events" },
-                { value: "50K+", label: "Attendees" },
-                { value: "120+", label: "Organisers" },
-              ].map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <p className="text-white font-black text-xl tracking-tight">
-                    {stat.value}
-                  </p>
-                  <p className="text-white/30 text-xs uppercase tracking-widest font-semibold">
-                    {stat.label}
-                  </p>
-                </div>
-              ))}
-            </div>
-
             <div className="flex items-center gap-3 flex-wrap justify-center">
               <Link
                 href="/events"
-                className="px-7 py-3.5 rounded-xl font-bold text-sm text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 shadow-xl shadow-orange-500/20 transition-all duration-300 flex items-center gap-2">
+                className="px-6 py-3 rounded-xl font-bold text-sm text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 shadow-xl shadow-orange-500/20 transition-all duration-300 flex items-center gap-2">
                 Browse all events
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 href="/upcoming"
-                className="px-7 py-3.5 rounded-xl font-bold text-sm text-white/55 hover:text-white bg-white/4 border border-white/8 hover:bg-white/[0.07] transition-all duration-200">
+                className="px-6 py-3 rounded-xl font-bold text-sm text-white/55 hover:text-white bg-white/4 border border-white/8 hover:bg-white/[0.07] transition-all duration-200">
                 Upcoming events
               </Link>
             </div>
           </div>
         </section>
 
-        {/* category filter */}
-        <section className="max-w-7xl mx-auto px-6 pb-12">
+        {/* category filter + section header combined */}
+        <section className="max-w-7xl mx-auto px-6 pb-8">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div>
+              <p className="text-orange-400/70 text-[10px] font-black tracking-[0.3em] uppercase mb-1">
+                Happening now
+              </p>
+              <h2 className="text-white font-black text-2xl tracking-tight">
+                Published Events
+              </h2>
+            </div>
+            <Link
+              href="/events"
+              className="group flex items-center gap-1.5 text-white/40 hover:text-orange-400 text-sm font-bold transition-colors shrink-0">
+              See all
+              <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </Link>
+          </div>
+
+          {/* categories sit directly under the section header, clearly tied to events below */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            <CategoryPill
-              category={null}
-              active={activeCategory === null}
+            <button
               onClick={() => setActiveCategory(null)}
-            />
+              className={`shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+                activeCategory === null
+                  ? "bg-orange-500/15 border border-orange-500/30 text-orange-400"
+                  : "text-white/35 hover:text-white/60 hover:bg-white/[0.04]"
+              }`}>
+              All
+            </button>
             {MOCK_CATEGORIES.map((cat) => (
-              <CategoryPill
+              <button
                 key={cat.id}
-                category={cat}
-                active={activeCategory === cat.name}
                 onClick={() =>
                   setActiveCategory(
                     activeCategory === cat.name ? null : cat.name,
                   )
                 }
-              />
+                className={`shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+                  activeCategory === cat.name
+                    ? "bg-orange-500/15 border border-orange-500/30 text-orange-400"
+                    : "text-white/35 hover:text-white/60 hover:bg-white/[0.04]"
+                }`}>
+                {cat.name}
+              </button>
             ))}
           </div>
         </section>
 
         {/* published events */}
         <section className="max-w-7xl mx-auto px-6 pb-20">
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <p className="text-orange-400/70 text-[10px] font-black tracking-[0.3em] uppercase mb-2">
-                Happening now
-              </p>
-              <h2 className="text-white font-black text-3xl tracking-tight">
-                Published Events
-              </h2>
-            </div>
-            <Link
-              href="/events"
-              className="group flex items-center gap-1.5 text-white/40 hover:text-orange-400 text-sm font-bold transition-colors shrink-0 ml-4">
-              See all
-              <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-            </Link>
-          </div>
-
           {published.length === 0 ? (
-            <EmptyState message="No published events found. Check back soon." />
+            <EmptyState message="No events found in this category." />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {published.map((event, i) => (
@@ -838,17 +778,17 @@ export default function LandingPage() {
           )}
         </section>
 
-        {/* upcoming events — full-width tinted band */}
+        {/* upcoming events */}
         <section
           className="border-y border-white/[0.05]"
           style={{ background: "rgba(255,255,255,0.012)" }}>
-          <div className="max-w-7xl mx-auto px-6 py-20">
-            <div className="flex items-end justify-between mb-8">
+          <div className="max-w-7xl mx-auto px-6 py-16">
+            <div className="flex items-end justify-between mb-6">
               <div>
-                <p className="text-orange-400/70 text-[10px] font-black tracking-[0.3em] uppercase mb-2">
+                <p className="text-orange-400/70 text-[10px] font-black tracking-[0.3em] uppercase mb-1">
                   Coming up
                 </p>
-                <h2 className="text-white font-black text-3xl tracking-tight">
+                <h2 className="text-white font-black text-2xl tracking-tight">
                   Upcoming Events
                 </h2>
               </div>
@@ -861,7 +801,7 @@ export default function LandingPage() {
             </div>
 
             {upcoming.length === 0 ? (
-              <EmptyState message="No upcoming events found." />
+              <EmptyState message="No upcoming events found in this category." />
             ) : (
               <div className="space-y-2">
                 {upcoming.map((event, i) => (
@@ -876,7 +816,6 @@ export default function LandingPage() {
         {!isAuthenticated && (
           <section className="max-w-7xl mx-auto px-6 py-20">
             <div className="relative rounded-3xl overflow-hidden border border-white/[0.07] p-12 sm:p-16 text-center">
-              {/* background */}
               <div
                 className="absolute inset-0"
                 style={{ background: "#0f0d0b" }}
@@ -888,7 +827,6 @@ export default function LandingPage() {
                     "radial-gradient(ellipse at 50% 0%, rgba(251,146,60,1) 0%, transparent 60%)",
                 }}
               />
-              {/* top accent line */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-[2px] bg-linear-to-r from-transparent via-orange-500 to-transparent" />
 
               <div className="relative z-10 space-y-5 max-w-xl mx-auto">
