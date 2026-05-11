@@ -24,6 +24,10 @@ dev:
 test:
 	go test ./... -v
 
+# seed:
+seed:
+	go run ./internal/scripts/seed.go	
+
 test-service:
 	go test ./internal/service/... -v
 

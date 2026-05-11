@@ -23,6 +23,7 @@ func NewEventHandler(event EventServicer) *EventHandler {
 type EventResponse struct {
 	ID          string  `json:"id"`
 	OrganiserID string  `json:"organiser_id"`
+	CategoryID  string  `json:"category_id"`
 	Title       string  `json:"title"`
 	Slug        string  `json:"slug"`
 	Description *string `json:"description,omitempty"`
@@ -42,6 +43,7 @@ func toEventResponse(event repository.Event) EventResponse {
 	return EventResponse{
 		ID:          event.ID.String(),
 		OrganiserID: event.OrganiserID.String(),
+		CategoryID:  event.CategoryID.String(),
 		Title:       event.Title,
 		Slug:        event.Slug,
 		Description: &event.Description.String,
