@@ -66,7 +66,7 @@ func main() {
 	adminService := service.NewAdminService(db.Queries())
 
 	// initialize handlers
-	authHandler := handler.NewAuthHandler(authService)
+	authHandler := handler.NewAuthHandler(authService, cfg.Env)
 	userHandler := handler.NewUserHandler(userService)
 	eventHandler := handler.NewEventHandler(eventService)
 	ticketTypeHandler := handler.NewTicketTypeHandler(ticketService)

@@ -9,12 +9,19 @@ import (
 	"github.com/knnedy/nafasi/internal/service"
 )
 
+const refreshTokenCookieName = "nafasi-auth"
+
 type AuthHandler struct {
 	auth AuthServicer
+	env  string
 }
 
-func NewAuthHandler(auth AuthServicer) *AuthHandler {
-	return &AuthHandler{auth: auth}
+func NewAuthHandler(auth AuthServicer, env string) *AuthHandler {
+	return &AuthHandler{auth: auth, env: env}
+}
+
+func (h *AuthHandler) isProduction() bool {
+	return h.env == "production"
 }
 
 // authDataResponse is the data envelope returned on register, login and refresh
@@ -30,26 +37,26 @@ func toAuthDataResponse(result service.AuthResult) authDataResponse {
 	}
 }
 
-func setRefreshTokenCookie(w http.ResponseWriter, refreshToken string) {
+func (h *AuthHandler) setRefreshTokenCookie(w http.ResponseWriter, refreshToken string) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     "nafasi-auth",
+		Name:     refreshTokenCookieName,
 		Value:    refreshToken,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   h.isProduction(),
 		SameSite: http.SameSiteStrictMode,
-		Path:     "/api/v1/auth/refresh",
-		MaxAge:   7 * 24 * 60 * 60, // 7 days in seconds — matches refresh token duration
+		Path:     "/api/v1/auth",
+		MaxAge:   7 * 24 * 60 * 60, // 7 days — matches refresh token duration
 	})
 }
 
-func clearRefreshTokenCookie(w http.ResponseWriter) {
+func (h *AuthHandler) clearRefreshTokenCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     "nafasi-auth",
+		Name:     refreshTokenCookieName,
 		Value:    "",
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   h.isProduction(),
 		SameSite: http.SameSiteStrictMode,
-		Path:     "/api/v1/auth/refresh",
+		Path:     "/api/v1/auth",
 		MaxAge:   -1,
 	})
 }
@@ -67,39 +74,36 @@ func clearRefreshTokenCookie(w http.ResponseWriter) {
 // @Router /auth/register [post]
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var input service.RegisterInput
-
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		response.WriteError(w, response.ErrInvalidInput)
 		return
 	}
 
-	// organiser registration
+	// organiser registration — no tokens, pending approval
 	if repository.UserRole(input.Role) == repository.UserRoleORGANISER {
 		result, err := h.auth.RegisterOrganiser(r.Context(), input)
 		if err != nil {
 			response.WriteError(w, err)
 			return
 		}
-
 		response.WriteJSON(w, http.StatusCreated, toAuthDataResponse(result))
 		return
 	}
 
-	// default attendee registration
+	// attendee registration — tokens issued immediately
 	result, err := h.auth.Register(r.Context(), input)
 	if err != nil {
 		response.WriteError(w, err)
 		return
 	}
 
-	setRefreshTokenCookie(w, result.RefreshToken)
-
+	h.setRefreshTokenCookie(w, result.RefreshToken)
 	response.WriteJSON(w, http.StatusCreated, toAuthDataResponse(result))
 }
 
 // Login godoc
 // @Summary Login user
-// @Description Authenticates user and returns access + refresh tokens
+// @Description Authenticates user and returns access token; sets refresh token as httpOnly cookie
 // @Tags Auth
 // @Accept json
 // @Produce json
@@ -122,13 +126,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setRefreshTokenCookie(w, result.RefreshToken)
+	h.setRefreshTokenCookie(w, result.RefreshToken)
 	response.WriteJSON(w, http.StatusOK, toAuthDataResponse(result))
 }
 
 // RefreshAccessToken godoc
 // @Summary Refresh access token
-// @Description Generates a new access token using refresh token from HttpOnly cookie
+// @Description Generates a new access token using refresh token from httpOnly cookie
 // @Tags Auth
 // @Produce json
 // @Success 200 {object} authDataResponse
@@ -136,8 +140,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /auth/refresh [post]
 func (h *AuthHandler) RefreshAccessToken(w http.ResponseWriter, r *http.Request) {
-	// read refresh token from httponly cookie
-	cookie, err := r.Cookie("refresh_token")
+	cookie, err := r.Cookie(refreshTokenCookieName)
 	if err != nil {
 		response.WriteError(w, response.ErrUnauthorized)
 		return
@@ -149,7 +152,7 @@ func (h *AuthHandler) RefreshAccessToken(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	setRefreshTokenCookie(w, result.RefreshToken)
+	h.setRefreshTokenCookie(w, result.RefreshToken)
 	response.WriteJSON(w, http.StatusOK, toAuthDataResponse(result))
 }
 
@@ -176,7 +179,6 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// don't reveal whether the email exists prevents email enumeration
 	response.WriteJSON(w, http.StatusOK, map[string]string{
 		"message": "if an account exists with that email, a reset link has been sent",
 	})
@@ -221,8 +223,7 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /auth/logout [post]
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	// read refresh token from httponly cookie
-	cookie, err := r.Cookie("refresh_token")
+	cookie, err := r.Cookie(refreshTokenCookieName)
 	if err != nil {
 		response.WriteError(w, response.ErrUnauthorized)
 		return
@@ -233,6 +234,6 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clearRefreshTokenCookie(w)
+	h.clearRefreshTokenCookie(w)
 	response.WriteJSON(w, http.StatusOK, nil)
 }
