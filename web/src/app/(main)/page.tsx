@@ -11,18 +11,7 @@ import {
 } from "@/app/(main)/mock_events";
 import EventCard from "./components/event-card";
 import UpcomingRow from "./components/upcoming-row";
-
-// Empty state
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-14 h-14 rounded-2xl bg-white/3 border border-white/6 flex items-center justify-center mb-4">
-        <Ticket className="w-6 h-6 text-white/15" />
-      </div>
-      <p className="text-white/20 text-sm">{message}</p>
-    </div>
-  );
-}
+import EmptyState from "./components/empty-state";
 
 // Main page
 export default function Home() {
