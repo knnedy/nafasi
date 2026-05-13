@@ -214,7 +214,7 @@ export default function Navbar() {
                 Sign in
               </Link>
               <Link
-                href="/sign-up"
+                href="/signup"
                 className="px-4 py-2 rounded-xl font-bold text-sm text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 shadow-lg shadow-orange-500/25 transition-all duration-200">
                 Get started
               </Link>

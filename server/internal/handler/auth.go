@@ -9,7 +9,7 @@ import (
 	"github.com/knnedy/nafasi/internal/service"
 )
 
-const refreshTokenCookieName = "nafasi-auth"
+const refreshTokenCookieName = "_rt"
 
 type AuthHandler struct {
 	auth AuthServicer
@@ -223,17 +223,21 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /auth/logout [post]
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	// always clear the cookie — regardless of whether the token is present or already revoked
+	defer h.clearRefreshTokenCookie(w)
+
 	cookie, err := r.Cookie(refreshTokenCookieName)
 	if err != nil {
-		response.WriteError(w, response.ErrUnauthorized)
+		// no cookie — nothing to revoke, cookie already cleared by defer
+		response.WriteJSON(w, http.StatusOK, nil)
 		return
 	}
 
 	if err := h.auth.Logout(r.Context(), cookie.Value); err != nil {
-		response.WriteError(w, err)
+		// token may already be revoked — still a successful logout from the client's perspective
+		response.WriteJSON(w, http.StatusOK, nil)
 		return
 	}
 
-	h.clearRefreshTokenCookie(w)
 	response.WriteJSON(w, http.StatusOK, nil)
 }

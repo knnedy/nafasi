@@ -10,7 +10,7 @@ const authRoutes = [
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const token = req.cookies.get("nafasi-auth");
+  const token = req.cookies.get("_rt");
 
   const isProtected = protectedRoutes.some((r) => pathname.startsWith(r));
   const isAuthRoute = authRoutes.some((r) => pathname.startsWith(r));
