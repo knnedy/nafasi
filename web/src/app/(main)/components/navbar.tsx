@@ -177,7 +177,7 @@ export default function Navbar() {
     try {
       await api.public.post("/api/v1/auth/logout", {});
     } catch {
-      // continue regardless
+      // backend clears cookies via defer even on error — safe to continue
     } finally {
       clearAuth();
       toast.success("Signed out successfully.");

@@ -9,7 +9,17 @@ import (
 	"github.com/knnedy/nafasi/internal/service"
 )
 
-const refreshTokenCookieName = "_rt"
+const (
+	// refreshTokenCookie is httpOnly and scoped to /api/v1/auth only.
+	// The browser sends it exclusively to auth endpoints — never to the proxy.
+	refreshTokenCookie = "_rt"
+
+	// sidCookie is non-httpOnly and scoped to /.
+	// It carries no sensitive value ("1") — it only signals to the proxy
+	// that an active session exists so routing decisions can be made.
+	// This is the standard pattern used by Next Auth, Supabase, and Clerk.
+	sidCookie = "_sid"
+)
 
 type AuthHandler struct {
 	auth AuthServicer
@@ -24,10 +34,17 @@ func (h *AuthHandler) isProduction() bool {
 	return h.env == "production"
 }
 
-// authDataResponse is the data envelope returned on register, login and refresh
+// authDataResponse is the data envelope returned on login, register (attendee) and refresh
 type authDataResponse struct {
 	User        UserResponse `json:"user"`
 	AccessToken string       `json:"access_token"`
+}
+
+// organiserPendingResponse is returned on organiser registration — no tokens issued
+type organiserPendingResponse struct {
+	User    UserResponse `json:"user"`
+	Pending bool         `json:"pending"`
+	Message string       `json:"message"`
 }
 
 func toAuthDataResponse(result service.AuthResult) authDataResponse {
@@ -37,26 +54,56 @@ func toAuthDataResponse(result service.AuthResult) authDataResponse {
 	}
 }
 
-func (h *AuthHandler) setRefreshTokenCookie(w http.ResponseWriter, refreshToken string) {
+func toOrganiserPendingResponse(result service.AuthResult) organiserPendingResponse {
+	return organiserPendingResponse{
+		User:    toUserResponse(result.User),
+		Pending: true,
+		Message: "your account is pending admin approval",
+	}
+}
+
+func (h *AuthHandler) setSessionCookies(w http.ResponseWriter, refreshToken string) {
+	// _rt — the actual refresh token, httpOnly, scoped to auth endpoints only
 	http.SetCookie(w, &http.Cookie{
-		Name:     refreshTokenCookieName,
+		Name:     refreshTokenCookie,
 		Value:    refreshToken,
 		HttpOnly: true,
 		Secure:   h.isProduction(),
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/api/v1/auth",
-		MaxAge:   7 * 24 * 60 * 60, // 7 days — matches refresh token duration
+		MaxAge:   7 * 24 * 60 * 60,
+	})
+
+	// _sid — non-sensitive session indicator, readable by the proxy for routing
+	http.SetCookie(w, &http.Cookie{
+		Name:     sidCookie,
+		Value:    "1",
+		HttpOnly: false,
+		Secure:   h.isProduction(),
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+		MaxAge:   7 * 24 * 60 * 60,
 	})
 }
 
-func (h *AuthHandler) clearRefreshTokenCookie(w http.ResponseWriter) {
+func (h *AuthHandler) clearSessionCookies(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     refreshTokenCookieName,
+		Name:     refreshTokenCookie,
 		Value:    "",
 		HttpOnly: true,
 		Secure:   h.isProduction(),
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/api/v1/auth",
+		MaxAge:   -1,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     sidCookie,
+		Value:    "",
+		HttpOnly: false,
+		Secure:   h.isProduction(),
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
 		MaxAge:   -1,
 	})
 }
@@ -79,14 +126,14 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// organiser registration — no tokens, pending approval
+	// organiser registration — no tokens issued, pending admin approval
 	if repository.UserRole(input.Role) == repository.UserRoleORGANISER {
 		result, err := h.auth.RegisterOrganiser(r.Context(), input)
 		if err != nil {
 			response.WriteError(w, err)
 			return
 		}
-		response.WriteJSON(w, http.StatusCreated, toAuthDataResponse(result))
+		response.WriteJSON(w, http.StatusCreated, toOrganiserPendingResponse(result))
 		return
 	}
 
@@ -97,13 +144,13 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.setRefreshTokenCookie(w, result.RefreshToken)
+	h.setSessionCookies(w, result.RefreshToken)
 	response.WriteJSON(w, http.StatusCreated, toAuthDataResponse(result))
 }
 
 // Login godoc
 // @Summary Login user
-// @Description Authenticates user and returns access token; sets refresh token as httpOnly cookie
+// @Description Authenticates user and returns access token; sets session cookies
 // @Tags Auth
 // @Accept json
 // @Produce json
@@ -126,13 +173,16 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.setRefreshTokenCookie(w, result.RefreshToken)
+	h.setSessionCookies(w, result.RefreshToken)
 	response.WriteJSON(w, http.StatusOK, toAuthDataResponse(result))
 }
 
 // RefreshAccessToken godoc
 // @Summary Refresh access token
-// @Description Generates a new access token using refresh token from httpOnly cookie
+// @Description Rotates the refresh token and issues a new access token.
+// @Description Note: if two tabs refresh simultaneously, one will fail with INVALID_TOKEN
+// @Description and the client will be logged out. This is acceptable behaviour for
+// @Description a single-device session model.
 // @Tags Auth
 // @Produce json
 // @Success 200 {object} authDataResponse
@@ -140,7 +190,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /auth/refresh [post]
 func (h *AuthHandler) RefreshAccessToken(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie(refreshTokenCookieName)
+	cookie, err := r.Cookie(refreshTokenCookie)
 	if err != nil {
 		response.WriteError(w, response.ErrUnauthorized)
 		return
@@ -152,13 +202,13 @@ func (h *AuthHandler) RefreshAccessToken(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	h.setRefreshTokenCookie(w, result.RefreshToken)
+	h.setSessionCookies(w, result.RefreshToken)
 	response.WriteJSON(w, http.StatusOK, toAuthDataResponse(result))
 }
 
 // ForgotPassword godoc
 // @Summary Request password reset
-// @Description Sends password reset link if account exists (prevents email enumeration)
+// @Description Sends a reset link if the account exists (prevents email enumeration)
 // @Tags Auth
 // @Accept json
 // @Produce json
@@ -186,7 +236,7 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 
 // ResetPassword godoc
 // @Summary Reset user password
-// @Description Resets password using reset token
+// @Description Resets password using a reset token
 // @Tags Auth
 // @Accept json
 // @Produce json
@@ -215,29 +265,27 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 
 // Logout godoc
 // @Summary Logout user
-// @Description Invalidates refresh token and clears cookie
+// @Description Invalidates refresh token and clears both session cookies
 // @Tags Auth
 // @Produce json
 // @Success 200 {object} nil
-// @Failure 401 {object} response.ErrorResponse
-// @Failure 500 {object} response.ErrorResponse
 // @Router /auth/logout [post]
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	// always clear the cookie — regardless of whether the token is present or already revoked
-	defer h.clearRefreshTokenCookie(w)
-
-	cookie, err := r.Cookie(refreshTokenCookieName)
+	cookie, err := r.Cookie(refreshTokenCookie)
 	if err != nil {
-		// no cookie — nothing to revoke, cookie already cleared by defer
+		// no cookie present — clear anyway and return clean
+		h.clearSessionCookies(w)
 		response.WriteJSON(w, http.StatusOK, nil)
 		return
 	}
 
 	if err := h.auth.Logout(r.Context(), cookie.Value); err != nil {
-		// token may already be revoked — still a successful logout from the client's perspective
+		// token already revoked or not found — still a clean logout
+		h.clearSessionCookies(w)
 		response.WriteJSON(w, http.StatusOK, nil)
 		return
 	}
 
+	h.clearSessionCookies(w)
 	response.WriteJSON(w, http.StatusOK, nil)
 }
