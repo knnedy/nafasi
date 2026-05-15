@@ -36,7 +36,7 @@ type TicketTypeResponse struct {
 	UpdatedAt    string  `json:"updated_at"`
 }
 
-type AvailableTicketTypesRsponse struct {
+type AvailableTicketTypesResponse struct {
 	ID          string  `json:"id"`
 	EventID     string  `json:"event_id"`
 	Name        string  `json:"name"`
@@ -79,14 +79,14 @@ func toTicketTypeResponse(ticketType repository.TicketType) TicketTypeResponse {
 	}
 }
 
-func toAvailableTicketTypeResponse(ticketType repository.PublicGetAvailableTicketTypesRow) AvailableTicketTypesRsponse {
+func toAvailableTicketTypeResponse(ticketType repository.PublicGetAvailableTicketTypesRow) AvailableTicketTypesResponse {
 	var description *string
 
 	if ticketType.Description.Valid {
 		description = &ticketType.Description.String
 	}
 
-	return AvailableTicketTypesRsponse{
+	return AvailableTicketTypesResponse{
 		ID:          ticketType.ID.String(),
 		EventID:     ticketType.EventID.String(),
 		Name:        ticketType.Name,
@@ -192,7 +192,7 @@ func (h *TicketTypeHandler) GetAvailableByEvent(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	var resp []AvailableTicketTypesRsponse
+	var resp []AvailableTicketTypesResponse
 	for _, tt := range ticketTypes {
 		resp = append(resp, toAvailableTicketTypeResponse(tt))
 	}
