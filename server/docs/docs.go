@@ -1072,7 +1072,7 @@ const docTemplate = `{
         },
         "/auth/forgot-password": {
             "post": {
-                "description": "Sends password reset link if account exists (prevents email enumeration)",
+                "description": "Sends a reset link if the account exists (prevents email enumeration)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1121,7 +1121,7 @@ const docTemplate = `{
         },
         "/auth/login": {
             "post": {
-                "description": "Authenticates user and returns access + refresh tokens",
+                "description": "Authenticates user and returns access token; sets session cookies",
                 "consumes": [
                     "application/json"
                 ],
@@ -1173,7 +1173,7 @@ const docTemplate = `{
         },
         "/auth/logout": {
             "post": {
-                "description": "Invalidates refresh token and clears cookie",
+                "description": "Invalidates refresh token and clears both session cookies",
                 "produces": [
                     "application/json"
                 ],
@@ -1184,25 +1184,13 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK"
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
                     }
                 }
             }
         },
         "/auth/refresh": {
             "post": {
-                "description": "Generates a new access token using refresh token from HttpOnly cookie",
+                "description": "Rotates the refresh token and issues a new access token.\nNote: if two tabs refresh simultaneously, one will fail with INVALID_TOKEN\nand the client will be logged out. This is acceptable behaviour for\na single-device session model.",
                 "produces": [
                     "application/json"
                 ],
@@ -1234,7 +1222,7 @@ const docTemplate = `{
         },
         "/auth/register": {
             "post": {
-                "description": "Creates a new user account and returns access + refresh tokens",
+                "description": "Creates a new attendee or organiser account",
                 "consumes": [
                     "application/json"
                 ],
@@ -1280,7 +1268,7 @@ const docTemplate = `{
         },
         "/auth/reset-password": {
             "post": {
-                "description": "Resets password using reset token",
+                "description": "Resets password using a reset token",
                 "consumes": [
                     "application/json"
                 ],
@@ -3426,6 +3414,9 @@ const docTemplate = `{
                 "banner_url": {
                     "type": "string"
                 },
+                "category_id": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -3650,6 +3641,9 @@ const docTemplate = `{
         "handler.UserResponse": {
             "type": "object",
             "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -3659,10 +3653,13 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "is_verified": {
+                    "type": "boolean"
+                },
                 "name": {
                     "type": "string"
                 },
-                "updated_at": {
+                "role": {
                     "type": "string"
                 }
             }
@@ -3938,7 +3935,8 @@ const docTemplate = `{
             "required": [
                 "email",
                 "name",
-                "password"
+                "password",
+                "role"
             ],
             "properties": {
                 "email": {
@@ -3953,6 +3951,13 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 8
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "ATTENDEE",
+                        "ORGANISER"
+                    ]
                 }
             }
         },

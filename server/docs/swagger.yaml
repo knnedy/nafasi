@@ -119,6 +119,8 @@ definitions:
     properties:
       banner_url:
         type: string
+      category_id:
+        type: string
       created_at:
         type: string
       description:
@@ -266,15 +268,19 @@ definitions:
     type: object
   handler.UserResponse:
     properties:
+      avatar_url:
+        type: string
       created_at:
         type: string
       email:
         type: string
       id:
         type: string
+      is_verified:
+        type: boolean
       name:
         type: string
-      updated_at:
+      role:
         type: string
     type: object
   handler.authDataResponse:
@@ -467,10 +473,16 @@ definitions:
         maxLength: 100
         minLength: 8
         type: string
+      role:
+        enum:
+        - ATTENDEE
+        - ORGANISER
+        type: string
     required:
     - email
     - name
     - password
+    - role
     type: object
   service.ResetPasswordInput:
     properties:
@@ -1273,7 +1285,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Sends password reset link if account exists (prevents email enumeration)
+      description: Sends a reset link if the account exists (prevents email enumeration)
       parameters:
       - description: Forgot password payload
         in: body
@@ -1305,7 +1317,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Authenticates user and returns access + refresh tokens
+      description: Authenticates user and returns access token; sets session cookies
       parameters:
       - description: Login payload
         in: body
@@ -1337,27 +1349,22 @@ paths:
       - Auth
   /auth/logout:
     post:
-      description: Invalidates refresh token and clears cookie
+      description: Invalidates refresh token and clears both session cookies
       produces:
       - application/json
       responses:
         "200":
           description: OK
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
       summary: Logout user
       tags:
       - Auth
   /auth/refresh:
     post:
-      description: Generates a new access token using refresh token from HttpOnly
-        cookie
+      description: |-
+        Rotates the refresh token and issues a new access token.
+        Note: if two tabs refresh simultaneously, one will fail with INVALID_TOKEN
+        and the client will be logged out. This is acceptable behaviour for
+        a single-device session model.
       produces:
       - application/json
       responses:
@@ -1380,7 +1387,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Creates a new user account and returns access + refresh tokens
+      description: Creates a new attendee or organiser account
       parameters:
       - description: Register payload
         in: body
@@ -1410,7 +1417,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Resets password using reset token
+      description: Resets password using a reset token
       parameters:
       - description: Reset password payload
         in: body
