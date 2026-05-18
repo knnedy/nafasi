@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/knnedy/nafasi/internal/repository"
 	"github.com/knnedy/nafasi/internal/response"
@@ -17,7 +18,6 @@ const (
 	// sidCookie is non-httpOnly and scoped to /.
 	// It carries no sensitive value ("1") — it only signals to the proxy
 	// that an active session exists so routing decisions can be made.
-	// This is the standard pattern used by Next Auth, Supabase, and Clerk.
 	sidCookie = "_sid"
 )
 
@@ -87,6 +87,8 @@ func (h *AuthHandler) setSessionCookies(w http.ResponseWriter, refreshToken stri
 }
 
 func (h *AuthHandler) clearSessionCookies(w http.ResponseWriter) {
+	pastTime := time.Unix(0, 0) // Jan 1, 1970
+
 	http.SetCookie(w, &http.Cookie{
 		Name:     refreshTokenCookie,
 		Value:    "",
@@ -95,6 +97,7 @@ func (h *AuthHandler) clearSessionCookies(w http.ResponseWriter) {
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/api/v1/auth",
 		MaxAge:   -1,
+		Expires:  pastTime, // Add this
 	})
 
 	http.SetCookie(w, &http.Cookie{
@@ -105,6 +108,7 @@ func (h *AuthHandler) clearSessionCookies(w http.ResponseWriter) {
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 		MaxAge:   -1,
+		Expires:  pastTime, // Add this
 	})
 }
 

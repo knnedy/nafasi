@@ -17,6 +17,31 @@ export function formatTime(iso: string) {
   });
 }
 
+export function formatPrice(cents: number, currency: string) {
+  return new Intl.NumberFormat("en-KE", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+  }).format(cents / 100);
+}
+
+export function formatDateLong(iso: string) {
+  return new Date(iso).toLocaleDateString("en-KE", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+export function formatDuration(start: string, end: string) {
+  const diff = new Date(end).getTime() - new Date(start).getTime();
+  const hours = Math.floor(diff / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  if (mins === 0) return `${hours}h`;
+  return `${hours}h ${mins}m`;
+}
+
 export const ACCENTS = [
   "#F97316",
   "#8B5CF6",

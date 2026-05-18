@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -62,7 +62,13 @@ const mockEvents = [
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setAuth } = useAuthStore();
+
+  const redirectParam = searchParams.get("redirect");
+
+  const redirectUrl =
+    redirectParam && redirectParam.startsWith("/") ? redirectParam : "/";
 
   const form = useForm<SignInForm>({
     resolver: zodResolver(signInSchema),
@@ -85,7 +91,7 @@ export default function SignInPage() {
 
       setAuth(json.data.user, json.data.access_token);
       toast.success("Welcome back!");
-      router.push("/");
+      router.push(redirectUrl);
     } catch (err) {
       if (err instanceof APIError) {
         if (err.code === "INVALID_CREDENTIALS") {
