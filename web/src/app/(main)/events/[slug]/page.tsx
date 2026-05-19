@@ -9,29 +9,16 @@ import {
   MapPin,
   Wifi,
   Clock,
-  Ticket,
   ExternalLink,
   Share2,
   CheckCircle,
-  LogIn,
-  Phone,
-  Minus,
-  Plus,
-  LoaderCircle,
-  X,
 } from "lucide-react";
 import {
   accentForId,
   formatDateLong,
   formatDuration,
-  formatPrice,
   formatTime,
 } from "@/app/(main)/utils";
-import TicketCard from "./components/ticket-card";
-import { useAuthStore } from "@/store/auth";
-import { useRouter } from "next/navigation";
-import { api, APIError } from "@/lib/api";
-import { toast } from "sonner";
 import TicketSidebar from "./components/ticket-sidebar";
 
 // Types
@@ -66,9 +53,9 @@ export interface AvailableTicketTypesResponse {
 
 // Mock data
 const MOCK_EVENT: EventResponse = {
-  id: "1",
-  organiser_id: "o1",
-  category_id: "1",
+  id: "550e8400-e29b-41d4-a716-446655440000",
+  organiser_id: "550e8400-e29b-41d4-a716-446655440010",
+  category_id: "550e8400-e29b-41d4-a716-446655440020",
   title: "Afropunk Nairobi 2026",
   slug: "afropunk-nairobi-2026",
   description:
@@ -86,8 +73,8 @@ const MOCK_EVENT: EventResponse = {
 
 const MOCK_TICKETS: AvailableTicketTypesResponse[] = [
   {
-    id: "t1",
-    event_id: "1",
+    id: "550e8400-e29b-41d4-a716-446655440001",
+    event_id: "550e8400-e29b-41d4-a716-446655440000",
     name: "General Admission",
     description: "Standing access to all stages and general areas.",
     price: 250000,
@@ -95,8 +82,8 @@ const MOCK_TICKETS: AvailableTicketTypesResponse[] = [
     is_free: false,
   },
   {
-    id: "t2",
-    event_id: "1",
+    id: "550e8400-e29b-41d4-a716-446655440002",
+    event_id: "550e8400-e29b-41d4-a716-446655440000",
     name: "VIP",
     description:
       "Priority entry, dedicated viewing area, and complimentary drinks.",
@@ -105,8 +92,8 @@ const MOCK_TICKETS: AvailableTicketTypesResponse[] = [
     is_free: false,
   },
   {
-    id: "t3",
-    event_id: "1",
+    id: "550e8400-e29b-41d4-a716-446655440003",
+    event_id: "550e8400-e29b-41d4-a716-446655440000",
     name: "Early Bird",
     description:
       "Limited early bird tickets at a discounted price. First come, first served.",

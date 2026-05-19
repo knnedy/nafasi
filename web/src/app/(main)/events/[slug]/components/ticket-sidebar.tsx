@@ -19,7 +19,12 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth";
 import { toast } from "sonner";
 import { api, APIError } from "@/lib/api";
-import { formatDateLong, formatPrice, formatTime } from "@/app/(main)/utils";
+import {
+  formatDateLong,
+  formatPhoneNumber,
+  formatPrice,
+  formatTime,
+} from "@/app/(main)/utils";
 import TicketCard from "./ticket-card";
 
 type CheckoutStep = "idle" | "payment" | "processing" | "success";
@@ -71,13 +76,25 @@ export default function TicketSidebar({
 
     setCheckoutStep("processing");
 
+    let formattedPhone = "";
+    if (!selectedTicketData.is_free) {
+      try {
+        formattedPhone = formatPhoneNumber(phone);
+      } catch {
+        toast.error(
+          "Invalid M-Pesa number. Use format 07XX XXX XXX or 254XXXXXXXXX.",
+        );
+        return;
+      }
+    }
+
     try {
       await api.post("/api/v1/payments/initiate", {
         event_id: event.id,
         ticket_type_id: selectedTicketData.id,
         quantity,
         payment_method: selectedTicketData.is_free ? "FREE" : "MPESA",
-        ...(selectedTicketData.is_free ? {} : { phone_number: phone }),
+        ...(selectedTicketData.is_free ? {} : { phone_number: formattedPhone }),
       });
 
       setCheckoutStep("success");

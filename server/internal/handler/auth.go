@@ -97,7 +97,7 @@ func (h *AuthHandler) clearSessionCookies(w http.ResponseWriter) {
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/api/v1/auth",
 		MaxAge:   -1,
-		Expires:  pastTime, // Add this
+		Expires:  pastTime,
 	})
 
 	http.SetCookie(w, &http.Cookie{
@@ -108,7 +108,7 @@ func (h *AuthHandler) clearSessionCookies(w http.ResponseWriter) {
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 		MaxAge:   -1,
-		Expires:  pastTime, // Add this
+		Expires:  pastTime,
 	})
 }
 

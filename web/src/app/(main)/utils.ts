@@ -61,3 +61,31 @@ export function accentForId(id: string) {
 export function categoryName(categoryId: string) {
   return MOCK_CATEGORIES.find((c) => c.id === categoryId)?.name ?? "";
 }
+
+export function formatPhoneNumber(phone: string): string {
+  // trim and strip everything except digits and leading +
+  phone = phone.trim().replace(/[^0-9+]/g, "");
+
+  // normalize to 254XXXXXXXXX (no +)
+  if (phone.startsWith("+254")) {
+    phone = phone.slice(1);
+  } else if (phone.startsWith("254")) {
+    // already correct base
+  } else if (phone.startsWith("0") && phone.length === 10) {
+    phone = "254" + phone.slice(1);
+  } else if (phone.length === 9) {
+    phone = "254" + phone;
+  } else {
+    throw new Error("Invalid phone number format");
+  }
+
+  if (phone.length !== 12) {
+    throw new Error("Invalid phone number length");
+  }
+
+  if (!phone.startsWith("2547") && !phone.startsWith("2541")) {
+    throw new Error("Invalid Kenyan mobile prefix");
+  }
+
+  return phone;
+}

@@ -34,12 +34,15 @@ async function refreshAccessToken(): Promise<boolean> {
 
     if (!res.ok) return false;
 
-    const data = await res.json();
+    const json = await res.json();
 
-    const { setAuth } = await import("@/store/auth").then((m) =>
-      m.useAuthStore.getState(),
-    );
-    setAuth(data.data.user, data.data.access_token);
+    const user = json.data?.user;
+    const accessToken = json.data?.access_token;
+
+    if (!user || !accessToken) return false;
+
+    const { setAuth } = (await import("@/store/auth")).useAuthStore.getState();
+    setAuth(user, accessToken);
 
     return true;
   } catch {
