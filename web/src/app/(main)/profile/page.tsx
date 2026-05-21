@@ -602,14 +602,14 @@ export default function ProfilePage() {
         <div className="px-6 py-5 border-b border-white/6 flex items-center justify-between">
           <div>
             <h2 className="text-white font-black text-base tracking-tight">
-              My Tickets
+              My Orders
             </h2>
             <p className="text-white/30 text-xs mt-0.5">
-              Your purchased and reserved tickets.
+              Your purchased and reserved orders.
             </p>
           </div>
           <Link
-            href="/tickets"
+            href="/profile/orders"
             className="flex items-center gap-1.5 text-orange-400 hover:text-orange-300 text-xs font-bold transition-colors shrink-0 ml-4">
             View all
             <ArrowUpRight className="w-3.5 h-3.5" />

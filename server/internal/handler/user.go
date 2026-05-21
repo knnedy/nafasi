@@ -43,6 +43,50 @@ func toUserResponse(user repository.User) UserResponse {
 	}
 }
 
+type UserOrderResponse struct {
+	ID              string `json:"id"`
+	Quantity        int32  `json:"quantity"`
+	Status          string `json:"status"`
+	QrCode          string `json:"qr_code"`
+	CheckedIn       bool   `json:"checked_in"`
+	CheckedInAt     string `json:"checked_in_at,omitempty"`
+	CreatedAt       string `json:"created_at"`
+	EventTitle      string `json:"event_title"`
+	EventSlug       string `json:"event_slug"`
+	EventStartsAt   string `json:"event_starts_at"`
+	EventEndsAt     string `json:"event_ends_at"`
+	EventLocation   string `json:"event_location,omitempty"`
+	EventVenue      string `json:"event_venue,omitempty"`
+	EventIsOnline   bool   `json:"event_is_online"`
+	EventOnlineUrl  string `json:"event_online_url,omitempty"`
+	EventBannerUrl  string `json:"event_banner_url,omitempty"`
+	TicketTypeName  string `json:"ticket_type_name"`
+	TicketTypePrice int64  `json:"ticket_type_price"`
+}
+
+func toTicketResponse(t repository.GetOrdersByUserRow) UserOrderResponse {
+	return UserOrderResponse{
+		ID:              uuid.UUID(t.ID.Bytes).String(),
+		Quantity:        t.Quantity,
+		Status:          string(t.Status),
+		QrCode:          t.QrCode.String,
+		CheckedIn:       t.CheckedIn,
+		CheckedInAt:     t.CheckedInAt.Time.Format(time.RFC3339),
+		CreatedAt:       t.CreatedAt.Time.Format(time.RFC3339),
+		EventTitle:      t.EventTitle,
+		EventSlug:       t.EventSlug,
+		EventStartsAt:   t.EventStartsAt.Time.Format(time.RFC3339),
+		EventEndsAt:     t.EventEndsAt.Time.Format(time.RFC3339),
+		EventLocation:   t.EventLocation.String,
+		EventVenue:      t.EventVenue.String,
+		EventIsOnline:   t.EventIsOnline,
+		EventOnlineUrl:  t.EventOnlineUrl.String,
+		EventBannerUrl:  t.EventBannerUrl.String,
+		TicketTypeName:  t.TicketTypeName,
+		TicketTypePrice: t.TicketTypePrice,
+	}
+}
+
 // GetMe godoc
 // @Summary Get current user
 // @Description Returns the authenticated user's profile
@@ -76,7 +120,7 @@ func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 // @Tags Users
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {array} repository.GetUserTicketsRow
+// @Success 200 {array} UserOrderResponse
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /users/me/tickets [get]
@@ -87,13 +131,19 @@ func (h *UserHandler) GetMyTickets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tickets, err := h.user.GetMyTickets(r.Context(), userID)
+	tickets, err := h.user.GetMyOrders(r.Context(), userID)
 	if err != nil {
 		response.WriteError(w, err)
 		return
 	}
 
-	response.WriteJSON(w, http.StatusOK, tickets)
+	// convert repository rows to response objects
+	resp := make([]UserOrderResponse, 0, len(tickets))
+	for _, t := range tickets {
+		resp = append(resp, toTicketResponse(t))
+	}
+
+	response.WriteJSON(w, http.StatusOK, resp)
 }
 
 // UpdateMe godoc

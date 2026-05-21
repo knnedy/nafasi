@@ -111,49 +111,6 @@ func (q *Queries) GetOrderById(ctx context.Context, id pgtype.UUID) (Order, erro
 }
 
 const getOrdersByUser = `-- name: GetOrdersByUser :many
-SELECT id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount, currency, status, payment_method, payment_ref, qr_code, checked_in, checked_in_at, created_at, updated_at FROM "orders"
-WHERE "user_id" = $1
-ORDER BY "created_at" DESC
-`
-
-func (q *Queries) GetOrdersByUser(ctx context.Context, userID pgtype.UUID) ([]Order, error) {
-	rows, err := q.db.Query(ctx, getOrdersByUser, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Order
-	for rows.Next() {
-		var i Order
-		if err := rows.Scan(
-			&i.ID,
-			&i.UserID,
-			&i.EventID,
-			&i.TicketTypeID,
-			&i.Quantity,
-			&i.UnitPrice,
-			&i.TotalAmount,
-			&i.Currency,
-			&i.Status,
-			&i.PaymentMethod,
-			&i.PaymentRef,
-			&i.QrCode,
-			&i.CheckedIn,
-			&i.CheckedInAt,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getUserTickets = `-- name: GetUserTickets :many
 SELECT
     o.id,
     o.quantity,
@@ -181,7 +138,7 @@ AND o.status = 'PAID'
 ORDER BY e.starts_at ASC
 `
 
-type GetUserTicketsRow struct {
+type GetOrdersByUserRow struct {
 	ID              pgtype.UUID
 	Quantity        int32
 	Status          OrderStatus
@@ -202,15 +159,15 @@ type GetUserTicketsRow struct {
 	TicketTypePrice int64
 }
 
-func (q *Queries) GetUserTickets(ctx context.Context, userID pgtype.UUID) ([]GetUserTicketsRow, error) {
-	rows, err := q.db.Query(ctx, getUserTickets, userID)
+func (q *Queries) GetOrdersByUser(ctx context.Context, userID pgtype.UUID) ([]GetOrdersByUserRow, error) {
+	rows, err := q.db.Query(ctx, getOrdersByUser, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetUserTicketsRow
+	var items []GetOrdersByUserRow
 	for rows.Next() {
-		var i GetUserTicketsRow
+		var i GetOrdersByUserRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Quantity,

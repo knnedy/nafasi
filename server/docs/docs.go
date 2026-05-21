@@ -3230,6 +3230,46 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/users/me/tickets": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the authenticated user's tickets",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get my tickets",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handler.UserOrderResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -3635,6 +3675,65 @@ const docTemplate = `{
             "properties": {
                 "is_verified": {
                     "type": "boolean"
+                }
+            }
+        },
+        "handler.UserOrderResponse": {
+            "type": "object",
+            "properties": {
+                "checked_in": {
+                    "type": "boolean"
+                },
+                "checked_in_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "event_banner_url": {
+                    "type": "string"
+                },
+                "event_ends_at": {
+                    "type": "string"
+                },
+                "event_is_online": {
+                    "type": "boolean"
+                },
+                "event_location": {
+                    "type": "string"
+                },
+                "event_online_url": {
+                    "type": "string"
+                },
+                "event_slug": {
+                    "type": "string"
+                },
+                "event_starts_at": {
+                    "type": "string"
+                },
+                "event_title": {
+                    "type": "string"
+                },
+                "event_venue": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "qr_code": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "ticket_type_name": {
+                    "type": "string"
+                },
+                "ticket_type_price": {
+                    "type": "integer"
                 }
             }
         },

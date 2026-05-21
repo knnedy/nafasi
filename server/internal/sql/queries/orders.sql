@@ -17,11 +17,6 @@ INSERT INTO "orders" (
 SELECT * FROM "orders" WHERE "id" = $1;
 
 -- name: GetOrdersByUser :many
-SELECT * FROM "orders"
-WHERE "user_id" = $1
-ORDER BY "created_at" DESC;
-
--- name: GetUserTickets :many
 SELECT
     o.id,
     o.quantity,

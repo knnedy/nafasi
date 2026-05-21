@@ -25,7 +25,7 @@ type AuthQuerier interface {
 type UserQuerier interface {
 	GetUserById(ctx context.Context, id pgtype.UUID) (repository.User, error)
 	GetUserByEmail(ctx context.Context, email string) (repository.User, error)
-	GetUserTickets(ctx context.Context, userID pgtype.UUID) ([]repository.GetUserTicketsRow, error)
+	GetOrdersByUser(ctx context.Context, userID pgtype.UUID) ([]repository.GetOrdersByUserRow, error)
 	UpdateUserProfile(ctx context.Context, arg repository.UpdateUserProfileParams) (repository.User, error)
 	UpdateUserPassword(ctx context.Context, arg repository.UpdateUserPasswordParams) (repository.User, error)
 	UpdateUserAvatar(ctx context.Context, arg repository.UpdateUserAvatarParams) (repository.User, error)

@@ -57,13 +57,13 @@ func (s *UserService) GetMe(ctx context.Context, userID string) (repository.User
 	return user, nil
 }
 
-func (s *UserService) GetMyTickets(ctx context.Context, userID string) ([]repository.GetUserTicketsRow, error) {
+func (s *UserService) GetMyOrders(ctx context.Context, userID string) ([]repository.GetOrdersByUserRow, error) {
 	parsedID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, response.ErrNotFound
 	}
 
-	tickets, err := s.db.GetUserTickets(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
+	tickets, err := s.db.GetOrdersByUser(ctx, pgtype.UUID{Bytes: parsedID, Valid: true})
 	if err != nil {
 		return nil, response.ErrDatabase
 	}
