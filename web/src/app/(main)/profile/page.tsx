@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   Ticket,
   CalendarDays,
+  ArrowUpRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ import {
 } from "@/components/ui/field";
 import { api, APIError } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
+import Link from "next/link";
 
 // Schemas
 const updateProfileSchema = z.object({
@@ -596,51 +598,67 @@ export default function ProfilePage() {
       </Section>
 
       {/* my tickets */}
-      <Section
-        title="My Tickets"
-        description="Your purchased and reserved tickets.">
-        {MOCK_TICKETS.length === 0 ? (
-          <div className="text-center py-8">
-            <Ticket className="w-8 h-8 text-white/10 mx-auto mb-3" />
-            <p className="text-white/25 text-sm">No tickets yet.</p>
+      <div className="rounded-2xl border border-white/8 bg-white/2 overflow-hidden">
+        <div className="px-6 py-5 border-b border-white/6 flex items-center justify-between">
+          <div>
+            <h2 className="text-white font-black text-base tracking-tight">
+              My Tickets
+            </h2>
+            <p className="text-white/30 text-xs mt-0.5">
+              Your purchased and reserved tickets.
+            </p>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {MOCK_TICKETS.map((ticket) => (
-              <div
-                key={ticket.id}
-                className="flex items-center gap-4 p-4 rounded-xl border border-white/6 bg-white/2 hover:bg-white/4 transition-all duration-200">
-                <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
-                  <Ticket className="w-4 h-4 text-orange-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-bold text-sm truncate">
-                    {ticket.event_title}
-                  </p>
-                  <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                    <span className="text-white/40 text-xs">
-                      {ticket.ticket_type}
-                    </span>
-                    <span className="text-white/25 text-xs flex items-center gap-1">
-                      <CalendarDays className="w-3 h-3" />
-                      {formatDate(ticket.starts_at)} ·{" "}
-                      {formatTime(ticket.starts_at)}
-                    </span>
+          <Link
+            href="/tickets"
+            className="flex items-center gap-1.5 text-orange-400 hover:text-orange-300 text-xs font-bold transition-colors shrink-0 ml-4">
+            View all
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+        <div className="p-6">
+          {MOCK_TICKETS.length === 0 ? (
+            <div className="text-center py-8">
+              <Ticket className="w-8 h-8 text-white/10 mx-auto mb-3" />
+              <p className="text-white/25 text-sm">No tickets yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {MOCK_TICKETS.map((ticket) => (
+                <div
+                  key={ticket.id}
+                  className="flex items-center gap-4 p-4 rounded-xl border border-white/6 bg-white/2 hover:bg-white/4 transition-all duration-200">
+                  <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
+                    <Ticket className="w-4 h-4 text-orange-400" />
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-bold text-sm truncate">
+                      {ticket.event_title}
+                    </p>
+                    <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                      <span className="text-white/40 text-xs">
+                        {ticket.ticket_type}
+                      </span>
+                      <span className="text-white/25 text-xs flex items-center gap-1">
+                        <CalendarDays className="w-3 h-3" />
+                        {formatDate(ticket.starts_at)} ·{" "}
+                        {formatTime(ticket.starts_at)}
+                      </span>
+                    </div>
+                  </div>
+                  <span
+                    className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shrink-0 ${
+                      ticket.status === "CONFIRMED"
+                        ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+                        : "bg-amber-500/10 border border-amber-500/20 text-amber-400"
+                    }`}>
+                    {ticket.status.toLowerCase()}
+                  </span>
                 </div>
-                <span
-                  className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shrink-0 ${
-                    ticket.status === "CONFIRMED"
-                      ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
-                      : "bg-amber-500/10 border border-amber-500/20 text-amber-400"
-                  }`}>
-                  {ticket.status.toLowerCase()}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </Section>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* danger zone */}
       <Section
