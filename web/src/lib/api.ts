@@ -1,6 +1,5 @@
 const BASE_URL = "";
 
-// custom error class so callers can catch API errors specifically
 export class APIError extends Error {
   constructor(
     public status: number,
@@ -25,18 +24,25 @@ async function parseError(res: Response): Promise<APIError> {
   }
 }
 
+const getAuthStore = () =>
+  import("@/store/auth").then((m) => m.useAuthStore.getState());
+
+function redirectToSignIn(): never {
+  if (typeof window !== "undefined") {
+    document.cookie =
+      "_sid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; samesite=strict";
+    window.location.href = "/signin";
+  }
+  throw new APIError(401, "UNAUTHORIZED", "session expired");
+}
+
 let refreshPromise: Promise<boolean> | null = null;
 
 async function refreshAccessToken(): Promise<boolean> {
-  // This forces all parallel 401s to wait on the exact same network call.
-  if (refreshPromise) {
-    return refreshPromise;
-  }
+  if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
     try {
-      console.log("cookies visible to browser:", document.cookie);
-
       const res = await fetch(`${BASE_URL}/api/v1/auth/refresh`, {
         method: "POST",
         credentials: "include",
@@ -45,23 +51,18 @@ async function refreshAccessToken(): Promise<boolean> {
       if (!res.ok) return false;
 
       const json = await res.json();
-
       const user = json.data?.user;
       const accessToken = json.data?.access_token;
 
       if (!user || !accessToken) return false;
 
-      const { setAuth } = (
-        await import("@/store/auth")
-      ).useAuthStore.getState();
+      const { setAuth } = await getAuthStore();
       setAuth(user, accessToken);
 
       return true;
     } catch {
       return false;
     } finally {
-      // Once the request finishes (success or fail), clear the variable
-      // so future expirations 15 minutes from now can trigger a new refresh.
       refreshPromise = null;
     }
   })();
@@ -73,19 +74,15 @@ async function fetchWithAuth(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<Response> {
-  const { accessToken } = (
-    await import("@/store/auth")
-  ).useAuthStore.getState();
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-    ...(options.headers as Record<string, string>),
-  };
+  const { accessToken } = await getAuthStore();
 
   const res = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
-    headers,
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+      ...(options.headers as Record<string, string>),
+    },
     credentials: "include",
   });
 
@@ -93,23 +90,12 @@ async function fetchWithAuth(
     const refreshed = await refreshAccessToken();
 
     if (!refreshed) {
-      const { clearAuth } = (
-        await import("@/store/auth")
-      ).useAuthStore.getState();
+      const { clearAuth } = await getAuthStore();
       clearAuth();
-      if (typeof window !== "undefined") {
-        // Manually destroy the _sid proxy cookie from the browser before
-        // Next.js proxy middleware has a chance to intercept the redirect.
-        document.cookie =
-          "_sid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; samesite=strict";
-        window.location.href = "/signin";
-      }
-      throw new APIError(401, "UNAUTHORIZED", "session expired");
+      redirectToSignIn();
     }
 
-    const { accessToken: newToken } = (
-      await import("@/store/auth")
-    ).useAuthStore.getState();
+    const { accessToken: newToken } = await getAuthStore();
 
     const retryRes = await fetch(`${BASE_URL}${endpoint}`, {
       ...options,
@@ -121,6 +107,12 @@ async function fetchWithAuth(
       credentials: "include",
     });
 
+    if (retryRes.status === 401) {
+      const { clearAuth } = await getAuthStore();
+      clearAuth();
+      redirectToSignIn();
+    }
+
     if (!retryRes.ok) throw await parseError(retryRes);
     return retryRes;
   }
@@ -129,8 +121,6 @@ async function fetchWithAuth(
   return res;
 }
 
-// public fetch — no auth header, no token refresh
-// used for login, register, public event listing etc
 async function fetchPublic(
   endpoint: string,
   options: RequestInit = {},
@@ -149,7 +139,6 @@ async function fetchPublic(
 }
 
 export const api = {
-  // authenticated requests
   get: (endpoint: string, options?: RequestInit) =>
     fetchWithAuth(endpoint, { ...options, method: "GET" }),
 
@@ -170,7 +159,6 @@ export const api = {
   delete: (endpoint: string, options?: RequestInit) =>
     fetchWithAuth(endpoint, { ...options, method: "DELETE" }),
 
-  // public requests — no auth
   public: {
     get: (endpoint: string, options?: RequestInit) =>
       fetchPublic(endpoint, { ...options, method: "GET" }),

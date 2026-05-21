@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
 
@@ -195,10 +194,6 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /auth/refresh [post]
 func (h *AuthHandler) RefreshAccessToken(w http.ResponseWriter, r *http.Request) {
-	for _, c := range r.Cookies() {
-		log.Printf("cookie received: name=%s value=%s", c.Name, c.Value)
-	}
-
 	cookie, err := r.Cookie(refreshTokenCookie)
 	if err != nil {
 		// clear cookies if the refresh token is missing
