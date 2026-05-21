@@ -70,6 +70,32 @@ func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, toUserResponse(user))
 }
 
+// GetMyTickets godoc
+// @Summary Get my tickets
+// @Description Returns the authenticated user's tickets
+// @Tags Users
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} repository.GetUserTicketsRow
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /users/me/tickets [get]
+func (h *UserHandler) GetMyTickets(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		response.WriteError(w, response.ErrUnauthorized)
+		return
+	}
+
+	tickets, err := h.user.GetMyTickets(r.Context(), userID)
+	if err != nil {
+		response.WriteError(w, err)
+		return
+	}
+
+	response.WriteJSON(w, http.StatusOK, tickets)
+}
+
 // UpdateMe godoc
 // @Summary Update user profile
 // @Description Updates the authenticated user's profile details

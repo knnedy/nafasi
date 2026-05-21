@@ -19,6 +19,7 @@ type AuthServicer interface {
 
 type UserServicer interface {
 	GetMe(ctx context.Context, userID string) (repository.User, error)
+	GetMyTickets(ctx context.Context, userID string) ([]repository.GetUserTicketsRow, error)
 	UpdateProfile(ctx context.Context, userID string, input service.UpdateProfileInput) (repository.User, error)
 	UpdatePassword(ctx context.Context, userID string, input service.UpdatePasswordInput) error
 	UpdateAvatar(ctx context.Context, userID string, input service.UpdateAvatarInput) (repository.User, error)
