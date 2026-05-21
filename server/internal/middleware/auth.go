@@ -52,7 +52,9 @@ func (am *AuthMiddleware) Authenticate(next http.Handler) http.Handler {
 		}
 
 		// attach userID to context and call handler
-		ctx := context.WithValue(r.Context(), contextKeyUserID, claims.UserID)
+		ctx := r.Context()
+		ctx = SetUserID(ctx, claims.UserID)
+		ctx = SetUserRole(ctx, repository.UserRole(claims.Role))
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

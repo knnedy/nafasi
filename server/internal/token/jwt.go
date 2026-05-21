@@ -6,7 +6,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-const accessTokenDuration = 15 * time.Minute
+const accessTokenDuration = 2 * time.Minute
 
 type AccessTokenClaims struct {
 	UserID string `json:"user_id"`

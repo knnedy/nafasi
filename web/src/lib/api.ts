@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = "";
 
 // custom error class so callers can catch API errors specifically
 export class APIError extends Error {
@@ -25,29 +25,48 @@ async function parseError(res: Response): Promise<APIError> {
   }
 }
 
+let refreshPromise: Promise<boolean> | null = null;
+
 async function refreshAccessToken(): Promise<boolean> {
-  try {
-    const res = await fetch(`${BASE_URL}/api/v1/auth/refresh`, {
-      method: "POST",
-      credentials: "include",
-    });
-
-    if (!res.ok) return false;
-
-    const json = await res.json();
-
-    const user = json.data?.user;
-    const accessToken = json.data?.access_token;
-
-    if (!user || !accessToken) return false;
-
-    const { setAuth } = (await import("@/store/auth")).useAuthStore.getState();
-    setAuth(user, accessToken);
-
-    return true;
-  } catch {
-    return false;
+  // This forces all parallel 401s to wait on the exact same network call.
+  if (refreshPromise) {
+    return refreshPromise;
   }
+
+  refreshPromise = (async () => {
+    try {
+      console.log("cookies visible to browser:", document.cookie);
+
+      const res = await fetch(`${BASE_URL}/api/v1/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!res.ok) return false;
+
+      const json = await res.json();
+
+      const user = json.data?.user;
+      const accessToken = json.data?.access_token;
+
+      if (!user || !accessToken) return false;
+
+      const { setAuth } = (
+        await import("@/store/auth")
+      ).useAuthStore.getState();
+      setAuth(user, accessToken);
+
+      return true;
+    } catch {
+      return false;
+    } finally {
+      // Once the request finishes (success or fail), clear the variable
+      // so future expirations 15 minutes from now can trigger a new refresh.
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
 }
 
 async function fetchWithAuth(
@@ -79,6 +98,10 @@ async function fetchWithAuth(
       ).useAuthStore.getState();
       clearAuth();
       if (typeof window !== "undefined") {
+        // Manually destroy the _sid proxy cookie from the browser before
+        // Next.js proxy middleware has a chance to intercept the redirect.
+        document.cookie =
+          "_sid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; samesite=strict";
         window.location.href = "/signin";
       }
       throw new APIError(401, "UNAUTHORIZED", "session expired");
