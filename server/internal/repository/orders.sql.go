@@ -152,3 +152,91 @@ func (q *Queries) GetOrdersByUser(ctx context.Context, userID pgtype.UUID) ([]Or
 	}
 	return items, nil
 }
+
+const getUserTickets = `-- name: GetUserTickets :many
+SELECT
+    o.id,
+    o.quantity,
+    o.status,
+    o.qr_code,
+    o.checked_in,
+    o.checked_in_at,
+    o.created_at,
+    e.title       AS event_title,
+    e.slug        AS event_slug,
+    e.starts_at   AS event_starts_at,
+    e.ends_at     AS event_ends_at,
+    e.location    AS event_location,
+    e.venue       AS event_venue,
+    e.is_online   AS event_is_online,
+    e.online_url  AS event_online_url,
+    e.banner_url  AS event_banner_url,
+    tt.name       AS ticket_type_name,
+    tt.price      AS ticket_type_price
+FROM "orders" o
+JOIN "events" e       ON e.id = o.event_id
+JOIN "ticket_types" tt ON tt.id = o.ticket_type_id
+WHERE o.user_id = $1
+AND o.status = 'PAID'
+ORDER BY e.starts_at ASC
+`
+
+type GetUserTicketsRow struct {
+	ID              pgtype.UUID
+	Quantity        int32
+	Status          OrderStatus
+	QrCode          pgtype.Text
+	CheckedIn       bool
+	CheckedInAt     pgtype.Timestamp
+	CreatedAt       pgtype.Timestamp
+	EventTitle      string
+	EventSlug       string
+	EventStartsAt   pgtype.Timestamp
+	EventEndsAt     pgtype.Timestamp
+	EventLocation   pgtype.Text
+	EventVenue      pgtype.Text
+	EventIsOnline   bool
+	EventOnlineUrl  pgtype.Text
+	EventBannerUrl  pgtype.Text
+	TicketTypeName  string
+	TicketTypePrice int64
+}
+
+func (q *Queries) GetUserTickets(ctx context.Context, userID pgtype.UUID) ([]GetUserTicketsRow, error) {
+	rows, err := q.db.Query(ctx, getUserTickets, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUserTicketsRow
+	for rows.Next() {
+		var i GetUserTicketsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Quantity,
+			&i.Status,
+			&i.QrCode,
+			&i.CheckedIn,
+			&i.CheckedInAt,
+			&i.CreatedAt,
+			&i.EventTitle,
+			&i.EventSlug,
+			&i.EventStartsAt,
+			&i.EventEndsAt,
+			&i.EventLocation,
+			&i.EventVenue,
+			&i.EventIsOnline,
+			&i.EventOnlineUrl,
+			&i.EventBannerUrl,
+			&i.TicketTypeName,
+			&i.TicketTypePrice,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
