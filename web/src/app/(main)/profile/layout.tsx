@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ProfileLayout from "./components/profile-layout";
 
 export const metadata: Metadata = {
   title: "Profile",
@@ -6,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return <ProfileLayout>{children}</ProfileLayout>;
 }
