@@ -2682,6 +2682,31 @@ paths:
       summary: Update user avatar
       tags:
       - Users
+  /users/me/orders:
+    get:
+      description: Returns the authenticated user's orders
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.UserOrderResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get my orders
+      tags:
+      - Users
   /users/me/password:
     patch:
       consumes:
@@ -2718,31 +2743,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Update user password
-      tags:
-      - Users
-  /users/me/tickets:
-    get:
-      description: Returns the authenticated user's tickets
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/handler.UserOrderResponse'
-            type: array
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get my tickets
       tags:
       - Users
 securityDefinitions:
