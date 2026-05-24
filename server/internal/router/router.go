@@ -82,7 +82,7 @@ func New(
 				r.Patch("/me", user.UpdateMe)
 				r.Patch("/me/password", user.UpdatePassword)
 				r.Delete("/me", user.DeleteMe)
-				r.Get("/me/tickets", user.GetMyTickets)
+				r.Get("/me/orders", user.GetMyOrders)
 			})
 
 			// payments

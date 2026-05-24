@@ -64,7 +64,7 @@ type UserOrderResponse struct {
 	TicketTypePrice int64  `json:"ticket_type_price"`
 }
 
-func toTicketResponse(t repository.GetOrdersByUserRow) UserOrderResponse {
+func toOrderResponse(t repository.GetOrdersByUserRow) UserOrderResponse {
 	return UserOrderResponse{
 		ID:              uuid.UUID(t.ID.Bytes).String(),
 		Quantity:        t.Quantity,
@@ -115,32 +115,32 @@ func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetMyTickets godoc
-// @Summary Get my tickets
-// @Description Returns the authenticated user's tickets
+// @Summary Get my orders
+// @Description Returns the authenticated user's orders
 // @Tags Users
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {array} UserOrderResponse
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
-// @Router /users/me/tickets [get]
-func (h *UserHandler) GetMyTickets(w http.ResponseWriter, r *http.Request) {
+// @Router /users/me/orders [get]
+func (h *UserHandler) GetMyOrders(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.GetUserID(r.Context())
 	if !ok {
 		response.WriteError(w, response.ErrUnauthorized)
 		return
 	}
 
-	tickets, err := h.user.GetMyOrders(r.Context(), userID)
+	orders, err := h.user.GetMyOrders(r.Context(), userID)
 	if err != nil {
 		response.WriteError(w, err)
 		return
 	}
 
 	// convert repository rows to response objects
-	resp := make([]UserOrderResponse, 0, len(tickets))
-	for _, t := range tickets {
-		resp = append(resp, toTicketResponse(t))
+	resp := make([]UserOrderResponse, 0, len(orders))
+	for _, t := range orders {
+		resp = append(resp, toOrderResponse(t))
 	}
 
 	response.WriteJSON(w, http.StatusOK, resp)
