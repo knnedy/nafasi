@@ -49,7 +49,13 @@ function NavLinks() {
 }
 
 // User avatar initials
-function UserAvatar({ name }: { name: string }) {
+function UserAvatar({
+  name,
+  size = "sm",
+}: {
+  name: string;
+  size?: "sm" | "md";
+}) {
   const initials = name
     .split(" ")
     .slice(0, 2)
@@ -58,7 +64,10 @@ function UserAvatar({ name }: { name: string }) {
     .toUpperCase();
 
   return (
-    <div className="w-8 h-8 rounded-full bg-linear-to-br from-orange-500/80 to-amber-500/80 flex items-center justify-center text-white text-xs font-black tracking-wider border border-orange-500/30 shrink-0">
+    <div
+      className={`rounded-full bg-linear-to-br from-orange-500/80 to-amber-500/80 flex items-center justify-center text-white font-black border border-orange-500/30 shrink-0 ${
+        size === "md" ? "w-9 h-9 text-sm" : "w-7 h-7 text-xs"
+      }`}>
       {initials}
     </div>
   );
@@ -73,92 +82,84 @@ function UserDropdown() {
     try {
       await api.public.post("/api/v1/auth/logout", {});
     } catch {
-      // continue regardless
+      // backend clears cookies via defer even on error — safe to continue
     } finally {
       clearAuth();
       toast.success("Signed out successfully.");
-      router.refresh();
+      router.push("/signin");
     }
   };
 
   if (!user) return null;
 
+  const isDashboardUser = user.role === "ORGANISER" || user.role === "ADMIN";
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-white/4 border border-white/8 hover:bg-white/7 hover:border-white/12 transition-all duration-200 outline-none focus-visible:ring-1 focus-visible:ring-orange-500/50">
-          <UserAvatar name={user.name} />
-          <div className="hidden sm:block text-left">
-            <p className="text-white text-xs font-bold leading-none">
-              {user.name.split(" ")[0]}
-            </p>
-            <p className="text-white/30 text-[10px] leading-none mt-0.5 capitalize">
-              {user.role.toLowerCase()}
-            </p>
-          </div>
-          <ChevronRight className="w-3.5 h-3.5 text-white/20 hidden sm:block" />
+        <button className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white/4 border border-white/8 hover:bg-white/7 hover:border-white/12 transition-all duration-200 outline-none focus-visible:ring-1 focus-visible:ring-orange-500/50">
+          <UserAvatar name={user.name} size="sm" />
+          <span className="hidden sm:block text-white text-xs font-bold">
+            {user.name.split(" ")[0]}
+          </span>
+          <ChevronRight className="w-3 h-3 text-white/20 hidden sm:block" />
         </button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
         align="end"
         sideOffset={8}
-        className="w-56 bg-[#131110] border border-white/8 rounded-xl p-1 shadow-2xl shadow-black/60">
+        className="w-52 bg-[#131110] border border-white/8 rounded-xl p-1 shadow-2xl shadow-black/60">
         {/* user info header */}
-        <DropdownMenuLabel className="px-3 py-2.5">
+        <DropdownMenuLabel className="px-3 py-3">
           <div className="flex items-center gap-2.5">
-            <UserAvatar name={user.name} />
+            <UserAvatar name={user.name} size="md" />
             <div className="min-w-0">
-              <p className="text-white text-sm font-bold truncate">
+              <p className="text-white text-xs font-bold truncate leading-tight">
                 {user.name}
               </p>
-              <p className="text-white/30 text-xs truncate">{user.email}</p>
+              <p className="text-white/30 text-[10px] truncate mt-0.5">
+                {user.email}
+              </p>
+              <span className="text-[9px] font-black uppercase tracking-wider text-orange-400/70 mt-0.5 block">
+                {user.role.toLowerCase()}
+              </span>
             </div>
           </div>
         </DropdownMenuLabel>
 
-        <DropdownMenuSeparator className="bg-white/6 mx-1" />
+        <DropdownMenuSeparator className="bg-white/6 mx-1 my-0.5" />
 
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 cursor-pointer transition-colors text-sm font-medium outline-none">
-              <LayoutDashboard className="w-4 h-4 text-white/30" />
-              Dashboard
-            </Link>
-          </DropdownMenuItem>
+          {/* dashboard — organiser and admin only */}
+          {isDashboardUser && (
+            <DropdownMenuItem asChild>
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 cursor-pointer transition-colors text-sm font-medium outline-none">
+                <LayoutDashboard className="w-4 h-4 text-white/25" />
+                Dashboard
+              </Link>
+            </DropdownMenuItem>
+          )}
+
+          {/* profile — all roles */}
           <DropdownMenuItem asChild>
             <Link
               href="/profile"
               className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 cursor-pointer transition-colors text-sm font-medium outline-none">
-              <User className="w-4 h-4 text-white/30" />
-              My Profile
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link
-              href="/profile/orders"
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 cursor-pointer transition-colors text-sm font-medium outline-none">
-              <Ticket className="w-4 h-4 text-white/30" />
-              My Orders
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link
-              href="/profile/settings"
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 cursor-pointer transition-colors text-sm font-medium outline-none">
-              <Settings className="w-4 h-4 text-white/30" />
-              Settings
+              <User className="w-4 h-4 text-white/25" />
+              Profile
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
 
-        <DropdownMenuSeparator className="bg-white/6 mx-1" />
+        <DropdownMenuSeparator className="bg-white/6 mx-1 my-0.5" />
 
+        {/* sign out */}
         <DropdownMenuItem
           onClick={handleLogout}
-          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-500/6 cursor-pointer transition-colors text-sm font-medium outline-none">
+          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/6 cursor-pointer transition-colors text-sm font-medium outline-none">
           <LogOut className="w-4 h-4" />
           Sign out
         </DropdownMenuItem>
@@ -185,6 +186,8 @@ export default function Navbar() {
       setMobileMenuOpen(false);
     }
   };
+
+  const isDashboardUser = user?.role === "ORGANISER" || user?.role === "ADMIN";
 
   return (
     <nav className="sticky top-0 z-50 border-b border-white/6 bg-[#0C0A09]/75 backdrop-blur-xl">
@@ -252,47 +255,44 @@ export default function Navbar() {
             Upcoming
           </Link>
 
-          <div className="pt-3 border-t border-white/6 flex flex-col gap-2 mt-2">
+          <div className="pt-3 border-t border-white/6 flex flex-col gap-1 mt-2">
             {isAuthenticated && user ? (
               <>
                 {/* user info */}
-                <div className="flex items-center gap-3 px-3 py-2">
-                  <UserAvatar name={user.name} />
-                  <div>
-                    <p className="text-white text-sm font-bold">{user.name}</p>
-                    <p className="text-white/30 text-xs">{user.email}</p>
+                <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/3 border border-white/6 mb-1">
+                  <UserAvatar name={user.name} size="md" />
+                  <div className="min-w-0">
+                    <p className="text-white text-sm font-bold truncate">
+                      {user.name}
+                    </p>
+                    <p className="text-white/30 text-xs truncate">
+                      {user.email}
+                    </p>
                   </div>
                 </div>
-                <div className="h-px bg-white/6 mx-1" />
-                <Link
-                  href="/dashboard"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2.5 text-white/60 hover:text-white text-sm font-semibold py-2.5 px-3 rounded-lg hover:bg-white/4 transition-colors">
-                  <LayoutDashboard className="w-4 h-4 text-white/30" />
-                  Dashboard
-                </Link>
+
+                {/* dashboard — organiser and admin only */}
+                {isDashboardUser && (
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2.5 text-white/60 hover:text-white text-sm font-semibold py-2.5 px-3 rounded-lg hover:bg-white/4 transition-colors">
+                    <LayoutDashboard className="w-4 h-4 text-white/30" />
+                    Dashboard
+                  </Link>
+                )}
+
+                {/* profile — all roles */}
                 <Link
                   href="/profile"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-2.5 text-white/60 hover:text-white text-sm font-semibold py-2.5 px-3 rounded-lg hover:bg-white/4 transition-colors">
                   <User className="w-4 h-4 text-white/30" />
-                  My Profile
+                  Profile
                 </Link>
-                <Link
-                  href="/profile/tickets"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2.5 text-white/60 hover:text-white text-sm font-semibold py-2.5 px-3 rounded-lg hover:bg-white/4 transition-colors">
-                  <Ticket className="w-4 h-4 text-white/30" />
-                  My Tickets
-                </Link>
-                <Link
-                  href="/profile/settings"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2.5 text-white/60 hover:text-white text-sm font-semibold py-2.5 px-3 rounded-lg hover:bg-white/4 transition-colors">
-                  <Settings className="w-4 h-4 text-white/30" />
-                  Settings
-                </Link>
-                <div className="h-px bg-white/6 mx-1" />
+
+                <div className="h-px bg-white/6 mx-1 my-1" />
+
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2.5 text-red-400/70 hover:text-red-400 text-sm font-semibold py-2.5 px-3 rounded-lg hover:bg-red-500/6 transition-colors w-full text-left">
@@ -309,7 +309,7 @@ export default function Navbar() {
                   Sign in
                 </Link>
                 <Link
-                  href="/sign-up"
+                  href="/signup"
                   onClick={() => setMobileMenuOpen(false)}
                   className="text-center px-4 py-2.5 rounded-xl font-bold text-sm text-white bg-linear-to-r from-orange-500 to-amber-500">
                   Get started

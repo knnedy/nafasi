@@ -3,7 +3,8 @@ import ProfileLayout from "./components/profile-layout";
 
 export const metadata: Metadata = {
   title: "Profile",
-  description: "Manage your NAFASI account details, tickets and preferences.",
+  description:
+    "Manage your NAFASI account details, tickets orders and preferences.",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

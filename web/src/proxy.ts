@@ -21,7 +21,9 @@ export function proxy(req: NextRequest) {
   const isAuthRoute = authRoutes.some((r) => pathname.startsWith(r));
 
   if (isProtected && !session) {
-    return NextResponse.redirect(new URL("/signin", req.url));
+    return NextResponse.redirect(
+      new URL(`/signin?redirect=${pathname}`, req.url),
+    );
   }
 
   if (isAuthRoute && session) {
