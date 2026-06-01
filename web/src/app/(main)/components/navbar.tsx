@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  Settings,
   Ticket,
   User,
   X,
@@ -86,7 +85,7 @@ function UserDropdown() {
     } finally {
       clearAuth();
       toast.success("Signed out successfully.");
-      router.push("/signin");
+      router.push("/");
     }
   };
 
