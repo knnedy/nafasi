@@ -1,6 +1,12 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import Navbar from "./navbar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isDashboard = pathname.startsWith("/dashboard");
+
   return (
     <div className="min-h-screen bg-[#0C0A09] font-sans">
       {/* grain overlay */}
@@ -25,7 +31,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }}
       />
 
-      <Navbar />
+      {!isDashboard ? (
+        <>
+          <Navbar />
+        </>
+      ) : null}
       {children}
     </div>
   );
