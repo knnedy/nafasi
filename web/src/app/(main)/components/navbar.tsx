@@ -93,6 +93,9 @@ function UserDropdown() {
 
   const isDashboardUser = user.role === "ORGANISER" || user.role === "ADMIN";
 
+  const dashboardHref =
+    user.role === "ORGANISER" ? "/dashboard/organiser" : "/dashboard/admin";
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -134,7 +137,7 @@ function UserDropdown() {
           {isDashboardUser && (
             <DropdownMenuItem asChild>
               <Link
-                href="/dashboard"
+                href={dashboardHref}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 cursor-pointer transition-colors text-sm font-medium outline-none">
                 <LayoutDashboard className="w-4 h-4 text-white/25" />
                 Dashboard
@@ -187,6 +190,9 @@ export default function Navbar() {
   };
 
   const isDashboardUser = user?.role === "ORGANISER" || user?.role === "ADMIN";
+
+  const dashboardHref =
+    user?.role === "ORGANISER" ? "/dashboard/organiser" : "/dashboard/admin";
 
   return (
     <nav className="sticky top-0 z-50 border-b border-white/6 bg-[#0C0A09]/75 backdrop-blur-xl">
@@ -273,7 +279,7 @@ export default function Navbar() {
                 {/* dashboard — organiser and admin only */}
                 {isDashboardUser && (
                   <Link
-                    href="/dashboard"
+                    href={dashboardHref}
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-2.5 text-white/60 hover:text-white text-sm font-semibold py-2.5 px-3 rounded-lg hover:bg-white/4 transition-colors">
                     <LayoutDashboard className="w-4 h-4 text-white/30" />

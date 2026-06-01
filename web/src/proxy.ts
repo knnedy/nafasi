@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const protectedRoutes = ["/dashboard", "/profile", "/organiser"];
+const protectedRoutes = ["/dashboard", "/profile"];
 const authRoutes = [
   "/signin",
   "/signup",
