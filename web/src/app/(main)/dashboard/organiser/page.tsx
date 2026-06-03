@@ -15,7 +15,7 @@ import {
   XCircle,
   Circle,
 } from "lucide-react";
-import { accentForId, formatPrice, formatTime } from "@/app/(main)/utils";
+import { accentForId, formatPrice } from "@/app/(main)/utils";
 
 // Types
 interface EventResponse {
