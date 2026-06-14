@@ -2463,6 +2463,57 @@ paths:
       summary: Get event tickets sold
       tags:
       - Organiser
+  /organiser/orders:
+    get:
+      description: Returns paginated orders for all events created by the authenticated
+        organiser.
+      parameters:
+      - description: Filter by event ID
+        in: query
+        name: eventID
+        type: string
+      - description: Filter by status (PENDING, PAID, FAILED, CANCELLED, REFUNDED)
+        in: query
+        name: status
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.OrganiserOrderResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get organiser orders
+      tags:
+      - Organiser
   /payments/initiate:
     post:
       consumes:
