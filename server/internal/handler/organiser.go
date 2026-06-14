@@ -132,7 +132,6 @@ func (h *OrganiserHandler) GetEventsByOrganiser(w http.ResponseWriter, r *http.R
 // @Tags Organiser
 // @Produce json
 // @Security BearerAuth
-// @Param eventID query string false "Filter by event ID"
 // @Param status query string false "Filter by status (PENDING, PAID, FAILED, CANCELLED, REFUNDED)"
 // @Param limit query int false "Limit"
 // @Param offset query int false "Offset"
