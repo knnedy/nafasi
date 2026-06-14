@@ -61,6 +61,7 @@ type CheckInServicer interface {
 
 type OrganiserServicer interface {
 	GetEventsByOrganiser(ctx context.Context, organiserID string) ([]repository.Event, error)
+	GetOrdersByOrganiser(ctx context.Context, organiserID string, status repository.OrderStatus, limit, offset int32) ([]repository.Order, error)
 	GetTicketTypesByEvent(ctx context.Context, organiserID string, eventID string) ([]repository.TicketType, error)
 	GetTicketTypeSalesByEvent(ctx context.Context, organiserID string, eventID string) ([]repository.GetTicketTypeSalesByEventRow, error)
 	GetTotalTicketsSold(ctx context.Context, organiserID string, eventID string) (int64, error)

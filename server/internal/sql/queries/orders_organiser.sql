@@ -1,3 +1,11 @@
+-- name: GetOrdersByOrganiser :many
+SELECT o.* FROM "orders" o
+JOIN "events" e ON o.event_id = e.id
+WHERE e.organiser_id = $1
+AND o.status = $2
+ORDER BY o.created_at DESC
+LIMIT $3 OFFSET $4;
+
 -- name: GetOrdersByEvent :many
 SELECT * FROM "orders"
 WHERE "event_id" = $1

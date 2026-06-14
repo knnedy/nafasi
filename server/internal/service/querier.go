@@ -83,6 +83,7 @@ type CheckInQuerier interface {
 
 type OrganiserQuerier interface {
 	GetEventsByOrganiser(ctx context.Context, organiserID pgtype.UUID) ([]repository.Event, error)
+	GetOrdersByOrganiser(ctx context.Context, arg repository.GetOrdersByOrganiserParams) ([]repository.Order, error)
 	GetTicketTypesByEvent(ctx context.Context, eventID pgtype.UUID) ([]repository.TicketType, error)
 	GetTicketTypeSalesByEvent(ctx context.Context, eventID pgtype.UUID) ([]repository.GetTicketTypeSalesByEventRow, error)
 	GetTotalTicketsSold(ctx context.Context, eventID pgtype.UUID) (int64, error)

@@ -33,6 +33,25 @@ func (s *OrganiserService) GetEventsByOrganiser(ctx context.Context, organiserID
 	return events, nil
 }
 
+func (s *OrganiserService) GetOrdersByOrganiser(ctx context.Context, organiserID string, status repository.OrderStatus, limit, offset int32) ([]repository.Order, error) {
+	parsedOrganiserID, err := uuid.Parse(organiserID)
+	if err != nil {
+		return nil, response.ErrInvalidInput
+	}
+
+	orders, err := s.db.GetOrdersByOrganiser(ctx, repository.GetOrdersByOrganiserParams{
+		OrganiserID: pgtype.UUID{Bytes: parsedOrganiserID},
+		Status:      status,
+		Limit:       limit,
+		Offset:      offset,
+	})
+	if err != nil {
+		return nil, response.ErrDatabase
+	}
+
+	return orders, nil
+}
+
 func (s *OrganiserService) GetTicketTypesByEvent(ctx context.Context, organiserID, eventID string) ([]repository.TicketType, error) {
 	parsedEventID, err := uuid.Parse(eventID)
 	if err != nil {

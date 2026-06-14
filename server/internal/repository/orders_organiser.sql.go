@@ -205,6 +205,64 @@ func (q *Queries) GetOrdersByEventAndStatus(ctx context.Context, arg GetOrdersBy
 	return items, nil
 }
 
+const getOrdersByOrganiser = `-- name: GetOrdersByOrganiser :many
+SELECT o.id, o.user_id, o.event_id, o.ticket_type_id, o.quantity, o.unit_price, o.total_amount, o.currency, o.status, o.payment_method, o.payment_ref, o.qr_code, o.checked_in, o.checked_in_at, o.created_at, o.updated_at FROM "orders" o
+JOIN "events" e ON o.event_id = e.id
+WHERE e.organiser_id = $1
+AND o.status = $2
+ORDER BY o.created_at DESC
+LIMIT $3 OFFSET $4
+`
+
+type GetOrdersByOrganiserParams struct {
+	OrganiserID pgtype.UUID
+	Status      OrderStatus
+	Limit       int32
+	Offset      int32
+}
+
+func (q *Queries) GetOrdersByOrganiser(ctx context.Context, arg GetOrdersByOrganiserParams) ([]Order, error) {
+	rows, err := q.db.Query(ctx, getOrdersByOrganiser,
+		arg.OrganiserID,
+		arg.Status,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Order
+	for rows.Next() {
+		var i Order
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.EventID,
+			&i.TicketTypeID,
+			&i.Quantity,
+			&i.UnitPrice,
+			&i.TotalAmount,
+			&i.Currency,
+			&i.Status,
+			&i.PaymentMethod,
+			&i.PaymentRef,
+			&i.QrCode,
+			&i.CheckedIn,
+			&i.CheckedInAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRecentEventOrders = `-- name: GetRecentEventOrders :many
 SELECT id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount, currency, status, payment_method, payment_ref, qr_code, checked_in, checked_in_at, created_at, updated_at FROM "orders"
 WHERE "event_id" = $1

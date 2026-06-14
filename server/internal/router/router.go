@@ -158,7 +158,8 @@ func organiserRouter(
 			r.Get("/checkin/count", organiser.GetEventCheckedInCount)
 
 			r.Route("/orders", func(r chi.Router) {
-				r.Get("/", organiser.GetOrdersByEvent)
+				r.Get("/", organiser.GetOrdersByOrganiser)
+				r.Get("/event", organiser.GetOrdersByEvent)
 				r.Get("/recent", organiser.GetRecentEventOrders)
 				r.Get("/count", organiser.GetEventOrdersCount)
 				r.Get("/breakdown", organiser.GetEventOrderStatusBreakdown)

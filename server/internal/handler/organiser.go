@@ -126,6 +126,46 @@ func (h *OrganiserHandler) GetEventsByOrganiser(w http.ResponseWriter, r *http.R
 	response.WriteJSON(w, http.StatusOK, result)
 }
 
+// GetOrdersByOrganiser godoc
+// @Summary Get organiser orders
+// @Description Returns paginated orders for all events created by the authenticated organiser.
+// @Tags Organiser
+// @Produce json
+// @Security BearerAuth
+// @Param eventID query string false "Filter by event ID"
+// @Param status query string false "Filter by status (PENDING, PAID, FAILED, CANCELLED, REFUNDED)"
+// @Param limit query int false "Limit"
+// @Param offset query int false "Offset"
+// @Success 200 {array} OrganiserOrderResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 403 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /organiser/orders [get]
+func (h *OrganiserHandler) GetOrdersByOrganiser(w http.ResponseWriter, r *http.Request) {
+	organiserID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		response.WriteError(w, response.ErrUnauthorized)
+		return
+	}
+
+	limit, offset := getPagination(r)
+	status := r.URL.Query().Get("status")
+
+	orders, err := h.organiser.GetOrdersByOrganiser(r.Context(), organiserID, repository.OrderStatus(status), limit, offset)
+	if err != nil {
+		response.WriteError(w, err)
+		return
+	}
+
+	var result []OrganiserOrderResponse
+	for _, o := range orders {
+		result = append(result, toOrganiserOrderResponse(o))
+	}
+
+	response.WriteJSON(w, http.StatusOK, result)
+}
+
 // GetTicketTypesByEvent godoc
 // @Summary Get ticket types for an event
 // @Description Returns all ticket types for a specific event (organiser only)
