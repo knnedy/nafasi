@@ -17,6 +17,7 @@ import {
   XCircle,
   ExternalLink,
   Clock,
+  ScanLine,
 } from "lucide-react";
 import { accentForId, formatPrice } from "@/app/(main)/utils";
 
@@ -237,7 +238,6 @@ function ticketTypeName(id: string) {
   return MOCK_TICKET_TYPES.find((t) => t.id === id)?.name ?? "Unknown";
 }
 
-// Status config
 function statusConfig(status: string) {
   switch (status) {
     case "PUBLISHED":
@@ -291,22 +291,23 @@ function orderStatusClass(status: string) {
   }
 }
 
-// Stat card
 function StatCard({
   label,
   value,
   icon: Icon,
   accent,
   sub,
+  href,
 }: {
   label: string;
   value: string;
   icon: React.ElementType;
   accent: string;
   sub?: string;
+  href?: string;
 }) {
-  return (
-    <div className="rounded-2xl border border-white/8 bg-white/2 p-5">
+  const inner = (
+    <>
       <div className="flex items-center justify-between mb-3">
         <p className="text-white/35 text-xs font-bold uppercase tracking-widest">
           {label}
@@ -322,11 +323,26 @@ function StatCard({
       </div>
       <p className="text-white font-black text-2xl tracking-tight">{value}</p>
       {sub && <p className="text-white/25 text-xs mt-0.5">{sub}</p>}
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="rounded-2xl border border-white/8 bg-white/2 p-5 block hover:bg-white/4 hover:border-white/12 transition-all duration-200 group">
+        {inner}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-white/8 bg-white/2 p-5">
+      {inner}
     </div>
   );
 }
 
-// Event detail page
 export default function OrganiserEventDetailPage() {
   const event = MOCK_EVENT;
   const accent = accentForId(event.id);
@@ -394,12 +410,18 @@ export default function OrganiserEventDetailPage() {
           </div>
 
           {/* actions */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <Link
               href={`/dashboard/organiser/events/${event.id}/edit`}
               className="h-10 px-4 rounded-xl font-bold text-sm text-white/60 hover:text-white border border-white/8 hover:bg-white/4 transition-all duration-200 flex items-center gap-2">
               <Edit className="w-4 h-4" />
               Edit
+            </Link>
+            <Link
+              href={`/dashboard/organiser/events/${event.id}/checkin`}
+              className="h-10 px-4 rounded-xl font-bold text-sm text-white/60 hover:text-white border border-white/8 hover:bg-white/4 transition-all duration-200 flex items-center gap-2">
+              <ScanLine className="w-4 h-4" />
+              Check-in
             </Link>
             <Link
               href={`/dashboard/organiser/events/${event.id}/orders`}
@@ -431,6 +453,7 @@ export default function OrganiserEventDetailPage() {
           value={MOCK_STATS.total_orders.toLocaleString()}
           icon={ShoppingBag}
           accent="#8b5cf6"
+          href={`/dashboard/organiser/events/${event.id}/orders`}
         />
         <StatCard
           label="Checked in"
@@ -438,6 +461,7 @@ export default function OrganiserEventDetailPage() {
           icon={Users}
           accent="#0ea5e9"
           sub="on the day"
+          href={`/dashboard/organiser/events/${event.id}/checkin/orders`}
         />
       </div>
 
@@ -449,7 +473,7 @@ export default function OrganiserEventDetailPage() {
               Ticket Types
             </h2>
             <Link
-              href={`/dashboard/organiser/events/${event.id}/ticket-types/new`}
+              href={`/dashboard/organiser/events/${event.id}/setup`}
               className="text-orange-400 hover:text-orange-300 text-xs font-bold transition-colors flex items-center gap-1">
               + Add type
             </Link>
@@ -496,7 +520,6 @@ export default function OrganiserEventDetailPage() {
                     </div>
                   </div>
 
-                  {/* progress */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-white/35">
