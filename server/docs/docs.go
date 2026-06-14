@@ -1408,7 +1408,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/service.CheckInResult"
+                                "$ref": "#/definitions/handler.OrganiserOrderResponse"
                             }
                         }
                     },
@@ -2842,12 +2842,6 @@ const docTemplate = `{
                 ],
                 "summary": "Get organiser orders",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter by event ID",
-                        "name": "eventID",
-                        "in": "query"
-                    },
                     {
                         "type": "string",
                         "description": "Filter by status (PENDING, PAID, FAILED, CANCELLED, REFUNDED)",

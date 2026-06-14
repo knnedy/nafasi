@@ -1540,7 +1540,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/service.CheckInResult'
+              $ref: '#/definitions/handler.OrganiserOrderResponse'
             type: array
         "401":
           description: Unauthorized
@@ -2468,10 +2468,6 @@ paths:
       description: Returns paginated orders for all events created by the authenticated
         organiser.
       parameters:
-      - description: Filter by event ID
-        in: query
-        name: eventID
-        type: string
       - description: Filter by status (PENDING, PAID, FAILED, CANCELLED, REFUNDED)
         in: query
         name: status

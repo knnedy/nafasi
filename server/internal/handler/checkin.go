@@ -68,7 +68,7 @@ func (h *CheckInHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Security BearerAuth
 // @Param eventID path string true "Event ID"
-// @Success 200 {array} service.CheckInResult
+// @Success 200 {array} OrganiserOrderResponse
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /checkin/{eventID} [get]
@@ -92,5 +92,10 @@ func (h *CheckInHandler) GetCheckedInOrders(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	response.WriteJSON(w, http.StatusOK, orders)
+	var result []OrganiserOrderResponse
+	for _, o := range orders {
+		result = append(result, toOrganiserOrderResponse(o))
+	}
+
+	response.WriteJSON(w, http.StatusOK, result)
 }
