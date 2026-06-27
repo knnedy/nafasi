@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
   ArrowLeft,
-  ArrowRight,
   Type,
   AlignLeft,
   MapPin,
@@ -17,20 +16,16 @@ import {
   Wifi,
   Link as LinkIcon,
   LoaderCircle,
-  Sparkles,
+  CheckCircle,
+  Circle,
+  XCircle,
+  Flag,
+  Save,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
 import { api, APIError } from "@/lib/api";
 
-// Schema — mirrors CreateEventInput exactly
-const createEventSchema = z
+const editEventSchema = z
   .object({
     title: z
       .string()
@@ -53,30 +48,76 @@ const createEventSchema = z
     message: "End date must be after start date",
     path: ["ends_at"],
   })
-  .refine((d) => new Date(d.starts_at) > new Date(), {
-    message: "Start date must be in the future",
-    path: ["starts_at"],
-  })
   .refine((d) => !d.is_online || (d.online_url && d.online_url.length > 0), {
     message: "Online URL is required for online events",
     path: ["online_url"],
   });
 
-type CreateEventForm = z.infer<typeof createEventSchema>;
+type EditEventForm = z.infer<typeof editEventSchema>;
 
-// Input field wrapper
+const MOCK_EVENT = {
+  id: "550e8400-e29b-41d4-a716-446655440001",
+  title: "Afropunk Nairobi 2026",
+  description:
+    "The biggest Afropunk festival hits Nairobi with a lineup of world-class artists celebrating African culture, music, and identity.",
+  location: "Nairobi, Kenya",
+  venue: "Uhuru Gardens",
+  starts_at: "2026-06-14T18:00",
+  ends_at: "2026-06-14T23:00",
+  is_online: false,
+  online_url: "",
+  status: "PUBLISHED",
+};
+
+const STATUS_OPTIONS = [
+  {
+    value: "DRAFT",
+    label: "Draft",
+    description: "Not visible to the public",
+    icon: Circle,
+    cls: "border-white/10 text-white/40",
+    activeCls: "bg-white/6 border-white/20 text-white",
+  },
+  {
+    value: "PUBLISHED",
+    label: "Published",
+    description: "Live and accepting orders",
+    icon: CheckCircle,
+    cls: "border-emerald-500/15 text-emerald-400/40",
+    activeCls: "bg-emerald-500/10 border-emerald-500/30 text-emerald-400",
+  },
+  {
+    value: "CANCELLED",
+    label: "Cancelled",
+    description: "Event will not take place",
+    icon: XCircle,
+    cls: "border-red-500/15 text-red-400/40",
+    activeCls: "bg-red-500/10 border-red-500/30 text-red-400",
+  },
+  {
+    value: "COMPLETED",
+    label: "Completed",
+    description: "Event has ended",
+    icon: Flag,
+    cls: "border-blue-500/15 text-blue-400/40",
+    activeCls: "bg-blue-500/10 border-blue-500/30 text-blue-400",
+  },
+] as const;
+
+// ─── shared components ───────────────────────────────────────────────────────
+
 function FormField({
   icon: Icon,
   label,
   error,
-  children,
   hint,
+  children,
 }: {
   icon: React.ElementType;
   label: string;
   error?: string;
-  children: React.ReactNode;
   hint?: string;
+  children: React.ReactNode;
 }) {
   return (
     <div className="space-y-2">
@@ -93,7 +134,6 @@ function FormField({
   );
 }
 
-// Section card
 function FormSection({
   number,
   title,
@@ -107,7 +147,6 @@ function FormSection({
 }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-6 lg:gap-12">
-      {/* left — section label */}
       <div className="lg:pt-1">
         <div className="flex items-center gap-2.5 mb-2">
           <div className="w-6 h-6 rounded-lg bg-orange-500/15 border border-orange-500/25 flex items-center justify-center shrink-0">
@@ -121,8 +160,6 @@ function FormSection({
         </div>
         <p className="text-white/25 text-xs leading-relaxed">{description}</p>
       </div>
-
-      {/* right — fields */}
       <div className="rounded-2xl border border-white/8 bg-white/2 p-6 space-y-5">
         {children}
       </div>
@@ -130,37 +167,39 @@ function FormSection({
   );
 }
 
-// Styled input
 const inputClass =
   "w-full h-12 rounded-xl bg-white/4 border border-white/8 text-white placeholder:text-white/20 text-sm focus:outline-none focus:border-orange-500/40 focus:bg-white/6 focus:ring-2 focus:ring-orange-500/8 transition-all duration-200 px-4";
 
 const textareaClass =
   "w-full rounded-xl bg-white/4 border border-white/8 text-white placeholder:text-white/20 text-sm focus:outline-none focus:border-orange-500/40 focus:bg-white/6 focus:ring-2 focus:ring-orange-500/8 transition-all duration-200 px-4 py-3 resize-none leading-relaxed";
 
-// New event page
-export default function NewEventPage() {
+export default function EditEventPage() {
   const router = useRouter();
-  const [isOnline, setIsOnline] = useState(false);
+  const event = MOCK_EVENT;
 
-  const form = useForm<CreateEventForm>({
-    resolver: zodResolver(createEventSchema),
+  const [isOnline, setIsOnline] = useState(event.is_online);
+  const [currentStatus, setCurrentStatus] = useState(event.status);
+  const [statusLoading, setStatusLoading] = useState(false);
+
+  const form = useForm<EditEventForm>({
+    resolver: zodResolver(editEventSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      location: "",
-      venue: "",
-      starts_at: "",
-      ends_at: "",
-      is_online: false,
-      online_url: "",
+      title: event.title,
+      description: event.description,
+      location: event.location,
+      venue: event.venue,
+      starts_at: event.starts_at,
+      ends_at: event.ends_at,
+      is_online: event.is_online,
+      online_url: event.online_url,
     },
   });
 
   const isLoading = form.formState.isSubmitting;
 
-  const onSubmit = async (data: CreateEventForm) => {
+  const onSubmit = async (data: EditEventForm) => {
     try {
-      const res = await api.post("/api/v1/events", {
+      await api.patch(`/api/v1/events/${event.id}`, {
         title: data.title,
         description: data.description ?? "",
         location: data.location ?? "",
@@ -171,17 +210,9 @@ export default function NewEventPage() {
         online_url: data.online_url ?? "",
       });
 
-      const json = await res.json();
-      const eventId = json.data.id;
-
-      toast.success("Event created! Now add your ticket types.");
-      router.push(`/dashboard/organiser/events/${eventId}/setup`);
+      toast.success("Event updated.");
     } catch (err) {
       if (err instanceof APIError) {
-        if (err.code === "VALIDATION_ERROR") {
-          toast.error(err.message);
-          return;
-        }
         toast.error(err.message);
         return;
       }
@@ -189,7 +220,23 @@ export default function NewEventPage() {
     }
   };
 
-  const watchTitle = form.watch("title");
+  const handleStatusChange = async (status: string) => {
+    if (status === currentStatus) return;
+    setStatusLoading(true);
+    try {
+      await api.patch(`/api/v1/events/${event.id}/status`, { status });
+      setCurrentStatus(status);
+      toast.success(`Event marked as ${status.toLowerCase()}.`);
+    } catch (err) {
+      if (err instanceof APIError) {
+        toast.error(err.message);
+        return;
+      }
+      toast.error("Failed to update status.");
+    } finally {
+      setStatusLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-8 max-w-4xl">
@@ -201,39 +248,60 @@ export default function NewEventPage() {
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
-
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
-            <Sparkles className="w-5 h-5 text-orange-400" />
-          </div>
-          <div>
-            <p className="text-orange-400/70 text-[10px] font-black tracking-[0.3em] uppercase mb-1">
-              Step 1 of 2
-            </p>
-            <h1 className="text-white font-black text-3xl tracking-tight leading-tight">
-              {watchTitle.trim() ? watchTitle : "Create an event"}
-            </h1>
-            <p className="text-white/30 text-sm mt-1">
-              Fill in the details. Ticket types come next.
-            </p>
-          </div>
-        </div>
+        <p className="text-orange-400/70 text-[10px] font-black tracking-[0.3em] uppercase mb-1">
+          Edit event
+        </p>
+        <h1 className="text-white font-black text-3xl tracking-tight leading-tight">
+          {event.title}
+        </h1>
+        <p className="text-white/30 text-sm mt-1">
+          Changes save immediately on submit.
+        </p>
       </div>
 
-      {/* progress indicator */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center">
-            <span className="text-white text-[10px] font-black">1</span>
+      {/* status */}
+      <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-6 lg:gap-12">
+        <div className="lg:pt-1">
+          <div className="flex items-center gap-2.5 mb-2">
+            <div className="w-6 h-6 rounded-lg bg-orange-500/15 border border-orange-500/25 flex items-center justify-center shrink-0">
+              <span className="text-orange-400 text-[10px] font-black">00</span>
+            </div>
+            <h3 className="text-white font-black text-sm tracking-tight">
+              Status
+            </h3>
           </div>
-          <span className="text-white text-xs font-bold">Event details</span>
+          <p className="text-white/25 text-xs leading-relaxed">
+            Controls visibility and whether the event accepts orders.
+          </p>
         </div>
-        <div className="flex-1 h-px bg-white/10 max-w-12" />
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-white/8 border border-white/10 flex items-center justify-center">
-            <span className="text-white/30 text-[10px] font-black">2</span>
+        <div className="rounded-2xl border border-white/8 bg-white/2 p-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {STATUS_OPTIONS.map((s) => {
+              const Icon = s.icon;
+              const isActive = currentStatus === s.value;
+              return (
+                <button
+                  key={s.value}
+                  onClick={() => handleStatusChange(s.value)}
+                  disabled={statusLoading}
+                  className={`flex flex-col items-start gap-2 p-3.5 rounded-xl border text-left transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isActive
+                      ? s.activeCls
+                      : `bg-white/2 hover:bg-white/4 ${s.cls}`
+                  }`}>
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <div>
+                    <p className="text-xs font-black leading-tight">
+                      {s.label}
+                    </p>
+                    <p className="text-[10px] text-white/25 mt-0.5 leading-tight">
+                      {s.description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
-          <span className="text-white/30 text-xs font-bold">Ticket types</span>
         </div>
       </div>
 
@@ -243,45 +311,37 @@ export default function NewEventPage() {
         <FormSection
           number="01"
           title="Basics"
-          description="What's the event called and what can attendees expect?">
-          <div className="space-y-5">
-            {/* title */}
-            <Controller
-              name="title"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <FormField
-                  icon={Type}
-                  label="Event title"
-                  error={fieldState.error?.message}>
-                  <input
-                    {...field}
-                    placeholder="e.g. Afropunk Nairobi 2026"
-                    className={`${inputClass} ${fieldState.invalid ? "border-red-500/40" : ""}`}
-                  />
-                </FormField>
-              )}
-            />
-
-            {/* description */}
-            <Controller
-              name="description"
-              control={form.control}
-              render={({ field }) => (
-                <FormField
-                  icon={AlignLeft}
-                  label="Description"
-                  hint="Optional — tell attendees what to expect.">
-                  <textarea
-                    {...field}
-                    rows={4}
-                    placeholder="Describe your event…"
-                    className={textareaClass}
-                  />
-                </FormField>
-              )}
-            />
-          </div>
+          description="The event title and description attendees will see.">
+          <Controller
+            name="title"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <FormField
+                icon={Type}
+                label="Event title"
+                error={fieldState.error?.message}>
+                <input
+                  {...field}
+                  placeholder="e.g. Afropunk Nairobi 2026"
+                  className={`${inputClass} ${fieldState.invalid ? "border-red-500/40" : ""}`}
+                />
+              </FormField>
+            )}
+          />
+          <Controller
+            name="description"
+            control={form.control}
+            render={({ field }) => (
+              <FormField icon={AlignLeft} label="Description" hint="Optional">
+                <textarea
+                  {...field}
+                  rows={4}
+                  placeholder="Describe your event…"
+                  className={textareaClass}
+                />
+              </FormField>
+            )}
+          />
         </FormSection>
 
         {/* date & time */}
@@ -329,8 +389,7 @@ export default function NewEventPage() {
         <FormSection
           number="03"
           title="Location"
-          description="Where is your event taking place? Skip if online.">
-          {/* online toggle */}
+          description="Where is your event taking place?">
           <Controller
             name="is_online"
             control={form.control}
@@ -370,7 +429,6 @@ export default function NewEventPage() {
                     </p>
                   </div>
                 </div>
-                {/* toggle pill */}
                 <div
                   className={`w-10 h-5.5 rounded-full transition-all duration-200 relative ${
                     field.value ? "bg-emerald-500" : "bg-white/10"
@@ -385,7 +443,6 @@ export default function NewEventPage() {
             )}
           />
 
-          {/* physical location fields */}
           {!isOnline && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <Controller
@@ -423,7 +480,6 @@ export default function NewEventPage() {
             </div>
           )}
 
-          {/* online URL */}
           {isOnline && (
             <Controller
               name="online_url"
@@ -447,25 +503,20 @@ export default function NewEventPage() {
         </FormSection>
 
         {/* submit */}
-        <div className="flex items-center justify-between pt-2 border-t border-white/6">
-          <p className="text-white/20 text-xs">
-            Event will be saved as a{" "}
-            <span className="text-white/40 font-semibold">Draft</span> — you can
-            publish after adding tickets.
-          </p>
+        <div className="flex items-center justify-end pt-2 border-t border-white/6">
           <button
             type="submit"
             disabled={isLoading}
-            className="h-11 px-6 rounded-xl font-bold text-sm text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 shadow-lg shadow-orange-500/20 transition-all duration-200 flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed shrink-0">
+            className="h-11 px-6 rounded-xl font-bold text-sm text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 shadow-lg shadow-orange-500/20 transition-all duration-200 flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
             {isLoading ? (
               <>
                 <LoaderCircle className="w-4 h-4 animate-spin" />
-                Creating…
+                Saving…
               </>
             ) : (
               <>
-                Continue
-                <ArrowRight className="w-4 h-4" />
+                <Save className="w-4 h-4" />
+                Save changes
               </>
             )}
           </button>
