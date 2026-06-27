@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { accentForId, formatPrice } from "@/app/(main)/utils";
 
-// Types
 interface EventResponse {
   id: string;
   organiser_id: string;
