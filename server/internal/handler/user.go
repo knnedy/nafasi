@@ -26,6 +26,7 @@ type UserResponse struct {
 	Name       string `json:"name"`
 	Email      string `json:"email"`
 	Role       string `json:"role"`
+	Status     string `json:"status"`
 	IsVerified bool   `json:"is_verified"`
 	AvatarURL  string `json:"avatar_url,omitempty"`
 	CreatedAt  string `json:"created_at"`
@@ -37,6 +38,7 @@ func toUserResponse(user repository.User) UserResponse {
 		Name:       user.Name,
 		Email:      user.Email,
 		Role:       string(user.Role),
+		Status:     string(user.Status),
 		IsVerified: user.IsVerified,
 		AvatarURL:  user.AvatarUrl.String,
 		CreatedAt:  user.CreatedAt.Time.Format(time.RFC3339),
