@@ -10,7 +10,6 @@ import {
   Plus,
   Ticket,
   LoaderCircle,
-  CheckCircle,
   Trash2,
   CalendarDays,
   MapPin,
