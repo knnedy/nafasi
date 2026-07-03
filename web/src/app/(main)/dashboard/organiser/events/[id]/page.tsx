@@ -472,7 +472,7 @@ export default function OrganiserEventDetailPage() {
               Ticket Types
             </h2>
             <Link
-              href={`/dashboard/organiser/events/${event.id}/setup`}
+              href={`/dashboard/organiser/events/${event.id}/ticket-types`}
               className="text-orange-400 hover:text-orange-300 text-xs font-bold transition-colors flex items-center gap-1">
               + Add type
             </Link>
