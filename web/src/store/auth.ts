@@ -38,12 +38,12 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "nafasi-auth",
-      // only persist user and token, isAuthenticated can be derived from the presence of user and token
-      partialize: (state) => ({
-        user: state.user,
-        accessToken: state.accessToken,
-        isAuthenticated: state.isAuthenticated,
-      }),
+      partialize: (state) =>
+        ({
+          user: state.user,
+          accessToken: state.accessToken,
+          isAuthenticated: state.isAuthenticated,
+        }) as AuthState,
     },
   ),
 );
