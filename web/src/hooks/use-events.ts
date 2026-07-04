@@ -68,3 +68,31 @@ export function usePublishedEvents(
     placeholderData: (prev) => prev,
   });
 }
+
+// Fetch Upcoming Events (Public)
+export function useUpcomingEvents(
+  category: string | null,
+  page: number,
+  limit: number = 20,
+) {
+  return useQuery({
+    queryKey: ["events", "upcoming", { category, page, limit }],
+    queryFn: async () => {
+      const offset = (page - 1) * limit;
+      const params = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString(),
+      });
+
+      if (category) params.append("category", category);
+
+      const res = await api.public.get(
+        `/api/v1/events/upcoming?${params.toString()}`,
+      );
+      const json = await res.json();
+
+      return (json.data || []) as Event[];
+    },
+    placeholderData: (prev) => prev,
+  });
+}

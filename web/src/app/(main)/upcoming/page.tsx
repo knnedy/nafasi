@@ -1,18 +1,22 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { MOCK_CATEGORIES, MOCK_UPCOMING } from "@/app/(main)/mock_events";
-import { accentForId, categoryName, formatTime } from "@/app/(main)/utils";
-import { EventResponse } from "@/app/(main)/mock_events";
+import { useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  useEventCategories,
+  useUpcomingEvents,
+  Event,
+} from "@/hooks/use-events";
+import { accentForId, formatTime } from "@/app/(main)/utils";
 import EmptyState from "../components/empty-state";
+import Pagination from "@/app/(main)/components/pagination";
 import Link from "next/link";
 import { CalendarDays, ChevronRight, MapPin, Wifi } from "lucide-react";
 
-// Group events by month label e.g. "August 2026"
-function groupByMonth(
-  events: EventResponse[],
-): Record<string, EventResponse[]> {
-  return events.reduce<Record<string, EventResponse[]>>((acc, event) => {
+const PAGE_LIMIT = 20;
+
+function groupByMonth(events: Event[]): Record<string, Event[]> {
+  return events.reduce<Record<string, Event[]>>((acc, event) => {
     const label = new Date(event.starts_at).toLocaleDateString("en-KE", {
       month: "long",
       year: "numeric",
@@ -33,9 +37,14 @@ function formatDayFull(iso: string) {
 }
 
 // Single upcoming event row in the timeline
-function TimelineRow({ event }: { event: EventResponse }) {
+function TimelineRow({
+  event,
+  categoryName,
+}: {
+  event: Event;
+  categoryName?: string;
+}) {
   const accent = accentForId(event.id);
-  const cat = categoryName(event.category_id);
   const { weekday, day, month } = formatDayFull(event.starts_at);
 
   return (
@@ -73,11 +82,11 @@ function TimelineRow({ event }: { event: EventResponse }) {
       <div className="flex-1 min-w-0 pb-2">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            {cat && (
+            {categoryName && (
               <span
                 className="text-[10px] font-black uppercase tracking-[0.15em] mb-2 block"
                 style={{ color: `${accent}99` }}>
-                {cat}
+                {categoryName}
               </span>
             )}
             <h3 className="text-white font-black text-lg leading-tight tracking-tight group-hover:text-orange-50 transition-colors line-clamp-1">
@@ -124,18 +133,46 @@ function TimelineRow({ event }: { event: EventResponse }) {
 
 // Main page
 export default function UpcomingPage() {
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const filtered = useMemo(() => {
-    if (activeCategory === null) return MOCK_UPCOMING;
-    return MOCK_UPCOMING.filter((e) => {
-      const cat = MOCK_CATEGORIES.find((c) => c.id === e.category_id);
-      return cat?.name === activeCategory;
-    });
-  }, [activeCategory]);
+  // URL State
+  const activeCategory = searchParams.get("category");
+  const currentPage = parseInt(searchParams.get("page") || "1", 10);
 
-  const grouped = useMemo(() => groupByMonth(filtered), [filtered]);
+  // Data Fetching
+  const { data: categories = [] } = useEventCategories();
+  const { data: events = [], isLoading } = useUpcomingEvents(
+    activeCategory,
+    currentPage,
+    PAGE_LIMIT,
+  );
+
+  const hasMore = events.length === PAGE_LIMIT;
+  const grouped = useMemo(() => groupByMonth(events), [events]);
   const months = Object.keys(grouped);
+
+  // Map category ID to its name for rendering
+  const getCategoryName = (id: string) => {
+    return categories.find((c) => c.id === id)?.name;
+  };
+
+  const setFilter = (name: string, value: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (value) {
+      params.set(name, value);
+    } else {
+      params.delete(name);
+    }
+
+    if (name !== "page") {
+      params.delete("page");
+    }
+
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   return (
     <div className="relative z-10 max-w-4xl mx-auto px-6 py-12">
@@ -147,32 +184,25 @@ export default function UpcomingPage() {
         <h1 className="text-white font-black text-4xl sm:text-5xl tracking-tight leading-tight mb-3">
           Upcoming Events
         </h1>
-        <p className="text-white/30 text-sm">
-          {filtered.length === MOCK_UPCOMING.length
-            ? `${MOCK_UPCOMING.length} events coming up`
-            : `${filtered.length} of ${MOCK_UPCOMING.length} events`}
-        </p>
       </div>
 
       {/* category filter */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none mb-10">
         <button
-          onClick={() => setActiveCategory(null)}
+          onClick={() => setFilter("category", null)}
           className={`shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
-            activeCategory === null
+            !activeCategory
               ? "bg-orange-500/15 border border-orange-500/30 text-orange-400"
               : "text-white/35 hover:text-white/60 hover:bg-white/4"
           }`}>
           All
         </button>
-        {MOCK_CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <button
             key={cat.id}
-            onClick={() =>
-              setActiveCategory(activeCategory === cat.name ? null : cat.name)
-            }
+            onClick={() => setFilter("category", cat.id)}
             className={`shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
-              activeCategory === cat.name
+              activeCategory === cat.id
                 ? "bg-orange-500/15 border border-orange-500/30 text-orange-400"
                 : "text-white/35 hover:text-white/60 hover:bg-white/4"
             }`}>
@@ -181,11 +211,31 @@ export default function UpcomingPage() {
         ))}
       </div>
 
-      {/* timeline */}
-      {months.length === 0 ? (
-        <EmptyState message="No upcoming events in this category." />
+      {/* Loading & Empty States */}
+      {isLoading ? (
+        <div className="space-y-6 opacity-40 animate-pulse">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex gap-6 py-6 border-b border-white/5">
+              <div className="w-16 h-12 bg-white/5 rounded-md shrink-0" />
+              <div className="w-2 h-full" />
+              <div className="flex-1 space-y-3">
+                <div className="h-4 w-1/4 bg-white/10 rounded" />
+                <div className="h-6 w-3/4 bg-white/10 rounded" />
+                <div className="h-3 w-1/2 bg-white/5 rounded mt-2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : events.length === 0 ? (
+        <EmptyState
+          title="No upcoming events"
+          message="We couldn't find any future events matching your filters."
+          onClear={
+            activeCategory ? () => setFilter("category", null) : undefined
+          }
+        />
       ) : (
-        <div className="space-y-14">
+        <div className="space-y-14 mb-10">
           {months.map((month) => (
             <div key={month}>
               {/* month heading */}
@@ -203,12 +253,21 @@ export default function UpcomingPage() {
               {/* events in this month */}
               <div>
                 {grouped[month].map((event) => (
-                  <TimelineRow key={event.id} event={event} />
+                  <TimelineRow
+                    key={event.id}
+                    event={event}
+                    categoryName={getCategoryName(event.category_id)}
+                  />
                 ))}
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {/* Pagination */}
+      {(currentPage > 1 || hasMore) && (
+        <Pagination currentPage={currentPage} hasMore={hasMore} />
       )}
     </div>
   );
