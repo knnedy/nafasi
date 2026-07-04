@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
+import { QueryProvider } from "@/providers/query-provider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -38,8 +39,10 @@ export default function RootLayout({
         inter.variable,
       )}>
       <body className="min-h-full flex flex-col">
-        <Toaster richColors />
-        {children}
+        <QueryProvider>
+          {children}
+          <Toaster richColors />
+        </QueryProvider>
       </body>
     </html>
   );

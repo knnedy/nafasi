@@ -1,0 +1,70 @@
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+
+export interface EventCategory {
+  id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Event {
+  id: string;
+  organiser_id: string;
+  category_id: string;
+  title: string;
+  slug: string;
+  description?: string;
+  location?: string;
+  venue?: string;
+  banner_url?: string;
+  starts_at: string;
+  ends_at: string;
+  status: string;
+  is_online: boolean;
+  online_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Fetch Categories (Public)
+export function useEventCategories() {
+  return useQuery({
+    queryKey: ["event-categories"],
+    queryFn: async () => {
+      const res = await api.public.get("/api/v1/event-categories");
+      const json = await res.json();
+
+      return (json.data || []) as EventCategory[];
+    },
+  });
+}
+
+// Fetch Published Events (Public)
+export function usePublishedEvents(
+  category: string | null,
+  page: number,
+  limit: number = 9,
+) {
+  return useQuery({
+    queryKey: ["events", "published", { category, page, limit }],
+    queryFn: async () => {
+      const offset = (page - 1) * limit;
+      const params = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString(),
+      });
+
+      if (category) params.append("category", category);
+
+      const res = await api.public.get(
+        `/api/v1/events/published?${params.toString()}`,
+      );
+      const json = await res.json();
+
+      return (json.data || []) as Event[];
+    },
+    placeholderData: (prev) => prev,
+  });
+}
