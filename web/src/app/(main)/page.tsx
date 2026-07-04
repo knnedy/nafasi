@@ -5,34 +5,27 @@ import Link from "next/link";
 import { Ticket, ArrowRight, ArrowUpRight } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import {
-  MOCK_CATEGORIES,
-  MOCK_PUBLISHED,
-  MOCK_UPCOMING,
-} from "@/app/(main)/mock_events";
+  useEventCategories,
+  usePublishedEvents,
+  useUpcomingEvents,
+} from "@/hooks/use-events";
 import EventCard from "./components/event-card";
 import UpcomingRow from "./components/upcoming-row";
 import EmptyState from "./components/empty-state";
 
-// Main page
 export default function Home() {
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const { isAuthenticated } = useAuthStore();
 
-  const published =
-    activeCategory === null
-      ? MOCK_PUBLISHED
-      : MOCK_PUBLISHED.filter((e) => {
-          const cat = MOCK_CATEGORIES.find((c) => c.id === e.category_id);
-          return cat?.name === activeCategory;
-        });
+  // Fetch real data
+  const { data: categories = [] } = useEventCategories();
 
-  const upcoming =
-    activeCategory === null
-      ? MOCK_UPCOMING
-      : MOCK_UPCOMING.filter((e) => {
-          const cat = MOCK_CATEGORIES.find((c) => c.id === e.category_id);
-          return cat?.name === activeCategory;
-        });
+  // Limit to 6 for the homepage
+  const { data: published = [], isLoading: isLoadingPublished } =
+    usePublishedEvents(activeCategoryId, 1, 6);
+
+  const { data: upcoming = [], isLoading: isLoadingUpcoming } =
+    useUpcomingEvents(activeCategoryId, 1, 6);
 
   return (
     <div className="relative z-10">
@@ -45,7 +38,7 @@ export default function Home() {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-400" />
             </span>
             <span className="text-orange-400/90 text-xs font-bold uppercase tracking-[0.2em]">
-              {MOCK_PUBLISHED.length} events live in Nairobi
+              Trending events live in Nairobi
             </span>
           </div>
 
@@ -99,25 +92,25 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* categories sit directly under the section header, clearly tied to events below */}
+        {/* categories sit directly under the section header */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           <button
-            onClick={() => setActiveCategory(null)}
+            onClick={() => setActiveCategoryId(null)}
             className={`shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
-              activeCategory === null
+              activeCategoryId === null
                 ? "bg-orange-500/15 border border-orange-500/30 text-orange-400"
                 : "text-white/35 hover:text-white/60 hover:bg-white/4"
             }`}>
             All
           </button>
-          {MOCK_CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() =>
-                setActiveCategory(activeCategory === cat.name ? null : cat.name)
+                setActiveCategoryId(activeCategoryId === cat.id ? null : cat.id)
               }
               className={`shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
-                activeCategory === cat.name
+                activeCategoryId === cat.id
                   ? "bg-orange-500/15 border border-orange-500/30 text-orange-400"
                   : "text-white/35 hover:text-white/60 hover:bg-white/4"
               }`}>
@@ -129,7 +122,16 @@ export default function Home() {
 
       {/* published events */}
       <section className="max-w-7xl mx-auto px-6 pb-20">
-        {published.length === 0 ? (
+        {isLoadingPublished ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-80 bg-white/5 animate-pulse rounded-2xl"
+              />
+            ))}
+          </div>
+        ) : published.length === 0 ? (
           <EmptyState message="No events found in this category." />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -162,7 +164,22 @@ export default function Home() {
             </Link>
           </div>
 
-          {upcoming.length === 0 ? (
+          {isLoadingUpcoming ? (
+            <div className="space-y-6 opacity-40 animate-pulse">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex gap-6 py-6 border-b border-white/5">
+                  <div className="w-16 h-12 bg-white/5 rounded-md shrink-0" />
+                  <div className="w-2 h-full" />
+                  <div className="flex-1 space-y-3">
+                    <div className="h-4 w-1/4 bg-white/10 rounded" />
+                    <div className="h-6 w-3/4 bg-white/10 rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : upcoming.length === 0 ? (
             <EmptyState message="No upcoming events found in this category." />
           ) : (
             <div className="space-y-2">
