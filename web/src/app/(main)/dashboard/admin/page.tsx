@@ -14,8 +14,11 @@ import {
   XCircle,
   Circle,
   Clock3,
+  AlertTriangle,
+  Tag,
 } from "lucide-react";
 import { formatPrice } from "@/app/(main)/utils";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 // Types
 interface AdminStatsResponse {
@@ -55,6 +58,16 @@ const MOCK_STATS: AdminStatsResponse = {
   paid_orders: 3601,
   total_revenue: 189500000,
 };
+
+const MOCK_EVENT_STATUS_BREAKDOWN = {
+  PUBLISHED: 51,
+  DRAFT: 16,
+  CANCELLED: 4,
+  COMPLETED: 3,
+};
+
+const MOCK_PENDING_ORGANISERS = 3;
+const MOCK_CATEGORIES_COUNT = 5;
 
 const MOCK_RECENT_ORDERS: AdminOrderDetailResponse[] = [
   {
@@ -249,6 +262,154 @@ function StatCard({
   );
 }
 
+// Event status donut chart
+const EVENT_STATUS_CONFIG = [
+  {
+    key: "PUBLISHED",
+    label: "Published",
+    color: "#10b981",
+    glow: "rgba(16,185,129,0.3)",
+  },
+  {
+    key: "DRAFT",
+    label: "Draft",
+    color: "#ffffff30",
+    glow: "rgba(255,255,255,0.1)",
+  },
+  {
+    key: "CANCELLED",
+    label: "Cancelled",
+    color: "#ef4444",
+    glow: "rgba(239,68,68,0.3)",
+  },
+  {
+    key: "COMPLETED",
+    label: "Completed",
+    color: "#3b82f6",
+    glow: "rgba(59,130,246,0.3)",
+  },
+];
+
+function CustomTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: { name: string; value: number; payload: { color: string } }[];
+}) {
+  if (!active || !payload?.length) return null;
+  const { name, value, payload: item } = payload[0];
+  return (
+    <div className="rounded-xl border border-white/10 bg-[#0f0d0b]/95 backdrop-blur-sm px-3 py-2 shadow-xl">
+      <div className="flex items-center gap-2">
+        <div
+          className="w-2 h-2 rounded-full shrink-0"
+          style={{ background: item.color }}
+        />
+        <span className="text-white/60 text-xs font-bold">{name}</span>
+      </div>
+      <p className="text-white font-black text-lg mt-0.5 leading-none">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function EventStatusBreakdown({
+  breakdown,
+  total,
+}: {
+  breakdown: typeof MOCK_EVENT_STATUS_BREAKDOWN;
+  total: number;
+}) {
+  const chartData = EVENT_STATUS_CONFIG.map(({ key, label, color }) => ({
+    name: label,
+    value: breakdown[key as keyof typeof breakdown] ?? 0,
+    color,
+  })).filter((d) => d.value > 0);
+
+  return (
+    <div className="rounded-2xl border border-white/8 bg-white/2 p-5 flex flex-col gap-5 h-full">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="w-3.5 h-3.5 text-white/25" />
+          <p className="text-white/35 text-xs font-bold uppercase tracking-widest">
+            Events by status
+          </p>
+        </div>
+        <Link
+          href="/dashboard/admin/events"
+          className="group flex items-center gap-1 text-white/25 hover:text-orange-400 text-xs font-bold transition-colors">
+          View all
+          <ArrowUpRight className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+        </Link>
+      </div>
+
+      {/* donut chart */}
+      <div
+        className="relative flex items-center justify-center"
+        style={{ height: 220 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              innerRadius={72}
+              outerRadius={98}
+              paddingAngle={3}
+              dataKey="value"
+              strokeWidth={0}
+              animationBegin={0}
+              animationDuration={900}>
+              {chartData.map((entry, i) => (
+                <Cell key={i} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+          </PieChart>
+        </ResponsiveContainer>
+        {/* center label */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <p className="text-white font-black text-4xl tracking-tight leading-none">
+            {total}
+          </p>
+          <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">
+            Total events
+          </p>
+        </div>
+      </div>
+
+      {/* legend */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+        {EVENT_STATUS_CONFIG.map(({ key, label, color }) => {
+          const count = breakdown[key as keyof typeof breakdown] ?? 0;
+          const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+          return (
+            <div key={key} className="flex items-center gap-2.5">
+              <div
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ background: color, boxShadow: `0 0 6px ${color}60` }}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-white/40 text-[10px] font-bold uppercase tracking-wider leading-none">
+                  {label}
+                </p>
+                <p className="text-white/80 text-sm font-black leading-tight mt-0.5">
+                  {count}
+                  <span className="text-white/25 text-xs font-normal ml-1">
+                    {pct}%
+                  </span>
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // Overview page
 export default function AdminOverviewPage() {
   const stats = MOCK_STATS;
@@ -264,21 +425,40 @@ export default function AdminOverviewPage() {
   return (
     <div className="space-y-8">
       {/* header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <p className="text-orange-400/70 text-[10px] font-black tracking-[0.3em] uppercase mb-1">
-            Admin
-          </p>
-          <h1 className="text-white font-black text-3xl tracking-tight">
-            Overview
-          </h1>
-          <p className="text-white/30 text-sm mt-1">
-            Platform health at a glance.
-          </p>
-        </div>
+      <div>
+        <p className="text-orange-400/70 text-[10px] font-black tracking-[0.3em] uppercase mb-1">
+          Admin
+        </p>
+        <h1 className="text-white font-black text-3xl tracking-tight">
+          Overview
+        </h1>
+        <p className="text-white/30 text-sm mt-1">
+          Platform health at a glance.
+        </p>
       </div>
 
-      {/* stats grid */}
+      {/* pending organisers alert */}
+      {MOCK_PENDING_ORGANISERS > 0 && (
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/6 border border-amber-500/15">
+          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-amber-400/90 text-sm font-bold">
+              {MOCK_PENDING_ORGANISERS} organiser
+                {Number(MOCK_PENDING_ORGANISERS) === 1 ? "" : "s"} awaiting verification
+            </p>
+            <p className="text-amber-400/50 text-xs mt-0.5">
+              Review and approve their accounts to allow event publishing.
+            </p>
+          </div>
+          <Link
+            href="/dashboard/admin/organisers?status=pending"
+            className="shrink-0 h-8 px-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/15 text-xs font-bold transition-colors flex items-center">
+            Review
+          </Link>
+        </div>
+      )}
+
+      {/* primary stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           label="Total users"
@@ -335,21 +515,6 @@ export default function AdminOverviewPage() {
 
         <div className="rounded-2xl border border-white/8 bg-white/2 p-5 space-y-3">
           <div className="flex items-center gap-2">
-            <CalendarDays className="w-3.5 h-3.5 text-emerald-400/60" />
-            <p className="text-white/35 text-xs font-bold uppercase tracking-widest">
-              Published
-            </p>
-          </div>
-          <p className="text-white font-black text-2xl tracking-tight">
-            {stats.published_events.toLocaleString()}
-          </p>
-          <p className="text-white/25 text-xs">
-            {stats.total_events - stats.published_events} unpublished
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-white/8 bg-white/2 p-5 space-y-3">
-          <div className="flex items-center gap-2">
             <Ticket className="w-3.5 h-3.5 text-blue-400/60" />
             <p className="text-white/35 text-xs font-bold uppercase tracking-widest">
               Paid orders
@@ -375,65 +540,92 @@ export default function AdminOverviewPage() {
           </p>
           <p className="text-white/25 text-xs">registered accounts</p>
         </div>
-      </div>
 
-      {/* recent orders */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-white font-black text-base tracking-tight">
-            Recent Orders
-          </h2>
+        <div className="rounded-2xl border border-white/8 bg-white/2 p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Tag className="w-3.5 h-3.5 text-emerald-400/60" />
+            <p className="text-white/35 text-xs font-bold uppercase tracking-widest">
+              Categories
+            </p>
+          </div>
+          <p className="text-white font-black text-2xl tracking-tight">
+            {MOCK_CATEGORIES_COUNT}
+          </p>
           <Link
-            href="/dashboard/admin/orders"
-            className="group flex items-center gap-1 text-white/35 hover:text-orange-400 text-xs font-bold transition-colors">
-            View all
-            <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            href="/dashboard/admin/categories"
+            className="group flex items-center gap-1 text-white/25 hover:text-orange-400 text-xs font-bold transition-colors">
+            Manage
+            <ArrowUpRight className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </Link>
         </div>
+      </div>
 
-        <div className="rounded-2xl border border-white/8 bg-white/2 overflow-hidden">
-          {MOCK_RECENT_ORDERS.map((order, i) => {
-            const sc = orderStatusConfig(order.status);
-            const StatusIcon = sc.icon;
+      {/* event status breakdown + recent orders */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="lg:col-span-2">
+          <EventStatusBreakdown
+            breakdown={MOCK_EVENT_STATUS_BREAKDOWN}
+            total={stats.total_events}
+          />
+        </div>
 
-            return (
-              <div
-                key={order.id}
-                className={`flex items-center gap-4 px-5 py-4 ${
-                  i < MOCK_RECENT_ORDERS.length - 1
-                    ? "border-b border-white/4"
-                    : ""
-                }`}>
-                <UserInitials name={order.user_name} />
+        <div className="lg:col-span-3 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-white font-black text-base tracking-tight">
+              Recent Orders
+            </h2>
+            <Link
+              href="/dashboard/admin/orders"
+              className="group flex items-center gap-1 text-white/35 hover:text-orange-400 text-xs font-bold transition-colors">
+              View all
+              <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </Link>
+          </div>
 
-                <div className="flex-1 min-w-0">
-                  <p className="text-white/80 text-sm font-bold truncate leading-tight">
-                    {order.user_name}
-                  </p>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="text-white/30 text-xs truncate">
-                      {order.event_title}
-                    </span>
-                    <span className="text-white/20 text-xs">·</span>
-                    <span className="text-white/25 text-xs">
-                      qty {order.quantity}
-                    </span>
-                    <span className="text-white/20 text-xs">·</span>
-                    <span className="text-white/20 text-xs flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {timeAgo(order.created_at)}
-                    </span>
+          <div className="rounded-2xl border border-white/8 bg-white/2 overflow-hidden">
+            {MOCK_RECENT_ORDERS.map((order, i) => {
+              const sc = orderStatusConfig(order.status);
+              const StatusIcon = sc.icon;
+
+              return (
+                <div
+                  key={order.id}
+                  className={`flex items-center gap-4 px-5 py-4 ${
+                    i < MOCK_RECENT_ORDERS.length - 1
+                      ? "border-b border-white/4"
+                      : ""
+                  }`}>
+                  <UserInitials name={order.user_name} />
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white/80 text-sm font-bold truncate leading-tight">
+                      {order.user_name}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className="text-white/30 text-xs truncate">
+                        {order.event_title}
+                      </span>
+                      <span className="text-white/20 text-xs">·</span>
+                      <span className="text-white/25 text-xs">
+                        qty {order.quantity}
+                      </span>
+                      <span className="text-white/20 text-xs">·</span>
+                      <span className="text-white/20 text-xs flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {timeAgo(order.created_at)}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <span
-                  className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border flex items-center gap-1 shrink-0 ${sc.cls}`}>
-                  <StatusIcon className="w-2.5 h-2.5" />
-                  {sc.label}
-                </span>
-              </div>
-            );
-          })}
+                  <span
+                    className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border flex items-center gap-1 shrink-0 ${sc.cls}`}>
+                    <StatusIcon className="w-2.5 h-2.5" />
+                    {sc.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

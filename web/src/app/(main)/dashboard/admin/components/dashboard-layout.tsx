@@ -110,10 +110,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 group cursor-pointer">
             <div className="w-8 h-8 rounded-xl bg-linear-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-[0_0_15px_rgba(249,115,22,0.2)] transition-transform duration-300 group-hover:scale-105">
-              <Ticket
-                className="w-4 h-4 text-white transform -rotate-12"
-                strokeWidth={2.5}
-              />
+              <Ticket className="w-4 h-4 text-white" strokeWidth={2.5} />
             </div>
             <span className="text-white font-black tracking-[0.25em] text-sm font-sans">
               NAFASI
