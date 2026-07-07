@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useParams } from "next/navigation";
+import { useEventBySlug, useEventTicketTypes } from "@/hooks/use-events";
 import {
   ArrowLeft,
   CalendarDays,
@@ -20,98 +22,64 @@ import {
   formatTime,
 } from "@/lib/utils";
 import TicketSidebar from "./components/ticket-sidebar";
+import EmptyState from "../../components/empty-state";
 
-// Types
-export interface EventResponse {
-  id: string;
-  organiser_id: string;
-  category_id: string;
-  title: string;
-  slug: string;
-  description?: string;
-  location?: string;
-  venue?: string;
-  banner_url?: string;
-  starts_at: string;
-  ends_at: string;
-  status: string;
-  is_online: boolean;
-  online_url?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface AvailableTicketTypesResponse {
-  id: string;
-  event_id: string;
-  name: string;
-  description?: string;
-  price: number;
-  currency: string;
-  is_free: boolean;
-}
-
-// Mock data
-const MOCK_EVENT: EventResponse = {
-  id: "550e8400-e29b-41d4-a716-446655440000",
-  organiser_id: "550e8400-e29b-41d4-a716-446655440010",
-  category_id: "550e8400-e29b-41d4-a716-446655440020",
-  title: "Afropunk Nairobi 2026",
-  slug: "afropunk-nairobi-2026",
-  description:
-    "The biggest Afropunk festival hits Nairobi with a lineup of world-class artists celebrating African culture, music, and identity. Expect electrifying performances, immersive art installations, fashion showcases, and a community of people who refuse to be boxed in.\n\nAfropunk Nairobi is more than a concert — it's a movement. Join thousands of fans for a night that celebrates the full spectrum of Black creativity, from afrobeats and punk to neo-soul and spoken word.\n\nDoors open at 5PM. Main stage starts at 7PM.",
-  location: "Nairobi, Kenya",
-  venue: "Uhuru Gardens",
-  banner_url: "https://picsum.photos/600/1024",
-  starts_at: "2026-06-14T18:00:00Z",
-  ends_at: "2026-06-14T23:00:00Z",
-  status: "PUBLISHED",
-  is_online: false,
-  created_at: "",
-  updated_at: "",
-};
-
-const MOCK_TICKETS: AvailableTicketTypesResponse[] = [
-  {
-    id: "550e8400-e29b-41d4-a716-446655440001",
-    event_id: "550e8400-e29b-41d4-a716-446655440000",
-    name: "General Admission",
-    description: "Standing access to all stages and general areas.",
-    price: 250000,
-    currency: "KES",
-    is_free: false,
-  },
-  {
-    id: "550e8400-e29b-41d4-a716-446655440002",
-    event_id: "550e8400-e29b-41d4-a716-446655440000",
-    name: "VIP",
-    description:
-      "Priority entry, dedicated viewing area, and complimentary drinks.",
-    price: 750000,
-    currency: "KES",
-    is_free: false,
-  },
-  {
-    id: "550e8400-e29b-41d4-a716-446655440003",
-    event_id: "550e8400-e29b-41d4-a716-446655440000",
-    name: "Early Bird",
-    description:
-      "Limited early bird tickets at a discounted price. First come, first served.",
-    price: 150000,
-    currency: "KES",
-    is_free: false,
-  },
-];
-
-// Main page
 export default function EventPage() {
-  const [copied, setCopied] = useState(false);
+  const params = useParams();
+  const slug = params?.slug as string;
 
+  // 1. Fetch the event
+  const {
+    data: event,
+    isLoading: isLoadingEvent,
+    error,
+  } = useEventBySlug(slug);
+
+  // 2. Fetch the tickets (automatically waits for event?.id to exist)
+  const { data: tickets = [], isLoading: isLoadingTickets } =
+    useEventTicketTypes(event?.id);
+
+  const [copied, setCopied] = useState(false);
   const bannerRef = useRef<HTMLDivElement>(null);
   const [bannerDims, setBannerDims] = useState({ width: 1200, height: 675 });
 
-  const event = MOCK_EVENT;
-  const tickets = MOCK_TICKETS;
+  if (isLoadingEvent) {
+    return (
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-10 animate-pulse">
+        <div className="w-32 h-4 bg-white/10 rounded mb-8" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+          <div className="lg:col-span-2 space-y-8">
+            <div className="w-full aspect-video bg-white/5 rounded-2xl" />
+            <div className="space-y-4">
+              <div className="w-3/4 h-10 bg-white/10 rounded" />
+              <div className="w-1/2 h-4 bg-white/5 rounded" />
+              <div className="w-1/2 h-4 bg-white/5 rounded" />
+            </div>
+          </div>
+          <div className="h-96 bg-white/5 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !event) {
+    return (
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-20">
+        <EmptyState
+          title="Event not found"
+          message="This event may have been removed or the URL is incorrect."
+        />
+        <div className="mt-8 flex justify-center">
+          <Link
+            href="/events"
+            className="px-6 py-3 rounded-xl font-bold text-sm text-white/55 hover:text-white bg-white/4 border border-white/8 hover:bg-white/[0.07] transition-all duration-200">
+            Browse all events
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const accent = accentForId(event.id);
 
   const handleShare = () => {
@@ -119,6 +87,7 @@ export default function EventPage() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
   return (
     <div className="relative z-10 max-w-7xl mx-auto px-6 py-10">
       {/* back link */}
@@ -183,7 +152,7 @@ export default function EventPage() {
                 </div>
                 <button
                   onClick={handleShare}
-                  className="absolute top-4 right-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm border border-white/10 rounded-full px-3 py-1.5 text-white/70 hover:text-white text-xs font-semibold transition-colors">
+                  className="absolute top-4 right-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm border border-white/10 rounded-full px-3 py-1.5 text-white/70 hover:text-white text-xs font-semibold transition-colors z-10">
                   {copied ? (
                     <>
                       <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
@@ -233,7 +202,7 @@ export default function EventPage() {
                 </div>
                 <button
                   onClick={handleShare}
-                  className="absolute top-4 right-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm border border-white/10 rounded-full px-3 py-1.5 text-white/70 hover:text-white text-xs font-semibold transition-colors">
+                  className="absolute top-4 right-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm border border-white/10 rounded-full px-3 py-1.5 text-white/70 hover:text-white text-xs font-semibold transition-colors z-10">
                   {copied ? (
                     <>
                       <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
@@ -331,7 +300,13 @@ export default function EventPage() {
         </div>
 
         {/* right — ticket sidebar */}
-        <TicketSidebar accent={accent} event={event} tickets={tickets} />
+        {/* Pass isLoadingTickets down if you want to handle skeleton loading in the sidebar itself */}
+        <TicketSidebar
+          accent={accent}
+          event={event}
+          tickets={tickets}
+          isLoading={isLoadingTickets}
+        />
       </div>
     </div>
   );

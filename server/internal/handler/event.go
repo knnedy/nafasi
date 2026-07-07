@@ -246,7 +246,7 @@ func (h *EventHandler) GetUpcoming(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {array} EventCategoryResponse
 // @Failure 404 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
-// @Router /events/categories [get]
+// @Router /event-categories [get]
 func (h *EventHandler) GetEventCategories(w http.ResponseWriter, r *http.Request) {
 	categories, err := h.event.GetEventCategories(r.Context())
 	if err != nil {

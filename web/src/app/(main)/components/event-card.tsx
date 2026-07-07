@@ -1,24 +1,22 @@
 import Link from "next/link";
 import Image from "next/image";
-import { EventResponse } from "../mock_events";
-import {
-  accentForId,
-  categoryName,
-  formatDateShort,
-  formatTime,
-} from "../utils";
+import { accentForId, formatDateShort, formatTime } from "@/lib/utils";
 import { ArrowUpRight, CalendarDays, MapPin, Wifi } from "lucide-react";
+import { Event, useEventCategories } from "@/hooks/use-events";
 
 export default function EventCard({
   event,
   index,
 }: {
-  event: EventResponse;
+  event: Event;
   index: number;
 }) {
   const accent = accentForId(event.id);
   const { day, date, month } = formatDateShort(event.starts_at);
-  const cat = categoryName(event.category_id);
+
+  // Fetch categories and find the matching one
+  const { data: categories = [] } = useEventCategories();
+  const cat = categories.find((c) => c.id === event.category_id)?.name;
 
   return (
     <Link

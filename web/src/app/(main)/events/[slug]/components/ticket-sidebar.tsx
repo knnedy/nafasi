@@ -1,4 +1,5 @@
-import { EventResponse } from "@/app/(main)/mock_events";
+"use client";
+
 import {
   CalendarDays,
   CheckCircle,
@@ -14,7 +15,6 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { AvailableTicketTypesResponse } from "../page";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth";
 import { toast } from "sonner";
@@ -24,8 +24,9 @@ import {
   formatPhoneNumber,
   formatPrice,
   formatTime,
-} from "@/app/(main)/utils";
+} from "@/lib/utils";
 import TicketCard from "./ticket-card";
+import { AvailableTicketType, Event } from "@/hooks/use-events";
 
 type CheckoutStep = "idle" | "payment" | "processing" | "success";
 
@@ -33,10 +34,12 @@ export default function TicketSidebar({
   accent,
   event,
   tickets,
+  isLoading = false,
 }: {
   accent: string;
-  event: EventResponse;
-  tickets: AvailableTicketTypesResponse[];
+  event: Event;
+  tickets: AvailableTicketType[];
+  isLoading?: boolean;
 }) {
   const [selectedTicket, setSelectedTicket] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -279,7 +282,16 @@ export default function TicketSidebar({
               </h2>
             </div>
 
-            {tickets.length === 0 ? (
+            {isLoading ? (
+              <div className="space-y-2.5 animate-pulse">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-20 rounded-xl bg-white/5 border border-white/10"
+                  />
+                ))}
+              </div>
+            ) : tickets.length === 0 ? (
               <div className="rounded-2xl border border-white/8 bg-white/2 p-6 text-center">
                 <p className="text-white/25 text-sm">No tickets available.</p>
               </div>
@@ -298,7 +310,9 @@ export default function TicketSidebar({
             )}
 
             <div className="pt-2">
-              {selectedTicketData ? (
+              {isLoading ? (
+                <div className="w-full h-12 rounded-xl bg-white/5 animate-pulse" />
+              ) : selectedTicketData ? (
                 <button
                   onClick={handleBuyClick}
                   className="w-full h-12 rounded-xl font-bold text-sm text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 shadow-lg shadow-orange-500/25 transition-all duration-200 flex items-center justify-center gap-2">

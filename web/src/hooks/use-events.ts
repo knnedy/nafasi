@@ -48,6 +48,7 @@ export function useEventCategories() {
 
       return (json.data || []) as EventCategory[];
     },
+    staleTime: 1000 * 60 * 60,
   });
 }
 
@@ -134,6 +135,6 @@ export function useEventTicketTypes(eventId: string | undefined) {
 
       return (json.data || []) as AvailableTicketType[];
     },
-    enabled: !!eventId, // This ensures it only runs AFTER the event is fetched
+    enabled: !!eventId,
   });
 }
