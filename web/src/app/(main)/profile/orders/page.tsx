@@ -16,104 +16,7 @@ import {
 } from "lucide-react";
 import { accentForId, formatPrice } from "@/lib/utils";
 import Image from "next/image";
-
-// Types
-interface UserOrderResponse {
-  id: string;
-  quantity: number;
-  status: string;
-  qr_code: string;
-  checked_in: boolean;
-  checked_in_at?: string;
-  created_at: string;
-  event_title: string;
-  event_slug: string;
-  event_starts_at: string;
-  event_ends_at: string;
-  event_location?: string;
-  event_venue?: string;
-  event_is_online: boolean;
-  event_online_url?: string;
-  event_banner_url?: string;
-  ticket_type_name: string;
-  ticket_type_price: number;
-}
-
-// Mock data
-const MOCK_ORDERS: UserOrderResponse[] = [
-  {
-    id: "550e8400-e29b-41d4-a716-446655440001",
-    quantity: 2,
-    status: "CONFIRMED",
-    qr_code: "NAFASI-TK-A1B2C3D4",
-    checked_in: false,
-    created_at: "2026-05-10T14:32:00Z",
-    event_title: "Afropunk Nairobi 2026",
-    event_slug: "afropunk-nairobi-2026",
-    event_starts_at: "2026-06-14T18:00:00Z",
-    event_ends_at: "2026-06-14T23:00:00Z",
-    event_location: "Nairobi, Kenya",
-    event_venue: "Uhuru Gardens",
-    event_is_online: false,
-    event_banner_url: "",
-    ticket_type_name: "VIP",
-    ticket_type_price: 750000,
-  },
-  {
-    id: "550e8400-e29b-41d4-a716-446655440002",
-    quantity: 1,
-    status: "CONFIRMED",
-    qr_code: "NAFASI-TK-E5F6G7H8",
-    checked_in: true,
-    checked_in_at: "2026-04-20T19:15:00Z",
-    created_at: "2026-04-01T09:00:00Z",
-    event_title: "Nairobi Jazz Festival",
-    event_slug: "nairobi-jazz-festival",
-    event_starts_at: "2026-07-04T17:00:00Z",
-    event_ends_at: "2026-07-06T22:00:00Z",
-    event_location: "Nairobi, Kenya",
-    event_venue: "Village Market",
-    event_is_online: false,
-    event_banner_url: "",
-    ticket_type_name: "General Admission",
-    ticket_type_price: 250000,
-  },
-  {
-    id: "550e8400-e29b-41d4-a716-446655440003",
-    quantity: 1,
-    status: "PENDING",
-    qr_code: "",
-    checked_in: false,
-    created_at: "2026-05-20T11:00:00Z",
-    event_title: "Tech Summit East Africa",
-    event_slug: "tech-summit-east-africa",
-    event_starts_at: "2026-06-25T08:00:00Z",
-    event_ends_at: "2026-06-25T18:00:00Z",
-    event_location: "Nairobi, Kenya",
-    event_venue: "KICC, Nairobi",
-    event_is_online: false,
-    event_banner_url: "",
-    ticket_type_name: "Early Bird",
-    ticket_type_price: 150000,
-  },
-  {
-    id: "550e8400-e29b-41d4-a716-446655440004",
-    quantity: 1,
-    status: "CONFIRMED",
-    qr_code: "NAFASI-TK-I9J0K1L2",
-    checked_in: false,
-    created_at: "2026-05-18T16:00:00Z",
-    event_title: "Women in Tech Kenya",
-    event_slug: "women-in-tech-kenya",
-    event_starts_at: "2026-07-10T09:00:00Z",
-    event_ends_at: "2026-07-10T17:00:00Z",
-    event_is_online: true,
-    event_online_url: "https://meet.example.com/women-in-tech",
-    event_banner_url: "",
-    ticket_type_name: "General Admission",
-    ticket_type_price: 0,
-  },
-];
+import { useMyOrders, UserOrderResponse } from "@/hooks/use-orders";
 
 // Helpers
 function formatDate(iso: string) {
@@ -314,6 +217,8 @@ function OrderCard({ order }: { order: UserOrderResponse }) {
             <Image
               src={order.event_banner_url}
               alt={order.event_title}
+              width={48}
+              height={48}
               className="w-full h-full object-cover"
             />
           ) : (
@@ -369,7 +274,10 @@ type Filter = (typeof FILTERS)[number];
 export default function OrdersPage() {
   const [activeFilter, setActiveFilter] = useState<Filter>("All");
 
-  const filtered = MOCK_ORDERS.filter((o) => {
+  // Fetch real data
+  const { data: orders = [], isLoading } = useMyOrders();
+
+  const filtered = orders.filter((o) => {
     if (activeFilter === "All") return true;
     return o.status === activeFilter.toUpperCase();
   });
@@ -403,18 +311,33 @@ export default function OrdersPage() {
             {f}
           </button>
         ))}
-        <span className="text-white/20 text-xs ml-auto shrink-0">
-          {filtered.length} {filtered.length === 1 ? "order" : "orders"}
-        </span>
+        {!isLoading && (
+          <span className="text-white/20 text-xs ml-auto shrink-0">
+            {filtered.length} {filtered.length === 1 ? "order" : "orders"}
+          </span>
+        )}
       </div>
 
-      {/* orders list */}
-      {filtered.length === 0 ? (
+      {/* orders list state handling */}
+      {isLoading ? (
+        <div className="space-y-3 animate-pulse">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-24 bg-white/5 rounded-2xl border border-white/8"
+            />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-14 h-14 rounded-2xl bg-white/3 border border-white/6 flex items-center justify-center mb-4">
             <Ticket className="w-6 h-6 text-white/15" />
           </div>
-          <p className="text-white/20 text-sm">No orders found.</p>
+          <p className="text-white/20 text-sm">
+            {activeFilter === "All"
+              ? "No orders found."
+              : `No ${activeFilter.toLowerCase()} orders.`}
+          </p>
           <Link
             href="/events"
             className="text-orange-400 hover:text-orange-300 text-xs font-bold mt-3 transition-colors">
