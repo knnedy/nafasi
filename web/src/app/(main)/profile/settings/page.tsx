@@ -27,6 +27,7 @@ import {
 import { api, APIError } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import Image from "next/image";
+import { useCurrentUser } from "@/hooks/use-user";
 
 // Schemas
 const updateProfileSchema = z.object({
@@ -71,17 +72,6 @@ type UpdateProfileForm = z.infer<typeof updateProfileSchema>;
 type UpdatePasswordForm = z.infer<typeof updatePasswordSchema>;
 type UpdateAvatarForm = z.infer<typeof updateAvatarSchema>;
 
-// Mock user
-const MOCK_USER = {
-  id: "550e8400-e29b-41d4-a716-446655440000",
-  name: "Ada Okonkwo",
-  email: "ada@example.com",
-  role: "ATTENDEE" as const,
-  is_verified: true,
-  avatar_url: "",
-  created_at: "2026-01-15T10:00:00Z",
-};
-
 // User avatar preview
 function AvatarPreview({ name, url }: { name: string; url?: string }) {
   const initials = name
@@ -96,6 +86,8 @@ function AvatarPreview({ name, url }: { name: string; url?: string }) {
       <Image
         src={url}
         alt={name}
+        width={64}
+        height={64}
         className="w-16 h-16 rounded-full object-cover border-2 border-orange-500/30 shrink-0"
       />
     );
@@ -140,15 +132,19 @@ export default function SettingsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState("");
 
-  const { user, setAuth, clearAuth } = useAuthStore();
-  const currentUser = user ?? MOCK_USER;
+  const { user: storeUser, setAuth, clearAuth } = useAuthStore();
+  const { data: fetchedUser, isLoading } = useCurrentUser();
+
+  const currentUser = fetchedUser ?? storeUser;
 
   const profileForm = useForm<UpdateProfileForm>({
     resolver: zodResolver(updateProfileSchema),
-    defaultValues: {
-      name: currentUser.name,
-      email: currentUser.email,
-    },
+    values: currentUser
+      ? {
+          name: currentUser.name,
+          email: currentUser.email,
+        }
+      : undefined,
   });
 
   const passwordForm = useForm<UpdatePasswordForm>({
@@ -158,7 +154,11 @@ export default function SettingsPage() {
 
   const avatarForm = useForm<UpdateAvatarForm>({
     resolver: zodResolver(updateAvatarSchema),
-    defaultValues: { avatar_url: currentUser.avatar_url ?? "" },
+    values: currentUser
+      ? {
+          avatar_url: currentUser.avatar_url ?? "",
+        }
+      : undefined,
   });
 
   const isProfileLoading = profileForm.formState.isSubmitting;
@@ -169,7 +169,7 @@ export default function SettingsPage() {
     try {
       const res = await api.patch("/api/v1/users/me", data);
       const json = await res.json();
-      if (user) setAuth(json.data, useAuthStore.getState().accessToken!);
+      if (storeUser) setAuth(json.data, useAuthStore.getState().accessToken!);
       toast.success("Profile updated successfully.");
     } catch (err) {
       if (err instanceof APIError) {
@@ -213,7 +213,7 @@ export default function SettingsPage() {
     try {
       const res = await api.patch("/api/v1/users/me/avatar", data);
       const json = await res.json();
-      if (user) setAuth(json.data, useAuthStore.getState().accessToken!);
+      if (storeUser) setAuth(json.data, useAuthStore.getState().accessToken!);
       toast.success("Avatar updated successfully.");
     } catch (err) {
       if (err instanceof APIError) {
@@ -225,7 +225,7 @@ export default function SettingsPage() {
   };
 
   const onDeleteAccount = async () => {
-    if (deleteInput !== currentUser.email) return;
+    if (!currentUser || deleteInput !== currentUser.email) return;
     try {
       await api.delete("/api/v1/users/me");
       clearAuth();
@@ -238,6 +238,32 @@ export default function SettingsPage() {
       toast.error("Something went wrong. Please try again.");
     }
   };
+
+  if (isLoading && !storeUser) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div>
+          <div className="w-20 h-3 bg-white/10 rounded mb-2" />
+          <div className="w-40 h-8 bg-white/10 rounded mb-2" />
+          <div className="w-64 h-4 bg-white/5 rounded" />
+        </div>
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="h-64 bg-white/5 rounded-2xl border border-white/8"
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="py-20 text-center text-white/40">
+        Please sign in to access settings.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
