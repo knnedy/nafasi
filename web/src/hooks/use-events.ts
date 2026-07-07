@@ -28,6 +28,16 @@ export interface Event {
   updated_at: string;
 }
 
+export interface AvailableTicketType {
+  id: string;
+  event_id: string;
+  name: string;
+  description?: string;
+  price: number;
+  currency: string;
+  is_free: boolean;
+}
+
 // Fetch Categories (Public)
 export function useEventCategories() {
   return useQuery({
@@ -108,5 +118,22 @@ export function useEventBySlug(slug: string | undefined) {
       return json.data as Event;
     },
     enabled: !!slug,
+  });
+}
+
+export function useEventTicketTypes(eventId: string | undefined) {
+  return useQuery({
+    queryKey: ["event-tickets", eventId],
+    queryFn: async () => {
+      if (!eventId) throw new Error("Event ID is required");
+
+      const res = await api.public.get(
+        `/api/v1/events/${eventId}/ticket-types/available`,
+      );
+      const json = await res.json();
+
+      return (json.data || []) as AvailableTicketType[];
+    },
+    enabled: !!eventId, // This ensures it only runs AFTER the event is fetched
   });
 }
