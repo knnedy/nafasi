@@ -18,7 +18,7 @@ import {
   formatDateLong,
   formatDuration,
   formatTime,
-} from "@/app/(main)/utils";
+} from "@/lib/utils";
 import TicketSidebar from "./components/ticket-sidebar";
 
 // Types

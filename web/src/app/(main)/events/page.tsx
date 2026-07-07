@@ -13,11 +13,9 @@ export default function EventsPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Read state from URL
   const activeCategory = searchParams.get("category");
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
 
-  // Fetch data via hooks
   const { data: categories = [] } = useEventCategories();
   const { data: events = [], isLoading } = usePublishedEvents(
     activeCategory,
@@ -27,7 +25,6 @@ export default function EventsPage() {
 
   const hasMore = events.length === PAGE_LIMIT;
 
-  // Helper to update URL state
   const setFilter = (name: string, value: string | null) => {
     const params = new URLSearchParams(searchParams.toString());
 

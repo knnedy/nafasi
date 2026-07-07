@@ -96,3 +96,17 @@ export function useUpcomingEvents(
     placeholderData: (prev) => prev,
   });
 }
+
+export function useEventBySlug(slug: string | undefined) {
+  return useQuery({
+    queryKey: ["event", slug],
+    queryFn: async () => {
+      if (!slug) throw new Error("Slug is required");
+      const res = await api.public.get(`/api/v1/events/slug/${slug}`);
+      const json = await res.json();
+
+      return json.data as Event;
+    },
+    enabled: !!slug,
+  });
+}

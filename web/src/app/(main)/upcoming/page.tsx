@@ -7,7 +7,7 @@ import {
   useUpcomingEvents,
   Event,
 } from "@/hooks/use-events";
-import { accentForId, formatTime } from "@/app/(main)/utils";
+import { accentForId, formatTime } from "@/lib/utils";
 import EmptyState from "../components/empty-state";
 import Pagination from "@/app/(main)/components/pagination";
 import Link from "next/link";
