@@ -14,7 +14,7 @@ import {
   ChevronUp,
   QrCode,
 } from "lucide-react";
-import { accentForId, formatPrice } from "@/app/(main)/utils";
+import { accentForId, formatPrice } from "@/lib/utils";
 import Image from "next/image";
 
 // Types
