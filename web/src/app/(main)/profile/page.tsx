@@ -2,6 +2,7 @@
 
 import { CheckCircle, Mail, Shield, Ticket, User } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
+import Image from "next/image";
 
 // Mock user
 const MOCK_USER = {
@@ -34,7 +35,7 @@ function UserAvatar({ name, url }: { name: string; url?: string }) {
 
   if (url) {
     return (
-      <img
+      <Image
         src={url}
         alt={name}
         className="w-24 h-24 rounded-full object-cover border-2 border-orange-500/30"

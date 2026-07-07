@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { User, Ticket, Settings, ChevronRight } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
+import Image from "next/image";
 
 // Nav items
 const NAV_ITEMS = [
@@ -38,7 +39,7 @@ function UserAvatar({ name, url }: { name: string; url?: string }) {
 
   if (url) {
     return (
-      <img
+      <Image
         src={url}
         alt={name}
         className="w-12 h-12 rounded-full object-cover border-2 border-orange-500/30 shrink-0"
