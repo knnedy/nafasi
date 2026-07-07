@@ -3,17 +3,7 @@
 import { CheckCircle, Mail, Shield, Ticket, User } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import Image from "next/image";
-
-// Mock user
-const MOCK_USER = {
-  id: "550e8400-e29b-41d4-a716-446655440000",
-  name: "Ada Okonkwo",
-  email: "ada@example.com",
-  role: "ATTENDEE" as const,
-  is_verified: true,
-  avatar_url: "",
-  created_at: "2026-01-15T10:00:00Z",
-};
+import { useCurrentUser } from "@/hooks/use-user";
 
 // Helpers
 function formatDate(iso: string) {
@@ -38,6 +28,8 @@ function UserAvatar({ name, url }: { name: string; url?: string }) {
       <Image
         src={url}
         alt={name}
+        width={96}
+        height={96}
         className="w-24 h-24 rounded-full object-cover border-2 border-orange-500/30"
       />
     );
@@ -79,8 +71,33 @@ function InfoRow({
 
 // Profile page
 export default function ProfilePage() {
-  const { user } = useAuthStore();
-  const currentUser = user ?? MOCK_USER;
+  const { user: storeUser } = useAuthStore();
+  const { data: fetchedUser, isLoading } = useCurrentUser();
+
+  // Prefer fresh data from API, fallback to Zustand store cache
+  const currentUser = fetchedUser ?? storeUser;
+
+  if (isLoading && !storeUser) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div>
+          <div className="w-20 h-3 bg-white/10 rounded mb-2" />
+          <div className="w-40 h-8 bg-white/10 rounded mb-2" />
+          <div className="w-64 h-4 bg-white/5 rounded" />
+        </div>
+        <div className="h-40 bg-white/5 rounded-2xl border border-white/8" />
+        <div className="h-64 bg-white/5 rounded-2xl border border-white/8" />
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="py-20 text-center text-white/40">
+        Please sign in to view your profile.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
