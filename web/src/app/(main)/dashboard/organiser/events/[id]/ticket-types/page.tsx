@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, APIError } from "@/lib/api";
-import { formatPrice } from "@/app/(main)/utils";
+import { formatPrice } from "@/lib/utils";
 
 // Types
 interface EventResponse {

@@ -19,7 +19,7 @@ import {
   Clock,
   ScanLine,
 } from "lucide-react";
-import { accentForId, formatPrice } from "@/app/(main)/utils";
+import { accentForId, formatPrice } from "@/lib/utils";
 
 interface EventResponse {
   id: string;

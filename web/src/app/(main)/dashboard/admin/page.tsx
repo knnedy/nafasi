@@ -17,7 +17,7 @@ import {
   AlertTriangle,
   Tag,
 } from "lucide-react";
-import { formatPrice } from "@/app/(main)/utils";
+import { formatPrice } from "@/lib/utils";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 // Types
@@ -444,7 +444,8 @@ export default function AdminOverviewPage() {
           <div className="flex-1 min-w-0">
             <p className="text-amber-400/90 text-sm font-bold">
               {MOCK_PENDING_ORGANISERS} organiser
-                {Number(MOCK_PENDING_ORGANISERS) === 1 ? "" : "s"} awaiting verification
+              {Number(MOCK_PENDING_ORGANISERS) === 1 ? "" : "s"} awaiting
+              verification
             </p>
             <p className="text-amber-400/50 text-xs mt-0.5">
               Review and approve their accounts to allow event publishing.

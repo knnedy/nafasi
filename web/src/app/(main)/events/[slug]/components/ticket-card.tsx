@@ -1,6 +1,6 @@
 import { CheckCircle } from "lucide-react";
-import { AvailableTicketTypesResponse } from "../page";
-import { formatPrice } from "@/app/(main)/utils";
+import { formatPrice } from "@/lib/utils";
+import { AvailableTicketType } from "@/hooks/use-events";
 
 export default function TicketCard({
   ticket,
@@ -8,7 +8,7 @@ export default function TicketCard({
   selected,
   onSelect,
 }: {
-  ticket: AvailableTicketTypesResponse;
+  ticket: AvailableTicketType;
   accent: string;
   selected: boolean;
   onSelect: () => void;
