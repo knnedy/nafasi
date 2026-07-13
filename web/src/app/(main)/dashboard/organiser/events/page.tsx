@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   CalendarDays,
@@ -16,179 +16,14 @@ import {
   TrendingUp,
   Search,
   X,
+  Loader2,
 } from "lucide-react";
 import { accentForId, formatPrice } from "@/lib/utils";
-
-// Types
-interface EventResponse {
-  id: string;
-  organiser_id: string;
-  category_id: string;
-  title: string;
-  slug: string;
-  description?: string;
-  location?: string;
-  venue?: string;
-  banner_url?: string;
-  starts_at: string;
-  ends_at: string;
-  status: string;
-  is_online: boolean;
-  online_url?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-// Mock data
-const MOCK_EVENTS: EventResponse[] = [
-  {
-    id: "550e8400-e29b-41d4-a716-446655440001",
-    organiser_id: "o1",
-    category_id: "1",
-    title: "Afropunk Nairobi 2026",
-    slug: "afropunk-nairobi-2026",
-    description:
-      "The biggest Afropunk festival hits Nairobi with a lineup of world-class artists celebrating African culture, music, and identity.",
-    location: "Nairobi, Kenya",
-    venue: "Uhuru Gardens",
-    banner_url: "",
-    starts_at: "2026-06-14T18:00:00Z",
-    ends_at: "2026-06-14T23:00:00Z",
-    status: "PUBLISHED",
-    is_online: false,
-    created_at: "2026-04-01T10:00:00Z",
-    updated_at: "2026-04-01T10:00:00Z",
-  },
-  {
-    id: "550e8400-e29b-41d4-a716-446655440002",
-    organiser_id: "o1",
-    category_id: "2",
-    title: "Tech Summit East Africa",
-    slug: "tech-summit-east-africa",
-    description:
-      "East Africa's premier technology conference bringing together innovators, founders, and investors.",
-    location: "Nairobi, Kenya",
-    venue: "KICC, Nairobi",
-    banner_url: "",
-    starts_at: "2026-06-25T08:00:00Z",
-    ends_at: "2026-06-25T18:00:00Z",
-    status: "PUBLISHED",
-    is_online: false,
-    created_at: "2026-03-15T10:00:00Z",
-    updated_at: "2026-03-15T10:00:00Z",
-  },
-  {
-    id: "550e8400-e29b-41d4-a716-446655440003",
-    organiser_id: "o1",
-    category_id: "2",
-    title: "Women in Tech Kenya",
-    slug: "women-in-tech-kenya",
-    description:
-      "A full-day conference celebrating and empowering women in technology across Kenya and East Africa.",
-    location: "Nairobi, Kenya",
-    venue: "Radisson Blu Hotel",
-    banner_url: "",
-    starts_at: "2026-07-10T09:00:00Z",
-    ends_at: "2026-07-10T17:00:00Z",
-    status: "DRAFT",
-    is_online: true,
-    created_at: "2026-05-01T10:00:00Z",
-    updated_at: "2026-05-01T10:00:00Z",
-  },
-  {
-    id: "550e8400-e29b-41d4-a716-446655440004",
-    organiser_id: "o1",
-    category_id: "1",
-    title: "Nairobi Jazz Festival",
-    slug: "nairobi-jazz-festival",
-    description:
-      "Three days of world-class jazz performances featuring local legends and international artists.",
-    location: "Nairobi, Kenya",
-    venue: "Village Market",
-    banner_url: "",
-    starts_at: "2026-07-04T17:00:00Z",
-    ends_at: "2026-07-06T22:00:00Z",
-    status: "DRAFT",
-    is_online: false,
-    created_at: "2026-05-10T10:00:00Z",
-    updated_at: "2026-05-10T10:00:00Z",
-  },
-  {
-    id: "550e8400-e29b-41d4-a716-446655440005",
-    organiser_id: "o1",
-    category_id: "3",
-    title: "Churchill Show Live",
-    slug: "churchill-show-live",
-    description: "Kenya's most popular comedy show returns live.",
-    location: "Nairobi, Kenya",
-    venue: "Carnivore Grounds",
-    banner_url: "",
-    starts_at: "2026-05-01T19:00:00Z",
-    ends_at: "2026-05-01T22:00:00Z",
-    status: "COMPLETED",
-    is_online: false,
-    created_at: "2026-02-01T10:00:00Z",
-    updated_at: "2026-05-02T10:00:00Z",
-  },
-  {
-    id: "550e8400-e29b-41d4-a716-446655440006",
-    organiser_id: "o1",
-    category_id: "2",
-    title: "Startup Grind Nairobi",
-    slug: "startup-grind-nairobi",
-    description:
-      "Monthly meetup for entrepreneurs and startup founders in Nairobi.",
-    location: "Nairobi, Kenya",
-    venue: "iHub Nairobi",
-    banner_url: "",
-    starts_at: "2026-04-15T18:00:00Z",
-    ends_at: "2026-04-15T21:00:00Z",
-    status: "CANCELLED",
-    is_online: false,
-    created_at: "2026-03-01T10:00:00Z",
-    updated_at: "2026-04-10T10:00:00Z",
-  },
-];
-
-// Mock per-event stats
-const MOCK_EVENT_STATS: Record<
-  string,
-  { tickets_sold: number; revenue: number; orders: number }
-> = {
-  "550e8400-e29b-41d4-a716-446655440001": {
-    tickets_sold: 312,
-    revenue: 8400000,
-    orders: 198,
-  },
-  "550e8400-e29b-41d4-a716-446655440002": {
-    tickets_sold: 87,
-    revenue: 1305000,
-    orders: 64,
-  },
-  "550e8400-e29b-41d4-a716-446655440003": {
-    tickets_sold: 0,
-    revenue: 0,
-    orders: 0,
-  },
-  "550e8400-e29b-41d4-a716-446655440004": {
-    tickets_sold: 0,
-    revenue: 0,
-    orders: 0,
-  },
-  "550e8400-e29b-41d4-a716-446655440005": {
-    tickets_sold: 203,
-    revenue: 3045000,
-    orders: 156,
-  },
-  "550e8400-e29b-41d4-a716-446655440006": {
-    tickets_sold: 12,
-    revenue: 180000,
-    orders: 10,
-  },
-};
+import { useOrganiserEvents, useAllEventsStats } from "@/hooks/use-organiser";
 
 // Helpers
 function formatDate(iso: string) {
+  if (!iso) return "—";
   return new Date(iso).toLocaleDateString("en-KE", {
     day: "numeric",
     month: "short",
@@ -197,6 +32,7 @@ function formatDate(iso: string) {
 }
 
 function formatTime(iso: string) {
+  if (!iso) return "—";
   return new Date(iso).toLocaleTimeString("en-KE", {
     hour: "2-digit",
     minute: "2-digit",
@@ -205,7 +41,7 @@ function formatTime(iso: string) {
 
 // Status config
 function statusConfig(status: string) {
-  switch (status) {
+  switch (status?.toUpperCase()) {
     case "PUBLISHED":
       return {
         label: "Published",
@@ -236,7 +72,7 @@ function statusConfig(status: string) {
       };
     default:
       return {
-        label: status,
+        label: status || "Unknown",
         color: "text-white/40",
         bg: "bg-white/4 border-white/8",
         icon: AlertCircle,
@@ -258,16 +94,52 @@ export default function OrganiserEventsPage() {
   const [activeFilter, setActiveFilter] = useState<Filter>("All");
   const [search, setSearch] = useState("");
 
-  const filtered = MOCK_EVENTS.filter((e) => {
-    const matchesFilter =
-      activeFilter === "All" || e.status === activeFilter.toUpperCase();
-    const matchesSearch =
-      search.trim() === "" ||
-      e.title.toLowerCase().includes(search.toLowerCase()) ||
-      e.venue?.toLowerCase().includes(search.toLowerCase()) ||
-      e.location?.toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+  // 1. Fetch real events
+  const { data: events = [], isLoading: isEventsLoading } =
+    useOrganiserEvents();
+
+  // 2. Fetch stats in parallel for all loaded events
+  const statsQueries = useAllEventsStats(events);
+
+  // 3. Build a lookup map for easy access in the render loop
+  const statsLookup = useMemo(() => {
+    const lookup: Record<
+      string,
+      { tickets_sold: number; revenue: number; orders: number }
+    > = {};
+
+    statsQueries.forEach((q) => {
+      if (q.data) {
+        lookup[q.data.eventId] = {
+          tickets_sold: q.data.tickets_sold,
+          revenue: q.data.revenue,
+          orders: q.data.orders,
+        };
+      }
+    });
+
+    return lookup;
+  }, [statsQueries]);
+
+  // 4. Client-side filtering
+  const filtered = useMemo(() => {
+    return events.filter((e) => {
+      const matchesFilter =
+        activeFilter === "All" || e.status === activeFilter.toUpperCase();
+      const q = search.trim().toLowerCase();
+      const matchesSearch =
+        q === "" ||
+        e.title.toLowerCase().includes(q) ||
+        (e.venue?.toLowerCase() || "").includes(q) ||
+        (e.location?.toLowerCase() || "").includes(q);
+
+      return matchesFilter && matchesSearch;
+    });
+  }, [events, activeFilter, search]);
+
+  const publishedCount = useMemo(() => {
+    return events.filter((e) => e.status === "PUBLISHED").length;
+  }, [events]);
 
   return (
     <div className="space-y-6">
@@ -281,9 +153,7 @@ export default function OrganiserEventsPage() {
             Events
           </h1>
           <p className="text-white/30 text-sm mt-1">
-            {MOCK_EVENTS.length} total ·{" "}
-            {MOCK_EVENTS.filter((e) => e.status === "PUBLISHED").length}{" "}
-            published
+            {events.length} total · {publishedCount} published
           </p>
         </div>
         <Link
@@ -334,7 +204,14 @@ export default function OrganiserEventsPage() {
       </div>
 
       {/* events list */}
-      {filtered.length === 0 ? (
+      {isEventsLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+          <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+          <p className="text-white/40 font-bold text-sm tracking-widest uppercase">
+            Loading Events
+          </p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-14 h-14 rounded-2xl bg-white/3 border border-white/6 flex items-center justify-center mb-4">
             <CalendarDays className="w-6 h-6 text-white/15" />
@@ -350,7 +227,12 @@ export default function OrganiserEventsPage() {
         <div className="space-y-3">
           {filtered.map((event) => {
             const accent = accentForId(event.id);
-            const stats = MOCK_EVENT_STATS[event.id];
+            // Default stats to 0 if the query is still loading
+            const stats = statsLookup[event.id] || {
+              tickets_sold: 0,
+              revenue: 0,
+              orders: 0,
+            };
             const sc = statusConfig(event.status);
             const StatusIcon = sc.icon;
 
