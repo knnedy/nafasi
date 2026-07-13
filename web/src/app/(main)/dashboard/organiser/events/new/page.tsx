@@ -18,9 +18,11 @@ import {
   Link as LinkIcon,
   LoaderCircle,
   Sparkles,
+  LayoutGrid,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, APIError } from "@/lib/api";
+import { APIError } from "@/lib/api";
+import { useCreateEvent } from "@/hooks/use-organiser";
 
 const createEventSchema = z
   .object({
@@ -28,6 +30,7 @@ const createEventSchema = z
       .string()
       .min(3, { message: "Title must be at least 3 characters" })
       .max(255, { message: "Title must be under 255 characters" }),
+    category_id: z.string().min(1, { message: "Category is required" }),
     description: z.string().optional(),
     location: z.string().optional(),
     venue: z.string().optional(),
@@ -133,11 +136,13 @@ const textareaClass =
 export default function NewEventPage() {
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(false);
+  const createEvent = useCreateEvent();
 
   const form = useForm<CreateEventForm>({
     resolver: zodResolver(createEventSchema),
     defaultValues: {
       title: "",
+      category_id: "",
       description: "",
       location: "",
       venue: "",
@@ -148,12 +153,11 @@ export default function NewEventPage() {
     },
   });
 
-  const isLoading = form.formState.isSubmitting;
-
-  const onSubmit = async (data: CreateEventForm) => {
-    try {
-      const res = await api.post("/api/v1/events", {
+  const onSubmit = (data: CreateEventForm) => {
+    createEvent.mutate(
+      {
         title: data.title,
+        category_id: data.category_id,
         description: data.description ?? "",
         location: data.location ?? "",
         venue: data.venue ?? "",
@@ -161,24 +165,26 @@ export default function NewEventPage() {
         ends_at: new Date(data.ends_at).toISOString(),
         is_online: data.is_online,
         online_url: data.online_url ?? "",
-      });
-
-      const json = await res.json();
-      const eventId = json.data.id;
-
-      toast.success("Event created! Now add your ticket types.");
-      router.push(`/dashboard/organiser/events/${eventId}/setup`);
-    } catch (err) {
-      if (err instanceof APIError) {
-        if (err.code === "VALIDATION_ERROR") {
-          toast.error(err.message);
-          return;
-        }
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
-    }
+      },
+      {
+        onSuccess: (json) => {
+          const eventId = json.data.id;
+          toast.success("Event created! Now add your ticket types.");
+          router.push(`/dashboard/organiser/events/${eventId}/setup`);
+        },
+        onError: (err) => {
+          if (err instanceof APIError) {
+            if (err.code === "VALIDATION_ERROR") {
+              toast.error(err.message);
+              return;
+            }
+            toast.error(err.message);
+            return;
+          }
+          toast.error("Something went wrong. Please try again.");
+        },
+      },
+    );
   };
 
   const watchTitle = form.watch("title");
@@ -251,6 +257,41 @@ export default function NewEventPage() {
                     placeholder="e.g. Afropunk Nairobi 2026"
                     className={`${inputClass} ${fieldState.invalid ? "border-red-500/40" : ""}`}
                   />
+                </FormField>
+              )}
+            />
+
+            {/* category */}
+            <Controller
+              name="category_id"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <FormField
+                  icon={LayoutGrid}
+                  label="Category"
+                  error={fieldState.error?.message}>
+                  <select
+                    {...field}
+                    className={`${inputClass} appearance-none ${fieldState.invalid ? "border-red-500/40" : ""} ${!field.value ? "text-white/20" : "text-white"}`}>
+                    <option value="" disabled className="text-black">
+                      Select a category...
+                    </option>
+                    <option value="1" className="text-black">
+                      Music & Concerts
+                    </option>
+                    <option value="2" className="text-black">
+                      Tech & Business
+                    </option>
+                    <option value="3" className="text-black">
+                      Comedy & Entertainment
+                    </option>
+                    <option value="4" className="text-black">
+                      Sports & Fitness
+                    </option>
+                    <option value="5" className="text-black">
+                      Art & Culture
+                    </option>
+                  </select>
                 </FormField>
               )}
             />
@@ -447,9 +488,9 @@ export default function NewEventPage() {
           </p>
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={createEvent.isPending}
             className="h-11 px-6 rounded-xl font-bold text-sm text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 shadow-lg shadow-orange-500/20 transition-all duration-200 flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed shrink-0">
-            {isLoading ? (
+            {createEvent.isPending ? (
               <>
                 <LoaderCircle className="w-4 h-4 animate-spin" />
                 Creating…
