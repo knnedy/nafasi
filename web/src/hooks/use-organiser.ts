@@ -1,4 +1,4 @@
-import { useQuery, useQueries } from "@tanstack/react-query";
+import { useQuery, useQueries, useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
 export interface EventResponse {
@@ -32,6 +32,18 @@ export interface OrganiserOrderResponse {
   checked_in: boolean;
   checked_in_at?: string;
   created_at: string;
+}
+
+export interface CreateEventInput {
+  title: string;
+  category_id: string;
+  description?: string;
+  location?: string;
+  venue?: string;
+  starts_at: string;
+  ends_at: string;
+  is_online: boolean;
+  online_url?: string;
 }
 
 // Fetch all events for the organiser
@@ -124,5 +136,14 @@ export function useAllEventsStats(events: EventResponse[] = []) {
       },
       staleTime: 1000 * 60 * 5, // Cache stats for 5 minutes
     })),
+  });
+}
+
+export function useCreateEvent() {
+  return useMutation({
+    mutationFn: async (input: CreateEventInput) => {
+      const res = await api.post("/api/v1/events", input);
+      return res.json();
+    },
   });
 }
