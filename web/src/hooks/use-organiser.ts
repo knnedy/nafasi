@@ -176,3 +176,28 @@ export function useCreateEvent() {
     },
   });
 }
+
+export function useUpdateEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdateEventInput;
+    }) => {
+      const res = await api.patch(`/api/v1/events/${id}`, data);
+      return res.json();
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate the main events list
+      queryClient.invalidateQueries({ queryKey: ["organiser", "events"] });
+      // Invalidate any queries relying on this specific event's data
+      queryClient.invalidateQueries({
+        queryKey: ["organiser", "events", variables.id],
+      });
+    },
+  });
+}
