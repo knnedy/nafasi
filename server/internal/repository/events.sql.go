@@ -14,6 +14,7 @@ import (
 const createEvent = `-- name: CreateEvent :one
 INSERT INTO "events" (
     "organiser_id",
+    "category_id",
     "title",
     "slug",
     "description",
@@ -26,12 +27,13 @@ INSERT INTO "events" (
     "is_online",
     "online_url"
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 ) RETURNING id, organiser_id, category_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
 `
 
 type CreateEventParams struct {
 	OrganiserID pgtype.UUID
+	CategoryID  pgtype.UUID
 	Title       string
 	Slug        string
 	Description pgtype.Text
@@ -48,6 +50,7 @@ type CreateEventParams struct {
 func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event, error) {
 	row := q.db.QueryRow(ctx, createEvent,
 		arg.OrganiserID,
+		arg.CategoryID,
 		arg.Title,
 		arg.Slug,
 		arg.Description,
@@ -174,16 +177,17 @@ func (q *Queries) GetEventBySlug(ctx context.Context, slug string) (Event, error
 const updateEvent = `-- name: UpdateEvent :one
 UPDATE "events"
 SET
-    "title"      = $2,
-    "slug"       = $3,
-    "description"= $4,
-    "location"   = $5,
-    "venue"      = $6,
-    "banner_url" = $7,
-    "starts_at"  = $8,
-    "ends_at"    = $9,
-    "is_online"  = $10,
-    "online_url" = $11,
+    "category_id" = $2,
+    "title"      = $3,
+    "slug"       = $4,
+    "description"= $5,
+    "location"   = $6,
+    "venue"      = $7,
+    "banner_url" = $8,
+    "starts_at"  = $9,
+    "ends_at"    = $10,
+    "is_online"  = $11,
+    "online_url" = $12,
     "updated_at" = NOW()
 WHERE "id" = $1
 RETURNING id, organiser_id, category_id, title, slug, description, location, venue, banner_url, starts_at, ends_at, status, is_online, online_url, created_at, updated_at
@@ -191,6 +195,7 @@ RETURNING id, organiser_id, category_id, title, slug, description, location, ven
 
 type UpdateEventParams struct {
 	ID          pgtype.UUID
+	CategoryID  pgtype.UUID
 	Title       string
 	Slug        string
 	Description pgtype.Text
@@ -206,6 +211,7 @@ type UpdateEventParams struct {
 func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) (Event, error) {
 	row := q.db.QueryRow(ctx, updateEvent,
 		arg.ID,
+		arg.CategoryID,
 		arg.Title,
 		arg.Slug,
 		arg.Description,

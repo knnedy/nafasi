@@ -20,16 +20,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
 import { api, APIError } from "@/lib/api";
 
-// Schema — mirrors CreateEventInput exactly
 const createEventSchema = z
   .object({
     title: z

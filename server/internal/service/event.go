@@ -32,6 +32,7 @@ func NewEventService(db EventQuerier) *EventService {
 }
 
 type CreateEventInput struct {
+	CategoryID  string `json:"category_id" validate:"required,uuid"`
 	Title       string `json:"title"       validate:"required,min=3,max=255"`
 	Description string `json:"description" validate:"omitempty"`
 	Location    string `json:"location"    validate:"omitempty"`
@@ -43,6 +44,7 @@ type CreateEventInput struct {
 }
 
 type UpdateEventInput struct {
+	CategoryID  string `json:"category_id" validate:"required,uuid"`
 	Title       string `json:"title"       validate:"required,min=3,max=255"`
 	Description string `json:"description" validate:"omitempty"`
 	Location    string `json:"location"    validate:"omitempty"`
@@ -78,7 +80,13 @@ func (s *EventService) CreateEvent(ctx context.Context, organiserID string, inpu
 	}
 
 	// parse organiser ID
-	parsedID, err := uuid.Parse(organiserID)
+	parsedOrganiserID, err := uuid.Parse(organiserID)
+	if err != nil {
+		return repository.Event{}, response.ErrNotFound
+	}
+
+	// parse category ID
+	parsedCategoryID, err := uuid.Parse(input.CategoryID)
 	if err != nil {
 		return repository.Event{}, response.ErrNotFound
 	}
@@ -109,7 +117,8 @@ func (s *EventService) CreateEvent(ctx context.Context, organiserID string, inpu
 	}
 
 	event, err := s.db.CreateEvent(ctx, repository.CreateEventParams{
-		OrganiserID: pgtype.UUID{Bytes: parsedID, Valid: true},
+		OrganiserID: pgtype.UUID{Bytes: parsedOrganiserID, Valid: true},
+		CategoryID:  pgtype.UUID{Bytes: parsedCategoryID, Valid: true},
 		Title:       input.Title,
 		Slug:        generateSlug(input.Title),
 		Description: pgtype.Text{String: input.Description, Valid: input.Description != ""},
@@ -238,6 +247,11 @@ func (s *EventService) UpdateEvent(ctx context.Context, eventID, organiserID str
 		return repository.Event{}, response.ErrNotFound
 	}
 
+	parsedCategoryID, err := uuid.Parse(input.CategoryID)
+	if err != nil {
+		return repository.Event{}, response.ErrNotFound
+	}
+
 	if event.OrganiserID.Bytes != parsedOrganiserID {
 		return repository.Event{}, response.ErrForbidden
 	}
@@ -271,6 +285,7 @@ func (s *EventService) UpdateEvent(ctx context.Context, eventID, organiserID str
 		EndsAt:      endsAt,
 		IsOnline:    input.IsOnline,
 		OnlineUrl:   pgtype.Text{String: input.OnlineURL, Valid: input.OnlineURL != ""},
+		CategoryID:  pgtype.UUID{Bytes: parsedCategoryID, Valid: true},
 	})
 	if err != nil {
 		return repository.Event{}, response.ErrDatabase
