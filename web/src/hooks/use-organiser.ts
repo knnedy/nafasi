@@ -46,6 +46,37 @@ export function useOrganiserEvents() {
   });
 }
 
+export function useOrganiserOrders(params?: {
+  status?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  return useQuery({
+    queryKey: ["organiser", "orders", params],
+    queryFn: async () => {
+      const searchParams = new URLSearchParams();
+      if (params?.status && params.status !== "All") {
+        searchParams.set("status", params.status.toUpperCase());
+      }
+      if (params?.limit) {
+        searchParams.set("limit", params.limit.toString());
+      }
+      if (params?.offset) {
+        searchParams.set("offset", params.offset.toString());
+      }
+
+      const queryStr = searchParams.toString();
+      const res = await api.get(
+        `/api/v1/organiser/orders${queryStr ? `?${queryStr}` : ""}`,
+      );
+      const json = await res.json();
+
+      // Based on your Go handler, the response is written directly as an array
+      return (json || []) as OrganiserOrderResponse[];
+    },
+  });
+}
+
 export function useOrganiserRecentOrders(limit: number = 5) {
   return useQuery({
     queryKey: ["organiser", "orders", "recent", { limit }],
