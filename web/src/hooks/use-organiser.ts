@@ -1,4 +1,9 @@
-import { useQuery, useQueries, useMutation } from "@tanstack/react-query";
+import {
+  useQuery,
+  useQueries,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
 export interface EventResponse {
@@ -35,6 +40,18 @@ export interface OrganiserOrderResponse {
 }
 
 export interface CreateEventInput {
+  title: string;
+  category_id: string;
+  description?: string;
+  location?: string;
+  venue?: string;
+  starts_at: string;
+  ends_at: string;
+  is_online: boolean;
+  online_url?: string;
+}
+
+export interface UpdateEventInput {
   title: string;
   category_id: string;
   description?: string;
@@ -103,13 +120,11 @@ export function useOrganiserRecentOrders(limit: number = 5) {
   });
 }
 
-// Parallel fetch for all event stats to power the dashboard totals
 export function useAllEventsStats(events: EventResponse[] = []) {
   return useQueries({
     queries: events.map((event) => ({
       queryKey: ["organiser", "events", event.id, "stats"],
       queryFn: async () => {
-        // Based on the handlers provided, these return map[string]int64 directly
         const [ticketsRes, revenueRes, ordersRes, checkInRes] =
           await Promise.all([
             api.get(`/api/v1/organiser/events/${event.id}/tickets-sold`),
@@ -117,6 +132,15 @@ export function useAllEventsStats(events: EventResponse[] = []) {
             api.get(`/api/v1/organiser/events/${event.id}/orders/count`),
             api.get(`/api/v1/organiser/events/${event.id}/checkin/count`),
           ]);
+
+        if (
+          !ticketsRes.ok ||
+          !revenueRes.ok ||
+          !ordersRes.ok ||
+          !checkInRes.ok
+        ) {
+          throw new Error(`Failed to fetch stats for event ${event.id}`);
+        }
 
         const [tickets, revenue, orders, checkin] = await Promise.all([
           ticketsRes.json(),
@@ -127,23 +151,28 @@ export function useAllEventsStats(events: EventResponse[] = []) {
 
         return {
           eventId: event.id,
-          // Extracting exactly as defined in your Go maps
           tickets_sold: tickets.total_tickets_sold || 0,
           revenue: revenue.revenue || 0,
           orders: orders.total_orders || 0,
           checked_in: checkin.checked_in_count || 0,
         };
       },
-      staleTime: 1000 * 60 * 5, // Cache stats for 5 minutes
+      staleTime: 1000 * 60 * 5,
     })),
   });
 }
 
 export function useCreateEvent() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (input: CreateEventInput) => {
       const res = await api.post("/api/v1/events", input);
       return res.json();
+    },
+    onSuccess: () => {
+      // Automatically refetch the events list when a new event is created
+      queryClient.invalidateQueries({ queryKey: ["organiser", "events"] });
     },
   });
 }
