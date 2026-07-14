@@ -63,6 +63,13 @@ export interface UpdateEventInput {
   online_url?: string;
 }
 
+export type EventStatus = "DRAFT" | "PUBLISHED" | "CANCELLED" | "COMPLETED";
+
+interface UpdateEventStatusVariables {
+  id: string;
+  status: EventStatus;
+}
+
 // Fetch all events for the organiser
 export function useOrganiserEvents() {
   return useQuery({
@@ -197,6 +204,27 @@ export function useUpdateEvent() {
       // Invalidate any queries relying on this specific event's data
       queryClient.invalidateQueries({
         queryKey: ["organiser", "events", variables.id],
+      });
+    },
+  });
+}
+
+export function useUpdateEventStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, status }: UpdateEventStatusVariables) => {
+      const res = await api.patch(`/api/v1/events/${id}/status`, { status });
+      return res.json();
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate the specific event cache
+      queryClient.invalidateQueries({
+        queryKey: ["organiser", "events", variables.id],
+      });
+      // Invalidate the general list cache so the status tag updates everywhere
+      queryClient.invalidateQueries({
+        queryKey: ["organiser", "events"],
       });
     },
   });

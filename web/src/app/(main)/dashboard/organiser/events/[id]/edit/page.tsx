@@ -23,7 +23,8 @@ import {
   Save,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, APIError } from "@/lib/api";
+import { APIError } from "@/lib/api";
+import { useUpdateEvent, useUpdateEventStatus } from "@/hooks/use-organiser";
 
 const editEventSchema = z
   .object({
@@ -104,7 +105,7 @@ const STATUS_OPTIONS = [
   },
 ] as const;
 
-// ─── shared components ───────────────────────────────────────────────────────
+// shared components
 
 function FormField({
   icon: Icon,
@@ -179,7 +180,10 @@ export default function EditEventPage() {
 
   const [isOnline, setIsOnline] = useState(event.is_online);
   const [currentStatus, setCurrentStatus] = useState(event.status);
-  const [statusLoading, setStatusLoading] = useState(false);
+
+  // Initialize mutations
+  const updateEvent = useUpdateEvent();
+  const updateStatus = useUpdateEventStatus();
 
   const form = useForm<EditEventForm>({
     resolver: zodResolver(editEventSchema),
@@ -195,47 +199,56 @@ export default function EditEventPage() {
     },
   });
 
-  const isLoading = form.formState.isSubmitting;
-
-  const onSubmit = async (data: EditEventForm) => {
-    try {
-      await api.patch(`/api/v1/events/${event.id}`, {
-        title: data.title,
-        description: data.description ?? "",
-        location: data.location ?? "",
-        venue: data.venue ?? "",
-        starts_at: new Date(data.starts_at).toISOString(),
-        ends_at: new Date(data.ends_at).toISOString(),
-        is_online: data.is_online,
-        online_url: data.online_url ?? "",
-      });
-
-      toast.success("Event updated.");
-    } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
-    }
+  const onSubmit = (data: EditEventForm) => {
+    updateEvent.mutate(
+      {
+        id: event.id,
+        data: {
+          title: data.title,
+          category_id: "1", // Update this based on your actual data model
+          description: data.description ?? "",
+          location: data.location ?? "",
+          venue: data.venue ?? "",
+          starts_at: new Date(data.starts_at).toISOString(),
+          ends_at: new Date(data.ends_at).toISOString(),
+          is_online: data.is_online,
+          online_url: data.online_url ?? "",
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success("Event updated.");
+        },
+        onError: (err) => {
+          if (err instanceof APIError) {
+            toast.error(err.message);
+            return;
+          }
+          toast.error("Something went wrong. Please try again.");
+        },
+      },
+    );
   };
 
-  const handleStatusChange = async (status: string) => {
+  const handleStatusChange = (status: string) => {
     if (status === currentStatus) return;
-    setStatusLoading(true);
-    try {
-      await api.patch(`/api/v1/events/${event.id}/status`, { status });
-      setCurrentStatus(status);
-      toast.success(`Event marked as ${status.toLowerCase()}.`);
-    } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Failed to update status.");
-    } finally {
-      setStatusLoading(false);
-    }
+
+    updateStatus.mutate(
+      { id: event.id, status },
+      {
+        onSuccess: () => {
+          setCurrentStatus(status);
+          toast.success(`Event marked as ${status.toLowerCase()}.`);
+        },
+        onError: (err) => {
+          if (err instanceof APIError) {
+            toast.error(err.message);
+            return;
+          }
+          toast.error("Failed to update status.");
+        },
+      },
+    );
   };
 
   return (
@@ -283,7 +296,7 @@ export default function EditEventPage() {
                 <button
                   key={s.value}
                   onClick={() => handleStatusChange(s.value)}
-                  disabled={statusLoading}
+                  disabled={updateStatus.isPending}
                   className={`flex flex-col items-start gap-2 p-3.5 rounded-xl border text-left transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                     isActive
                       ? s.activeCls
@@ -506,9 +519,9 @@ export default function EditEventPage() {
         <div className="flex items-center justify-end pt-2 border-t border-white/6">
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={updateEvent.isPending}
             className="h-11 px-6 rounded-xl font-bold text-sm text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 shadow-lg shadow-orange-500/20 transition-all duration-200 flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-            {isLoading ? (
+            {updateEvent.isPending ? (
               <>
                 <LoaderCircle className="w-4 h-4 animate-spin" />
                 Saving…

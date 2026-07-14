@@ -32,7 +32,7 @@ func NewEventService(db EventQuerier) *EventService {
 }
 
 type CreateEventInput struct {
-	CategoryID  string `json:"category_id" validate:"required,uuid"`
+	CategoryID  string `json:"category_id" validate:"required"`
 	Title       string `json:"title"       validate:"required,min=3,max=255"`
 	Description string `json:"description" validate:"omitempty"`
 	Location    string `json:"location"    validate:"omitempty"`
@@ -44,7 +44,7 @@ type CreateEventInput struct {
 }
 
 type UpdateEventInput struct {
-	CategoryID  string `json:"category_id" validate:"required,uuid"`
+	CategoryID  string `json:"category_id" validate:"required"`
 	Title       string `json:"title"       validate:"required,min=3,max=255"`
 	Description string `json:"description" validate:"omitempty"`
 	Location    string `json:"location"    validate:"omitempty"`
