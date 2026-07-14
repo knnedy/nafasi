@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -24,7 +24,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { APIError } from "@/lib/api";
-import { useUpdateEvent, useUpdateEventStatus } from "@/hooks/use-organiser";
+import {
+  type EventStatus,
+  useUpdateEvent,
+  useUpdateEventStatus,
+} from "@/hooks/use-organiser";
+import { useEventByID } from "@/hooks/use-events";
 
 const editEventSchema = z
   .object({
@@ -55,20 +60,6 @@ const editEventSchema = z
   });
 
 type EditEventForm = z.infer<typeof editEventSchema>;
-
-const MOCK_EVENT = {
-  id: "550e8400-e29b-41d4-a716-446655440001",
-  title: "Afropunk Nairobi 2026",
-  description:
-    "The biggest Afropunk festival hits Nairobi with a lineup of world-class artists celebrating African culture, music, and identity.",
-  location: "Nairobi, Kenya",
-  venue: "Uhuru Gardens",
-  starts_at: "2026-06-14T18:00",
-  ends_at: "2026-06-14T23:00",
-  is_online: false,
-  online_url: "",
-  status: "PUBLISHED",
-};
 
 const STATUS_OPTIONS = [
   {
@@ -176,36 +167,46 @@ const textareaClass =
 
 export default function EditEventPage() {
   const router = useRouter();
-  const event = MOCK_EVENT;
+  const params = useParams();
+  const eventId = params?.id as string;
 
-  const [isOnline, setIsOnline] = useState(event.is_online);
-  const [currentStatus, setCurrentStatus] = useState(event.status);
+  const { data: event, isLoading, isError } = useEventByID(eventId);
 
-  // Initialize mutations
+  const [statusOverride, setStatusOverride] = useState<EventStatus | null>(
+    null,
+  );
+  const currentStatus = statusOverride ?? event?.status ?? "";
+
   const updateEvent = useUpdateEvent();
   const updateStatus = useUpdateEventStatus();
 
   const form = useForm<EditEventForm>({
     resolver: zodResolver(editEventSchema),
-    defaultValues: {
-      title: event.title,
-      description: event.description,
-      location: event.location,
-      venue: event.venue,
-      starts_at: event.starts_at,
-      ends_at: event.ends_at,
-      is_online: event.is_online,
-      online_url: event.online_url,
-    },
+    values: event
+      ? {
+          title: event.title,
+          description: event.description ?? "",
+          location: event.location ?? "",
+          venue: event.venue ?? "",
+          starts_at: event.starts_at ? event.starts_at.slice(0, 16) : "",
+          ends_at: event.ends_at ? event.ends_at.slice(0, 16) : "",
+          is_online: event.is_online,
+          online_url: event.online_url ?? "",
+        }
+      : undefined,
   });
 
+  const isOnline = form.watch("is_online");
+
   const onSubmit = (data: EditEventForm) => {
+    if (!event) return;
+
     updateEvent.mutate(
       {
         id: event.id,
         data: {
           title: data.title,
-          category_id: "1", // Update this based on your actual data model
+          category_id: event.category_id,
           description: data.description ?? "",
           location: data.location ?? "",
           venue: data.venue ?? "",
@@ -231,13 +232,13 @@ export default function EditEventPage() {
   };
 
   const handleStatusChange = (status: string) => {
-    if (status === currentStatus) return;
+    if (!event || status === currentStatus) return;
 
     updateStatus.mutate(
-      { id: event.id, status },
+      { id: event.id, status: status as EventStatus },
       {
         onSuccess: () => {
-          setCurrentStatus(status);
+          setStatusOverride(status as EventStatus);
           toast.success(`Event marked as ${status.toLowerCase()}.`);
         },
         onError: (err) => {
@@ -250,6 +251,27 @@ export default function EditEventPage() {
       },
     );
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <LoaderCircle className="w-8 h-8 text-orange-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (isError || !event) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <p className="text-white/50 text-sm">Failed to load event.</p>
+        <button
+          onClick={() => router.back()}
+          className="text-orange-400 text-sm hover:underline">
+          Go back
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-4xl">
@@ -409,11 +431,7 @@ export default function EditEventPage() {
             render={({ field }) => (
               <button
                 type="button"
-                onClick={() => {
-                  const next = !field.value;
-                  field.onChange(next);
-                  setIsOnline(next);
-                }}
+                onClick={() => field.onChange(!field.value)}
                 className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all duration-200 ${
                   field.value
                     ? "bg-emerald-500/8 border-emerald-500/20"

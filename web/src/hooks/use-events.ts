@@ -122,6 +122,20 @@ export function useEventBySlug(slug: string | undefined) {
   });
 }
 
+export function useEventByID(id: string | undefined) {
+  return useQuery({
+    queryKey: ["event", id],
+    queryFn: async () => {
+      if (!id) throw new Error("ID is required");
+      const res = await api.public.get(`/api/v1/events/${id}`);
+      const json = await res.json();
+
+      return json.data as Event;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useEventTicketTypes(eventId: string | undefined) {
   return useQuery({
     queryKey: ["event-tickets", eventId],
