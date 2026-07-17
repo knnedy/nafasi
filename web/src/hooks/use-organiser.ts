@@ -378,3 +378,82 @@ export function useCreateTicketType({
 
   return { mutate, isSubmitting };
 }
+
+export interface UpdateTicketTypeInput {
+  name: string;
+  description?: string;
+  price: string;
+  quantity: number;
+  is_free: boolean;
+  sale_starts?: string;
+  sale_ends?: string;
+}
+
+export function useUpdateTicketType(eventId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      ticketTypeId,
+      data,
+    }: {
+      ticketTypeId: string;
+      data: UpdateTicketTypeInput;
+    }) => {
+      // Format dates to strict RFC3339 ISO strings if provided
+      const formattedData = {
+        ...data,
+        sale_starts: data.sale_starts
+          ? new Date(data.sale_starts).toISOString()
+          : "",
+        sale_ends: data.sale_ends ? new Date(data.sale_ends).toISOString() : "",
+      };
+
+      const res = await api.patch(
+        `/api/v1/events/${eventId}/ticket-types/${ticketTypeId}`,
+        formattedData,
+      );
+
+      const json = await res.json();
+      return json.data as TicketTypeResponse;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["events", eventId, "ticket-types"],
+      });
+      toast.success("Ticket type updated successfully.");
+    },
+    onError: (err) => {
+      if (err instanceof APIError) {
+        toast.error(err.message);
+      } else {
+        toast.error("Failed to update ticket type.");
+      }
+    },
+  });
+}
+
+export function useDeleteTicketType(eventId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ticketTypeId: string) => {
+      await api.delete(
+        `/api/v1/events/${eventId}/ticket-types/${ticketTypeId}`,
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["events", eventId, "ticket-types"],
+      });
+      toast.success("Ticket type deleted.");
+    },
+    onError: (err) => {
+      if (err instanceof APIError) {
+        toast.error(err.message);
+      } else {
+        toast.error("Failed to delete ticket type.");
+      }
+    },
+  });
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -22,47 +22,16 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, APIError } from "@/lib/api";
+import { APIError } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
-
-// Types
-interface EventResponse {
-  id: string;
-  title: string;
-  slug: string;
-  starts_at: string;
-  ends_at: string;
-  venue?: string;
-  location?: string;
-  is_online: boolean;
-  status: string;
-}
-
-interface TicketTypeResponse {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  currency: string;
-  quantity: number;
-  quantity_sold: number;
-  is_free: boolean;
-  sale_starts?: string;
-  sale_ends?: string;
-}
-
-// Mock event for design
-const MOCK_EVENT: EventResponse = {
-  id: "550e8400-e29b-41d4-a716-446655440001",
-  title: "Afropunk Nairobi 2026",
-  slug: "afropunk-nairobi-2026",
-  starts_at: "2026-06-14T18:00:00Z",
-  ends_at: "2026-06-14T23:00:00Z",
-  venue: "Uhuru Gardens",
-  location: "Nairobi, Kenya",
-  is_online: false,
-  status: "DRAFT",
-};
+import {
+  useEventTicketTypes,
+  useCreateTicketType,
+  useDeleteTicketType,
+  useUpdateEventStatus,
+  TicketTypeResponse,
+} from "@/hooks/use-organiser";
+import { useEventByID } from "@/hooks/use-events";
 
 // Schema
 const ticketTypeSchema = z
@@ -86,7 +55,7 @@ const ticketTypeSchema = z
     path: ["price"],
   });
 
-type TicketTypeForm = z.infer<typeof ticketTypeSchema>;
+export type TicketTypeForm = z.infer<typeof ticketTypeSchema>;
 
 // Helpers
 function formatDate(iso: string) {
@@ -141,13 +110,15 @@ function FormField({
   );
 }
 
-// Ticket type card (already added)
+// Ticket type card
 function TicketTypeCard({
   ticket,
   onDelete,
+  isDeleting,
 }: {
   ticket: TicketTypeResponse;
   onDelete: () => void;
+  isDeleting: boolean;
 }) {
   return (
     <div className="group flex items-center gap-4 p-4 rounded-2xl border border-white/8 bg-white/2 hover:border-white/12 transition-all duration-200">
@@ -175,21 +146,50 @@ function TicketTypeCard({
       <button
         type="button"
         onClick={onDelete}
-        className="opacity-0 group-hover:opacity-100 text-red-400/50 hover:text-red-400 transition-all duration-200 p-1.5 rounded-lg hover:bg-red-500/8">
-        <Trash2 className="w-4 h-4" />
+        disabled={isDeleting}
+        className={`transition-all duration-200 p-1.5 rounded-lg hover:bg-red-500/8 disabled:cursor-not-allowed ${
+          isDeleting
+            ? "opacity-100 text-red-400"
+            : "opacity-0 group-hover:opacity-100 text-red-400/50 hover:text-red-400"
+        }`}>
+        {isDeleting ? (
+          <LoaderCircle className="w-4 h-4 animate-spin" />
+        ) : (
+          <Trash2 className="w-4 h-4" />
+        )}
       </button>
     </div>
   );
 }
 
-// Setup page
-export default function EventSetupPage() {
+export default function EventTicketTypesPage() {
   const router = useRouter();
-  const [ticketTypes, setTicketTypes] = useState<TicketTypeResponse[]>([]);
+  const params = useParams();
+  const eventId = params?.id as string;
   const [showForm, setShowForm] = useState(true);
-  const [isPublishing, setIsPublishing] = useState(false);
 
-  const event = MOCK_EVENT;
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // 1. CALL ALL HOOKS AT THE TOP
+  const {
+    data: event,
+    isLoading: isLoadingEvent,
+    isError,
+  } = useEventByID(eventId);
+
+  // Use eventId here (it is available immediately)
+  const { data: ticketTypes = [] } = useEventTicketTypes(eventId);
+  const { mutate: deleteTicketType } = useDeleteTicketType(eventId);
+  const { mutate: updateEventStatus, isPending: isPublishing } =
+    useUpdateEventStatus();
+
+  const { mutate: createTicketType, isSubmitting } = useCreateTicketType({
+    eventId: eventId,
+    onSuccess: () => {
+      form.reset();
+      setShowForm(false);
+    },
+  });
 
   const form = useForm<TicketTypeForm>({
     resolver: zodResolver(ticketTypeSchema),
@@ -204,62 +204,75 @@ export default function EventSetupPage() {
     },
   });
 
+  // 2. NOW PERFORM EARLY RETURNS
+  if (isLoadingEvent) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-100">
+        <LoaderCircle className="w-8 h-8 text-orange-500 animate-spin" />
+        <p className="text-white/30 text-sm mt-4 animate-pulse">
+          Loading event...
+        </p>
+      </div>
+    );
+  }
+
+  if (isError || !event) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-100 text-center p-6">
+        <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/10 flex items-center justify-center mb-4">
+          <AlertTriangle className="w-8 h-8 text-red-500" />
+        </div>
+        <h2 className="text-white font-black text-xl mb-2">
+          Unable to load event
+        </h2>
+        <p className="text-white/30 text-sm mb-6 max-w-sm">
+          We couldn&apos;t retrieve the event details. Please check your
+          connection or try again.
+        </p>
+        <button
+          onClick={() => router.back()}
+          className="h-11 px-6 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-sm transition-colors border border-white/10">
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
   const isFree = form.watch("is_free");
-  const isSubmitting = form.formState.isSubmitting;
 
-  const onAddTicketType = async (data: TicketTypeForm) => {
-    try {
-      const res = await api.post(`/api/v1/events/${event.id}/ticket-types`, {
-        name: data.name,
-        description: data.description ?? "",
-        price: data.is_free ? "0" : (data.price ?? "0"),
-        quantity: data.quantity,
-        is_free: data.is_free,
-        sale_starts: data.sale_starts ?? "",
-        sale_ends: data.sale_ends ?? "",
-      });
-
-      const json = await res.json();
-      setTicketTypes((prev) => [...prev, json.data]);
-      form.reset();
-      toast.success(`"${data.name}" added.`);
-      setShowForm(false);
-    } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
-    }
+  const onAddTicketType = (data: TicketTypeForm) => {
+    createTicketType(data);
   };
 
   const handleDeleteTicketType = (id: string) => {
-    setTicketTypes((prev) => prev.filter((t) => t.id !== id));
+    setDeletingId(id);
+    deleteTicketType(id, {
+      onSettled: () => setDeletingId(null),
+    });
   };
 
-  const handlePublish = async () => {
+  const handlePublish = () => {
     if (ticketTypes.length === 0) {
       toast.error("Add at least one ticket type before publishing.");
       return;
     }
 
-    setIsPublishing(true);
-    try {
-      await api.patch(`/api/v1/events/${event.id}/status`, {
-        status: "PUBLISHED",
-      });
-
-      toast.success("Event published successfully!");
-      router.push(`/dashboard/organiser/events/${event.id}`);
-    } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setIsPublishing(false);
-    }
+    updateEventStatus(
+      { id: event.id, status: "PUBLISHED" },
+      {
+        onSuccess: () => {
+          toast.success("Event published successfully!");
+          router.push(`/dashboard/organiser/events/${event.id}`);
+        },
+        onError: (err) => {
+          if (err instanceof APIError) {
+            toast.error(err.message);
+          } else {
+            toast.error("Failed to publish event.");
+          }
+        },
+      },
+    );
   };
 
   return (
@@ -336,6 +349,7 @@ export default function EventSetupPage() {
               <TicketTypeCard
                 key={tt.id}
                 ticket={tt}
+                isDeleting={deletingId === tt.id}
                 onDelete={() => handleDeleteTicketType(tt.id)}
               />
             ))}
@@ -343,7 +357,7 @@ export default function EventSetupPage() {
         </div>
       )}
 
-      {/* add ticket type */}
+      {/* add ticket type form wrapper */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-white font-black text-base tracking-tight">
