@@ -70,6 +70,16 @@ interface UpdateEventStatusVariables {
   status: EventStatus;
 }
 
+export interface AvailableTicketTypesResponse {
+  id: string;
+  event_id: string;
+  name: string;
+  description?: string;
+  price: number;
+  currency: string;
+  is_free: boolean;
+}
+
 // Fetch all events for the organiser
 export function useOrganiserEvents() {
   return useQuery({
@@ -227,5 +237,70 @@ export function useUpdateEventStatus() {
         queryKey: ["organiser", "events"],
       });
     },
+  });
+}
+
+export function useEventOrders(
+  eventId: string,
+  params?: {
+    status?: string;
+    limit?: number;
+    offset?: number;
+  },
+) {
+  return useQuery({
+    queryKey: ["organiser", "events", eventId, "orders", params],
+    queryFn: async () => {
+      if (!eventId) return [];
+
+      const searchParams = new URLSearchParams();
+
+      if (params?.status && params.status !== "All") {
+        searchParams.set("status", params.status.toUpperCase());
+      }
+      if (params?.limit) {
+        searchParams.set("limit", params.limit.toString());
+      }
+      if (params?.offset) {
+        searchParams.set("offset", params.offset.toString());
+      }
+
+      const queryStr = searchParams.toString();
+      const url = `/api/v1/organiser/events/${eventId}/orders${queryStr ? `?${queryStr}` : ""}`;
+
+      const res = await api.get(url);
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch event orders");
+      }
+
+      const json = await res.json();
+
+      // Go handler returns directly using response.WriteJSON
+      return (json.data || json || []) as OrganiserOrderResponse[];
+    },
+    enabled: !!eventId,
+  });
+}
+
+export function useEventAvailableTicketTypes(eventId: string) {
+  return useQuery({
+    queryKey: ["events", eventId, "ticket-types", "available"],
+    queryFn: async () => {
+      if (!eventId) return [];
+
+      const res = await api.get(
+        `/api/v1/events/${eventId}/ticket-types/available`,
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch ticket types");
+      }
+
+      const json = await res.json();
+
+      return (json.data || json || []) as AvailableTicketTypesResponse[];
+    },
+    enabled: !!eventId,
   });
 }
