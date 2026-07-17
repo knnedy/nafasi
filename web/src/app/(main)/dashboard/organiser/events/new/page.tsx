@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { APIError } from "@/lib/api";
-import { useCreateEvent } from "@/hooks/use-organiser";
+import { useCreateEvent } from "@/hooks/organiser/use-events";
 
 const createEventSchema = z
   .object({

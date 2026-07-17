@@ -24,14 +24,14 @@ import {
 import { toast } from "sonner";
 import { APIError } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
+import { useEventByID } from "@/hooks/use-events";
 import {
-  useEventTicketTypes,
+  TicketTypeResponse,
   useCreateTicketType,
   useDeleteTicketType,
-  useUpdateEventStatus,
-  TicketTypeResponse,
-} from "@/hooks/use-organiser";
-import { useEventByID } from "@/hooks/use-events";
+  useEventTicketTypes,
+} from "@/hooks/organiser/use-ticket-types";
+import { useUpdateEventStatus } from "@/hooks/organiser/use-events";
 
 // Schema
 const ticketTypeSchema = z
@@ -164,20 +164,18 @@ function TicketTypeCard({
 
 export default function EventTicketTypesPage() {
   const router = useRouter();
-  const params = useParams();
-  const eventId = params?.id as string;
+  const params = useParams<{ id: string }>();
+  const eventId = params.id;
   const [showForm, setShowForm] = useState(true);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // 1. CALL ALL HOOKS AT THE TOP
   const {
     data: event,
     isLoading: isLoadingEvent,
     isError,
   } = useEventByID(eventId);
 
-  // Use eventId here (it is available immediately)
   const { data: ticketTypes = [] } = useEventTicketTypes(eventId);
   const { mutate: deleteTicketType } = useDeleteTicketType(eventId);
   const { mutate: updateEventStatus, isPending: isPublishing } =
@@ -204,7 +202,6 @@ export default function EventTicketTypesPage() {
     },
   });
 
-  // 2. NOW PERFORM EARLY RETURNS
   if (isLoadingEvent) {
     return (
       <div className="flex flex-col items-center justify-center min-h-100">

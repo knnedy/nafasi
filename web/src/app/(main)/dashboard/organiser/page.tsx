@@ -17,11 +17,9 @@ import {
   Loader2,
 } from "lucide-react";
 import { accentForId, formatPrice } from "@/lib/utils";
-import {
-  useOrganiserEvents,
-  useOrganiserRecentOrders,
-  useAllEventsStats,
-} from "@/hooks/use-organiser";
+import { useOrganiserEvents } from "@/hooks/organiser/use-events";
+import { useOrganiserRecentOrders } from "@/hooks/organiser/use-orders";
+import { useAllEventsStats } from "@/hooks/organiser/use-stats";
 
 function timeAgo(iso: string) {
   if (!iso) return "Just now";
@@ -140,10 +138,8 @@ export default function OrganiserOverviewPage() {
   const { data: recentOrders = [], isLoading: isLoadingOrders } =
     useOrganiserRecentOrders(5);
 
-  // Parallel fetch event stats
   const statsQueries = useAllEventsStats(events);
 
-  // Aggregate stats from fully resolved queries
   const loadedStats = statsQueries
     .map((q) => q.data)
     .filter((data) => data !== undefined);

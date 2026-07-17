@@ -16,10 +16,10 @@ import {
   Loader2,
 } from "lucide-react";
 import {
+  OrganiserOrderResponse,
   useOrganiserOrders,
-  useOrganiserEvents,
-  type OrganiserOrderResponse,
-} from "@/hooks/use-organiser";
+} from "@/hooks/organiser/use-orders";
+import { useOrganiserEvents } from "@/hooks/organiser/use-events";
 
 // Helpers
 function formatDate(iso: string) {
@@ -236,13 +236,11 @@ export default function OrganiserOrdersPage() {
     );
   }, [events]);
 
-  // Fetch orders (driving status through the API)
   const { data: orders = [], isLoading } = useOrganiserOrders({
     status: activeStatus === "All" ? undefined : activeStatus,
-    limit: 100, // Reasonable default for the dashboard view
+    limit: 100,
   });
 
-  // Client-side filtering for search and event selection
   const filtered = useMemo(() => {
     return orders.filter((o) => {
       const matchesEvent = activeEvent === "All" || o.event_id === activeEvent;

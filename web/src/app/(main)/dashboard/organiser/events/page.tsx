@@ -19,7 +19,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { accentForId, formatPrice } from "@/lib/utils";
-import { useOrganiserEvents, useAllEventsStats } from "@/hooks/use-organiser";
+import { useOrganiserEvents } from "@/hooks/organiser/use-events";
+import { useAllEventsStats } from "@/hooks/organiser/use-stats";
 
 // Helpers
 function formatDate(iso: string) {
@@ -94,14 +95,11 @@ export default function OrganiserEventsPage() {
   const [activeFilter, setActiveFilter] = useState<Filter>("All");
   const [search, setSearch] = useState("");
 
-  // 1. Fetch real events
   const { data: events = [], isLoading: isEventsLoading } =
     useOrganiserEvents();
 
-  // 2. Fetch stats in parallel for all loaded events
   const statsQueries = useAllEventsStats(events);
 
-  // 3. Build a lookup map for easy access in the render loop
   const statsLookup = useMemo(() => {
     const lookup: Record<
       string,

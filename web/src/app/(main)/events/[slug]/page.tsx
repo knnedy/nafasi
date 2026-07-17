@@ -28,14 +28,12 @@ export default function EventPage() {
   const params = useParams();
   const slug = params?.slug as string;
 
-  // 1. Fetch the event
   const {
     data: event,
     isLoading: isLoadingEvent,
     error,
   } = useEventBySlug(slug);
 
-  // 2. Fetch the tickets (automatically waits for event?.id to exist)
   const { data: tickets = [], isLoading: isLoadingTickets } =
     useEventTicketTypes(event?.id);
 

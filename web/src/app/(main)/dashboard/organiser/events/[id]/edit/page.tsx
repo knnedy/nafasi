@@ -24,12 +24,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { APIError } from "@/lib/api";
+import { useEventByID } from "@/hooks/use-events";
 import {
-  type EventStatus,
+  EventStatus,
   useUpdateEvent,
   useUpdateEventStatus,
-} from "@/hooks/use-organiser";
-import { useEventByID } from "@/hooks/use-events";
+} from "@/hooks/organiser/use-events";
 
 const editEventSchema = z
   .object({
@@ -167,8 +167,8 @@ const textareaClass =
 
 export default function EditEventPage() {
   const router = useRouter();
-  const params = useParams();
-  const eventId = params?.id as string;
+  const params = useParams<{ id: string }>();
+  const eventId = params.id;
 
   const { data: event, isLoading, isError } = useEventByID(eventId);
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -20,198 +21,9 @@ import {
   ScanLine,
 } from "lucide-react";
 import { accentForId, formatPrice } from "@/lib/utils";
-
-interface EventResponse {
-  id: string;
-  organiser_id: string;
-  category_id: string;
-  title: string;
-  slug: string;
-  description?: string;
-  location?: string;
-  venue?: string;
-  banner_url?: string;
-  starts_at: string;
-  ends_at: string;
-  status: string;
-  is_online: boolean;
-  online_url?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface TicketTypeResponse {
-  id: string;
-  event_id: string;
-  name: string;
-  description?: string;
-  price: number;
-  currency: string;
-  quantity: number;
-  quantity_sold: number;
-  is_free: boolean;
-  sale_starts?: string;
-  sale_ends?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface OrganiserOrderResponse {
-  id: string;
-  user_id: string;
-  event_id: string;
-  ticket_type_id: string;
-  quantity: number;
-  status: string;
-  payment_method?: string;
-  payment_ref?: string;
-  checked_in: boolean;
-  checked_in_at?: string;
-  created_at: string;
-}
-
-interface OrderStatusBreakdownResponse {
-  status: string;
-  count: number;
-}
-
-// Mock data
-const MOCK_EVENT: EventResponse = {
-  id: "550e8400-e29b-41d4-a716-446655440001",
-  organiser_id: "o1",
-  category_id: "1",
-  title: "Afropunk Nairobi 2026",
-  slug: "afropunk-nairobi-2026",
-  description:
-    "The biggest Afropunk festival hits Nairobi with a lineup of world-class artists celebrating African culture, music, and identity. Expect electrifying performances, immersive art installations, fashion showcases, and a community of people who refuse to be boxed in.",
-  location: "Nairobi, Kenya",
-  venue: "Uhuru Gardens",
-  banner_url: "",
-  starts_at: "2026-06-14T18:00:00Z",
-  ends_at: "2026-06-14T23:00:00Z",
-  status: "PUBLISHED",
-  is_online: false,
-  created_at: "2026-04-01T10:00:00Z",
-  updated_at: "2026-04-01T10:00:00Z",
-};
-
-const MOCK_TICKET_TYPES: TicketTypeResponse[] = [
-  {
-    id: "tt1",
-    event_id: "550e8400-e29b-41d4-a716-446655440001",
-    name: "General Admission",
-    description: "Standing access to all stages and general areas.",
-    price: 250000,
-    currency: "KES",
-    quantity: 500,
-    quantity_sold: 312,
-    is_free: false,
-    created_at: "",
-    updated_at: "",
-  },
-  {
-    id: "tt2",
-    event_id: "550e8400-e29b-41d4-a716-446655440001",
-    name: "VIP",
-    description:
-      "Priority entry, dedicated viewing area, and complimentary drinks.",
-    price: 750000,
-    currency: "KES",
-    quantity: 100,
-    quantity_sold: 78,
-    is_free: false,
-    created_at: "",
-    updated_at: "",
-  },
-  {
-    id: "tt3",
-    event_id: "550e8400-e29b-41d4-a716-446655440001",
-    name: "Early Bird",
-    description: "Limited early bird tickets at a discounted price.",
-    price: 150000,
-    currency: "KES",
-    quantity: 200,
-    quantity_sold: 200,
-    is_free: false,
-    sale_ends: "2026-05-01T00:00:00Z",
-    created_at: "",
-    updated_at: "",
-  },
-];
-
-const MOCK_STATS = {
-  total_tickets_sold: 590,
-  revenue: 18950000,
-  checked_in_count: 0,
-  total_orders: 312,
-};
-
-const MOCK_BREAKDOWN: OrderStatusBreakdownResponse[] = [
-  { status: "CONFIRMED", count: 289 },
-  { status: "PENDING", count: 18 },
-  { status: "CANCELLED", count: 5 },
-];
-
-const MOCK_RECENT_ORDERS: OrganiserOrderResponse[] = [
-  {
-    id: "ord-001",
-    user_id: "u1",
-    event_id: "550e8400-e29b-41d4-a716-446655440001",
-    ticket_type_id: "tt2",
-    quantity: 2,
-    status: "CONFIRMED",
-    payment_method: "MPESA",
-    payment_ref: "QH7K2L9M",
-    checked_in: false,
-    created_at: "2026-05-28T14:32:00Z",
-  },
-  {
-    id: "ord-002",
-    user_id: "u2",
-    event_id: "550e8400-e29b-41d4-a716-446655440001",
-    ticket_type_id: "tt1",
-    quantity: 1,
-    status: "CONFIRMED",
-    payment_method: "MPESA",
-    payment_ref: "RT4P8N3X",
-    checked_in: false,
-    created_at: "2026-05-27T09:15:00Z",
-  },
-  {
-    id: "ord-003",
-    user_id: "u3",
-    event_id: "550e8400-e29b-41d4-a716-446655440001",
-    ticket_type_id: "tt1",
-    quantity: 3,
-    status: "PENDING",
-    payment_method: "MPESA",
-    checked_in: false,
-    created_at: "2026-05-26T16:45:00Z",
-  },
-  {
-    id: "ord-004",
-    user_id: "u4",
-    event_id: "550e8400-e29b-41d4-a716-446655440001",
-    ticket_type_id: "tt3",
-    quantity: 1,
-    status: "CONFIRMED",
-    payment_method: "MPESA",
-    payment_ref: "WQ2J5K8Y",
-    checked_in: false,
-    created_at: "2026-05-25T11:20:00Z",
-  },
-  {
-    id: "ord-005",
-    user_id: "u5",
-    event_id: "550e8400-e29b-41d4-a716-446655440001",
-    ticket_type_id: "tt1",
-    quantity: 2,
-    status: "CANCELLED",
-    payment_method: "MPESA",
-    checked_in: false,
-    created_at: "2026-05-24T08:00:00Z",
-  },
-];
+import { useEventByID } from "@/hooks/use-events";
+import { useEventTicketTypes as useOrganiserTicketTypes } from "@/hooks/organiser/use-ticket-types";
+import { useEventOrders } from "@/hooks/organiser/use-orders";
 
 // Helpers
 function formatDate(iso: string) {
@@ -231,10 +43,6 @@ function timeAgo(iso: string) {
   if (days > 0) return `${days}d ago`;
   if (hours > 0) return `${hours}h ago`;
   return `${mins}m ago`;
-}
-
-function ticketTypeName(id: string) {
-  return MOCK_TICKET_TYPES.find((t) => t.id === id)?.name ?? "Unknown";
 }
 
 function statusConfig(status: string) {
@@ -343,16 +151,58 @@ function StatCard({
 }
 
 export default function OrganiserEventDetailPage() {
-  const event = MOCK_EVENT;
+  const params = useParams<{ id: string }>();
+  const eventId = params.id;
+
+  const { data: event, isLoading: eventLoading } = useEventByID(eventId);
+  const { data: ticketTypes = [], isLoading: ticketTypesLoading } =
+    useOrganiserTicketTypes(eventId);
+  const { data: orders = [], isLoading: ordersLoading } =
+    useEventOrders(eventId);
+
+  if (eventLoading || ticketTypesLoading || ordersLoading || !event) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-white/30 text-sm font-semibold">Loading event...</p>
+      </div>
+    );
+  }
+
   const accent = accentForId(event.id);
   const sc = statusConfig(event.status);
   const StatusIcon = sc.icon;
 
-  const totalCapacity = MOCK_TICKET_TYPES.reduce((s, t) => s + t.quantity, 0);
+  const totalCapacity = ticketTypes.reduce((s, t) => s + t.quantity, 0);
+  const totalTicketsSold = ticketTypes.reduce((s, t) => s + t.quantity_sold, 0);
+  const revenue = ticketTypes.reduce(
+    (s, t) => s + (t.is_free ? 0 : t.price * t.quantity_sold),
+    0,
+  );
+  const checkedInCount = orders.filter((o) => o.checked_in).length;
+  const totalOrders = orders.length;
+
   const soldPct =
     totalCapacity > 0
-      ? Math.round((MOCK_STATS.total_tickets_sold / totalCapacity) * 100)
+      ? Math.round((totalTicketsSold / totalCapacity) * 100)
       : 0;
+
+  const breakdown = Object.entries(
+    orders.reduce<Record<string, number>>((acc, o) => {
+      acc[o.status] = (acc[o.status] || 0) + 1;
+      return acc;
+    }, {}),
+  ).map(([status, count]) => ({ status, count }));
+
+  const recentOrders = [...orders]
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    )
+    .slice(0, 5);
+
+  function ticketTypeName(id: string) {
+    return ticketTypes.find((t) => t.id === id)?.name ?? "Unknown";
+  }
 
   return (
     <div className="space-y-8">
@@ -436,27 +286,27 @@ export default function OrganiserEventDetailPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           label="Tickets sold"
-          value={MOCK_STATS.total_tickets_sold.toLocaleString()}
+          value={totalTicketsSold.toLocaleString()}
           icon={Ticket}
           accent="#f97316"
           sub={`${soldPct}% of capacity`}
         />
         <StatCard
           label="Revenue"
-          value={formatPrice(MOCK_STATS.revenue, "KES")}
+          value={formatPrice(revenue, ticketTypes[0]?.currency ?? "KES")}
           icon={TrendingUp}
           accent="#10b981"
         />
         <StatCard
           label="Orders"
-          value={MOCK_STATS.total_orders.toLocaleString()}
+          value={totalOrders.toLocaleString()}
           icon={ShoppingBag}
           accent="#8b5cf6"
           href={`/dashboard/organiser/events/${event.id}/orders`}
         />
         <StatCard
           label="Checked in"
-          value={MOCK_STATS.checked_in_count.toLocaleString()}
+          value={checkedInCount.toLocaleString()}
           icon={Users}
           accent="#0ea5e9"
           sub="on the day"
@@ -479,7 +329,7 @@ export default function OrganiserEventDetailPage() {
           </div>
 
           <div className="space-y-3">
-            {MOCK_TICKET_TYPES.map((tt) => {
+            {ticketTypes.map((tt) => {
               const pct =
                 tt.quantity > 0
                   ? Math.round((tt.quantity_sold / tt.quantity) * 100)
@@ -562,8 +412,8 @@ export default function OrganiserEventDetailPage() {
               Order Breakdown
             </h2>
             <div className="space-y-3">
-              {MOCK_BREAKDOWN.map((b) => {
-                const total = MOCK_BREAKDOWN.reduce(
+              {breakdown.map((b) => {
+                const total = breakdown.reduce(
                   (s, x) => s + Number(x.count),
                   0,
                 );
@@ -615,13 +465,11 @@ export default function OrganiserEventDetailPage() {
               </Link>
             </div>
             <div>
-              {MOCK_RECENT_ORDERS.map((order, i) => (
+              {recentOrders.map((order, i) => (
                 <div
                   key={order.id}
                   className={`flex items-center gap-3 px-5 py-3.5 ${
-                    i < MOCK_RECENT_ORDERS.length - 1
-                      ? "border-b border-white/4"
-                      : ""
+                    i < recentOrders.length - 1 ? "border-b border-white/4" : ""
                   }`}>
                   <div className="flex-1 min-w-0">
                     <p className="text-white/70 text-xs font-bold truncate">

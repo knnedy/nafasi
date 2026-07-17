@@ -16,9 +16,10 @@ import {
   QrCode,
   Loader2,
 } from "lucide-react";
-import { useEventOrders, useEventTicketTypes } from "@/hooks/use-organiser";
 import { useParams } from "next/navigation";
 import { useEventByID } from "@/hooks/use-events";
+import { useEventOrders } from "@/hooks/organiser/use-orders";
+import { useEventTicketTypes } from "@/hooks/organiser/use-ticket-types";
 
 interface OrganiserOrderResponse {
   id: string;
@@ -198,9 +199,8 @@ export default function OrganiserEventOrdersPage() {
   const [activeFilter, setActiveFilter] = useState<Filter>("All");
   const [search, setSearch] = useState("");
 
-  const params = useParams();
-
-  const eventId = (params?.eventId || params?.id) as string;
+  const params = useParams<{ id: string }>();
+  const eventId = params.id;
 
   const { data: event } = useEventByID(eventId);
 

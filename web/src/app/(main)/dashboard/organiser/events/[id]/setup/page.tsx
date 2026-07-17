@@ -28,11 +28,11 @@ import { APIError } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 import { useEventByID } from "@/hooks/use-events";
 import {
-  useUpdateEventStatus,
-  useEventTicketTypes,
+  TicketTypeResponse,
   useCreateTicketType,
-  type TicketTypeResponse,
-} from "@/hooks/use-organiser";
+  useEventTicketTypes,
+} from "@/hooks/organiser/use-ticket-types";
+import { useUpdateEventStatus } from "@/hooks/organiser/use-events";
 
 export const ticketTypeSchema = z
   .object({
@@ -150,8 +150,8 @@ function TicketTypeCard({
 
 export default function EventSetupPage() {
   const router = useRouter();
-  const params = useParams();
-  const eventId = params?.id as string;
+  const params = useParams<{ id: string }>();
+  const eventId = params.id;
   const queryClient = useQueryClient();
 
   const [showForm, setShowForm] = useState(true);
