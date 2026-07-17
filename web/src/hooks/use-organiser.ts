@@ -70,7 +70,23 @@ interface UpdateEventStatusVariables {
   status: EventStatus;
 }
 
-export interface AvailableTicketTypesResponse {
+export interface TicketTypeResponse {
+  id: string;
+  event_id: string;
+  name: string;
+  description?: string;
+  price: number;
+  currency: string;
+  quantity: number;
+  quantity_sold: number;
+  is_free: boolean;
+  sale_starts?: string;
+  sale_ends?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AvailableTicketTypeResponse {
   id: string;
   event_id: string;
   name: string;
@@ -283,14 +299,14 @@ export function useEventOrders(
   });
 }
 
-export function useEventAvailableTicketTypes(eventId: string) {
+export function useEventTicketTypes(eventId: string) {
   return useQuery({
-    queryKey: ["events", eventId, "ticket-types", "available"],
+    queryKey: ["events", eventId, "ticket-types"],
     queryFn: async () => {
       if (!eventId) return [];
 
       const res = await api.get(
-        `/api/v1/events/${eventId}/ticket-types/available`,
+        `/api/v1/organiser/events/${eventId}/ticket-types`,
       );
 
       if (!res.ok) {
@@ -299,7 +315,7 @@ export function useEventAvailableTicketTypes(eventId: string) {
 
       const json = await res.json();
 
-      return (json.data || json || []) as AvailableTicketTypesResponse[];
+      return (json.data || json || []) as TicketTypeResponse[];
     },
     enabled: !!eventId,
   });

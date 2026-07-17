@@ -16,10 +16,7 @@ import {
   QrCode,
   Loader2,
 } from "lucide-react";
-import {
-  useEventOrders,
-  useEventAvailableTicketTypes,
-} from "@/hooks/use-organiser";
+import { useEventOrders, useEventTicketTypes } from "@/hooks/use-organiser";
 import { useParams } from "next/navigation";
 import { useEventByID } from "@/hooks/use-events";
 
@@ -214,7 +211,7 @@ export default function OrganiserEventOrdersPage() {
   } = useEventOrders(eventId);
 
   const { data: ticketTypes = [], isLoading: ticketsLoading } =
-    useEventAvailableTicketTypes(eventId);
+    useEventTicketTypes(eventId);
 
   const ticketTypesMap = useMemo(() => {
     return ticketTypes.reduce<Record<string, string>>((acc, curr) => {
