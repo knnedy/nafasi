@@ -12,81 +12,9 @@ import {
   Ticket,
   ScanLine,
 } from "lucide-react";
-
-interface OrganiserOrderResponse {
-  id: string;
-  user_id: string;
-  event_id: string;
-  ticket_type_id: string;
-  quantity: number;
-  status: string;
-  payment_method?: string;
-  payment_ref?: string;
-  checked_in: boolean;
-  checked_in_at?: string;
-  created_at: string;
-}
-
-const MOCK_TICKET_TYPES: Record<string, string> = {
-  tt1: "General Admission",
-  tt2: "VIP",
-  tt3: "Early Bird",
-};
-
-const MOCK_CHECKED_IN: OrganiserOrderResponse[] = [
-  {
-    id: "ord-001",
-    user_id: "u1",
-    event_id: "550e8400-e29b-41d4-a716-446655440001",
-    ticket_type_id: "tt2",
-    quantity: 2,
-    status: "CONFIRMED",
-    payment_method: "MPESA",
-    payment_ref: "QH7K2L9M",
-    checked_in: true,
-    checked_in_at: "2026-06-14T18:45:00Z",
-    created_at: "2026-05-28T14:32:00Z",
-  },
-  {
-    id: "ord-007",
-    user_id: "u7",
-    event_id: "550e8400-e29b-41d4-a716-446655440001",
-    ticket_type_id: "tt3",
-    quantity: 2,
-    status: "CONFIRMED",
-    payment_method: "MPESA",
-    payment_ref: "NL8M4Q6X",
-    checked_in: true,
-    checked_in_at: "2026-06-14T19:10:00Z",
-    created_at: "2026-05-22T10:30:00Z",
-  },
-  {
-    id: "ord-011",
-    user_id: "u11",
-    event_id: "550e8400-e29b-41d4-a716-446655440001",
-    ticket_type_id: "tt1",
-    quantity: 1,
-    status: "CONFIRMED",
-    payment_method: "MPESA",
-    payment_ref: "YK4T2R8N",
-    checked_in: true,
-    checked_in_at: "2026-06-14T19:22:00Z",
-    created_at: "2026-05-20T08:10:00Z",
-  },
-  {
-    id: "ord-012",
-    user_id: "u12",
-    event_id: "550e8400-e29b-41d4-a716-446655440001",
-    ticket_type_id: "tt2",
-    quantity: 1,
-    status: "CONFIRMED",
-    payment_method: "MPESA",
-    payment_ref: "PW6M3K1Z",
-    checked_in: true,
-    checked_in_at: "2026-06-14T19:35:00Z",
-    created_at: "2026-05-18T11:00:00Z",
-  },
-];
+import { useEventOrders } from "@/hooks/organiser/use-orders";
+import { useEventTicketTypes as useOrganiserTicketTypes } from "@/hooks/organiser/use-ticket-types";
+import type { OrganiserOrderResponse } from "@/hooks/organiser/use-orders";
 
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleTimeString("en-KE", {
@@ -104,9 +32,13 @@ function formatDate(iso: string) {
   });
 }
 
-function CheckedInRow({ order }: { order: OrganiserOrderResponse }) {
-  const ticketName = MOCK_TICKET_TYPES[order.ticket_type_id] ?? "Unknown";
-
+function CheckedInRow({
+  order,
+  ticketTypeName,
+}: {
+  order: OrganiserOrderResponse;
+  ticketTypeName: string;
+}) {
   return (
     <div className="flex items-center gap-4 px-5 py-4 border-b border-white/4 last:border-0">
       <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
@@ -115,7 +47,7 @@ function CheckedInRow({ order }: { order: OrganiserOrderResponse }) {
 
       <div className="flex-1 min-w-0">
         <p className="text-white/80 text-sm font-bold truncate leading-tight">
-          {ticketName}
+          {ticketTypeName}
         </p>
         <div className="flex items-center gap-3 mt-0.5 flex-wrap">
           <span className="text-white/30 text-xs">qty {order.quantity}</span>
@@ -151,21 +83,47 @@ export default function CheckedInOrdersPage() {
   const { id: eventId } = useParams<{ id: string }>();
   const [search, setSearch] = useState("");
 
+  const { data: orders = [], isLoading: ordersLoading } =
+    useEventOrders(eventId);
+  const { data: ticketTypes = [], isLoading: ticketTypesLoading } =
+    useOrganiserTicketTypes(eventId);
+
+  const ticketTypeMap = useMemo(
+    () => new Map(ticketTypes.map((t) => [t.id, t.name])),
+    [ticketTypes],
+  );
+
+  function ticketTypeName(id: string) {
+    return ticketTypeMap.get(id) ?? "Unknown";
+  }
+
+  const checkedIn = useMemo(() => orders.filter((o) => o.checked_in), [orders]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return MOCK_CHECKED_IN;
-    return MOCK_CHECKED_IN.filter(
+    if (!q) return checkedIn;
+    return checkedIn.filter(
       (o) =>
         o.id.toLowerCase().includes(q) ||
         o.payment_ref?.toLowerCase().includes(q) ||
-        MOCK_TICKET_TYPES[o.ticket_type_id]?.toLowerCase().includes(q),
+        (ticketTypeMap.get(o.ticket_type_id) ?? "Unknown")
+          .toLowerCase()
+          .includes(q),
     );
-  }, [search]);
+  }, [search, checkedIn, ticketTypeMap]);
 
   const totalTickets = useMemo(
-    () => MOCK_CHECKED_IN.reduce((sum, o) => sum + o.quantity, 0),
-    [],
+    () => checkedIn.reduce((sum, o) => sum + o.quantity, 0),
+    [checkedIn],
   );
+
+  if (ordersLoading || ticketTypesLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-white/30 text-sm font-semibold">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -186,7 +144,7 @@ export default function CheckedInOrdersPage() {
               Checked In
             </h1>
             <p className="text-white/30 text-sm mt-1">
-              {MOCK_CHECKED_IN.length} orders · {totalTickets} tickets
+              {checkedIn.length} orders · {totalTickets} tickets
             </p>
           </div>
           <Link
@@ -229,7 +187,11 @@ export default function CheckedInOrdersPage() {
       ) : (
         <div className="rounded-2xl border border-white/8 bg-white/2 overflow-hidden">
           {filtered.map((order) => (
-            <CheckedInRow key={order.id} order={order} />
+            <CheckedInRow
+              key={order.id}
+              order={order}
+              ticketTypeName={ticketTypeName(order.ticket_type_id)}
+            />
           ))}
         </div>
       )}
