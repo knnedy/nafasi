@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Plus,
@@ -23,50 +24,17 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, APIError } from "@/lib/api";
+import { APIError } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
+import { useEventByID } from "@/hooks/use-events";
+import {
+  useUpdateEventStatus,
+  useEventTicketTypes,
+  useCreateTicketType,
+  type TicketTypeResponse,
+} from "@/hooks/use-organiser";
 
-// Types
-interface EventResponse {
-  id: string;
-  title: string;
-  slug: string;
-  starts_at: string;
-  ends_at: string;
-  venue?: string;
-  location?: string;
-  is_online: boolean;
-  status: string;
-}
-
-interface TicketTypeResponse {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  currency: string;
-  quantity: number;
-  quantity_sold: number;
-  is_free: boolean;
-  sale_starts?: string;
-  sale_ends?: string;
-}
-
-// Mock event for design
-const MOCK_EVENT: EventResponse = {
-  id: "550e8400-e29b-41d4-a716-446655440001",
-  title: "Afropunk Nairobi 2026",
-  slug: "afropunk-nairobi-2026",
-  starts_at: "2026-06-14T18:00:00Z",
-  ends_at: "2026-06-14T23:00:00Z",
-  venue: "Uhuru Gardens",
-  location: "Nairobi, Kenya",
-  is_online: false,
-  status: "DRAFT",
-};
-
-// Schema
-const ticketTypeSchema = z
+export const ticketTypeSchema = z
   .object({
     name: z
       .string()
@@ -106,14 +74,12 @@ function formatTime(iso: string) {
   });
 }
 
-// Styled input
 const inputClass =
   "w-full h-11 rounded-xl bg-white/4 border border-white/8 text-white placeholder:text-white/20 text-sm focus:outline-none focus:border-orange-500/40 focus:bg-white/6 focus:ring-2 focus:ring-orange-500/8 transition-all duration-200 px-4";
 
 const inputInvalidClass =
   "w-full h-11 rounded-xl bg-white/4 border border-red-500/40 text-white placeholder:text-white/20 text-sm focus:outline-none focus:border-red-500/60 transition-all duration-200 px-4";
 
-// Form field
 function FormField({
   icon: Icon,
   label,
@@ -142,7 +108,6 @@ function FormField({
   );
 }
 
-// Ticket type card (already added)
 function TicketTypeCard({
   ticket,
   onDelete,
@@ -183,14 +148,41 @@ function TicketTypeCard({
   );
 }
 
-// Setup page
 export default function EventSetupPage() {
   const router = useRouter();
-  const [ticketTypes, setTicketTypes] = useState<TicketTypeResponse[]>([]);
-  const [showForm, setShowForm] = useState(true);
-  const [isPublishing, setIsPublishing] = useState(false);
+  const params = useParams();
+  const eventId = params?.id as string;
+  const queryClient = useQueryClient();
 
-  const event = MOCK_EVENT;
+  const [showForm, setShowForm] = useState(true);
+
+  // Queries
+  const {
+    data: event,
+    isLoading: isLoadingEvent,
+    isError,
+  } = useEventByID(eventId);
+  const { data: ticketTypes = [], isLoading: isLoadingTickets } =
+    useEventTicketTypes(eventId);
+
+  // Mutations
+  const updateStatus = useUpdateEventStatus();
+  const { mutate: createTicket, isSubmitting: isCreatingTicket } =
+    useCreateTicketType({
+      eventId,
+      onSuccess: (newTicket) => {
+        // Optimistically update cache without waiting for refetch
+        queryClient.setQueryData(
+          ["events", eventId, "ticket-types"],
+          (old: TicketTypeResponse[] | undefined) => [
+            ...(old || []),
+            newTicket,
+          ],
+        );
+        form.reset();
+        setShowForm(false);
+      },
+    });
 
   const form = useForm<TicketTypeForm>({
     resolver: zodResolver(ticketTypeSchema),
@@ -206,62 +198,65 @@ export default function EventSetupPage() {
   });
 
   const isFree = form.watch("is_free");
-  const isSubmitting = form.formState.isSubmitting;
 
   const onAddTicketType = async (data: TicketTypeForm) => {
-    try {
-      const res = await api.post(`/api/v1/events/${event.id}/ticket-types`, {
-        name: data.name,
-        description: data.description ?? "",
-        price: data.is_free ? "0" : (data.price ?? "0"),
-        quantity: data.quantity,
-        is_free: data.is_free,
-        sale_starts: data.sale_starts ?? "",
-        sale_ends: data.sale_ends ?? "",
-      });
-
-      const json = await res.json();
-      setTicketTypes((prev) => [...prev, json.data]);
-      form.reset();
-      toast.success(`"${data.name}" added.`);
-      setShowForm(false);
-    } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
-    }
+    if (!eventId) return;
+    await createTicket(data);
   };
 
   const handleDeleteTicketType = (id: string) => {
-    setTicketTypes((prev) => prev.filter((t) => t.id !== id));
+    queryClient.setQueryData(
+      ["events", eventId, "ticket-types"],
+      (old: TicketTypeResponse[] | undefined) =>
+        old ? old.filter((t) => t.id !== id) : [],
+    );
   };
 
-  const handlePublish = async () => {
+  const handlePublish = () => {
+    if (!eventId) return;
     if (ticketTypes.length === 0) {
       toast.error("Add at least one ticket type before publishing.");
       return;
     }
 
-    setIsPublishing(true);
-    try {
-      await api.patch(`/api/v1/events/${event.id}/status`, {
-        status: "PUBLISHED",
-      });
-
-      toast.success("Event published successfully!");
-      router.push(`/dashboard/organiser/events/${event.id}`);
-    } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setIsPublishing(false);
-    }
+    updateStatus.mutate(
+      { id: eventId, status: "PUBLISHED" },
+      {
+        onSuccess: () => {
+          toast.success("Event published successfully!");
+          router.push(`/dashboard/organiser/events/${eventId}`);
+        },
+        onError: (err) => {
+          if (err instanceof APIError) {
+            toast.error(err.message);
+          } else {
+            toast.error("Failed to publish event.");
+          }
+        },
+      },
+    );
   };
+
+  if (isLoadingEvent || isLoadingTickets) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <LoaderCircle className="w-8 h-8 text-orange-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (isError || !event) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <p className="text-white/50 text-sm">Failed to load event.</p>
+        <button
+          onClick={() => router.back()}
+          className="text-orange-400 text-sm hover:underline">
+          Go back
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-4xl">
@@ -321,7 +316,8 @@ export default function EventSetupPage() {
           <div className="flex items-center gap-3 mt-0.5 flex-wrap">
             <span className="text-white/30 text-xs flex items-center gap-1">
               <CalendarDays className="w-3 h-3" />
-              {formatDate(event.starts_at)} · {formatTime(event.starts_at)}
+              {event.starts_at &&
+                `${formatDate(event.starts_at)} · ${formatTime(event.starts_at)}`}
             </span>
             {event.is_online ? (
               <span className="text-emerald-500/60 text-xs flex items-center gap-1">
@@ -339,11 +335,11 @@ export default function EventSetupPage() {
           </div>
         </div>
         <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/6 border border-white/10 text-white/35 shrink-0">
-          Draft
+          {event.status}
         </span>
       </div>
 
-      {/* added ticket types */}
+      {/* added ticket types - fetched dynamically via useEventTicketTypes */}
       {ticketTypes.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -366,7 +362,7 @@ export default function EventSetupPage() {
         </div>
       )}
 
-      {/* add ticket type */}
+      {/* add ticket type form */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-white font-black text-base tracking-tight">
@@ -588,9 +584,9 @@ export default function EventSetupPage() {
               )}
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isCreatingTicket}
                 className="ml-auto h-11 px-6 rounded-xl font-bold text-sm text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 shadow-lg shadow-orange-500/20 transition-all duration-200 flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-                {isSubmitting ? (
+                {isCreatingTicket ? (
                   <>
                     <LoaderCircle className="w-4 h-4 animate-spin" />
                     Adding…
@@ -607,7 +603,7 @@ export default function EventSetupPage() {
         )}
       </div>
 
-      {/* publish section */}
+      {/* publish section - tied to useUpdateEventStatus mutation */}
       <div className="border-t border-white/6 pt-6 space-y-4">
         {ticketTypes.length === 0 && (
           <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/6 border border-amber-500/15">
@@ -630,9 +626,9 @@ export default function EventSetupPage() {
           <button
             type="button"
             onClick={handlePublish}
-            disabled={isPublishing || ticketTypes.length === 0}
+            disabled={updateStatus.isPending || ticketTypes.length === 0}
             className="h-11 px-6 rounded-xl font-bold text-sm text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 shadow-lg shadow-orange-500/20 transition-all duration-200 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shrink-0">
-            {isPublishing ? (
+            {updateStatus.isPending ? (
               <>
                 <LoaderCircle className="w-4 h-4 animate-spin" />
                 Publishing…
