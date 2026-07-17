@@ -4,7 +4,10 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api, APIError } from "@/lib/api";
+import { toast } from "sonner";
+import { useState } from "react";
+import { TicketTypeForm } from "@/app/(main)/dashboard/organiser/events/[id]/setup/page";
 
 export interface EventResponse {
   id: string;
@@ -64,11 +67,6 @@ export interface UpdateEventInput {
 }
 
 export type EventStatus = "DRAFT" | "PUBLISHED" | "CANCELLED" | "COMPLETED";
-
-interface UpdateEventStatusVariables {
-  id: string;
-  status: EventStatus;
-}
 
 export interface TicketTypeResponse {
   id: string;
@@ -235,6 +233,11 @@ export function useUpdateEvent() {
   });
 }
 
+interface UpdateEventStatusVariables {
+  id: string;
+  status: EventStatus;
+}
+
 export function useUpdateEventStatus() {
   const queryClient = useQueryClient();
 
@@ -319,4 +322,59 @@ export function useEventTicketTypes(eventId: string) {
     },
     enabled: !!eventId,
   });
+}
+
+interface UseCreateTicketTypeProps {
+  eventId: string;
+  onSuccess: (newTicket: TicketTypeResponse) => void;
+}
+
+export function useCreateTicketType({
+  eventId,
+  onSuccess,
+}: UseCreateTicketTypeProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const mutate = async (data: TicketTypeForm) => {
+    setIsSubmitting(true);
+    try {
+      // Format dates to strict RFC3339 ISO strings for the Go time parser, or leave empty for omitempty
+      const saleStarts = data.sale_starts
+        ? new Date(data.sale_starts).toISOString()
+        : "";
+      const saleEnds = data.sale_ends
+        ? new Date(data.sale_ends).toISOString()
+        : "";
+
+      const res = await api.post(`/api/v1/events/${eventId}/ticket-types`, {
+        name: data.name,
+        description: data.description ?? "",
+        price: data.is_free ? "0" : (data.price ?? "0"),
+        quantity: data.quantity,
+        is_free: data.is_free,
+        sale_starts: saleStarts,
+        sale_ends: saleEnds,
+      });
+
+      const json = await res.json();
+
+      // Explicitly pull from the verified successResponse envelope structure
+      const newTicket: TicketTypeResponse = json.data;
+
+      toast.success(`"${data.name}" added.`);
+      onSuccess(newTicket);
+      return true;
+    } catch (err) {
+      if (err instanceof APIError) {
+        toast.error(err.message);
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return { mutate, isSubmitting };
 }

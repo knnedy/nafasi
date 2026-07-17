@@ -87,7 +87,7 @@ const ticketTypeSchema = z
     path: ["price"],
   });
 
-type TicketTypeForm = z.infer<typeof ticketTypeSchema>;
+export type TicketTypeForm = z.infer<typeof ticketTypeSchema>;
 
 // Helpers
 function formatDate(iso: string) {
