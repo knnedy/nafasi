@@ -14,135 +14,10 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-
-// Types
-interface AdminOrderDetailResponse {
-  id: string;
-  user_id: string;
-  event_id: string;
-  quantity: number;
-  status: string;
-  payment_method?: string;
-  payment_ref?: string;
-  checked_in: boolean;
-  created_at: string;
-  user_name: string;
-  user_email: string;
-  event_title: string;
-}
-
-// Mock data
-const MOCK_ORDERS: AdminOrderDetailResponse[] = [
-  {
-    id: "ord-001",
-    user_id: "u1",
-    event_id: "evt-001",
-    quantity: 2,
-    status: "CONFIRMED",
-    payment_method: "MPESA",
-    payment_ref: "QH7K2L9M",
-    checked_in: true,
-    created_at: "2026-06-14T18:45:00Z",
-    user_name: "Amara Osei",
-    user_email: "amara@example.com",
-    event_title: "Afropunk Nairobi 2026",
-  },
-  {
-    id: "ord-002",
-    user_id: "u3",
-    event_id: "evt-001",
-    quantity: 1,
-    status: "CONFIRMED",
-    payment_method: "MPESA",
-    payment_ref: "RT4P8N3X",
-    checked_in: false,
-    created_at: "2026-06-14T17:30:00Z",
-    user_name: "Fatima Mwangi",
-    user_email: "fatima@example.com",
-    event_title: "Afropunk Nairobi 2026",
-  },
-  {
-    id: "ord-003",
-    user_id: "u8",
-    event_id: "evt-002",
-    quantity: 3,
-    status: "PENDING",
-    payment_method: "MPESA",
-    checked_in: false,
-    created_at: "2026-06-14T16:15:00Z",
-    user_name: "Tendai Moyo",
-    user_email: "tendai@example.com",
-    event_title: "Tech Summit East Africa",
-  },
-  {
-    id: "ord-004",
-    user_id: "u6",
-    event_id: "evt-002",
-    quantity: 1,
-    status: "CONFIRMED",
-    payment_method: "MPESA",
-    payment_ref: "WQ2J5K8Y",
-    checked_in: false,
-    created_at: "2026-06-14T15:00:00Z",
-    user_name: "Dele Adeyemi",
-    user_email: "dele@example.com",
-    event_title: "Tech Summit East Africa",
-  },
-  {
-    id: "ord-005",
-    user_id: "u5",
-    event_id: "evt-003",
-    quantity: 2,
-    status: "CANCELLED",
-    payment_method: "MPESA",
-    checked_in: false,
-    created_at: "2026-06-14T14:00:00Z",
-    user_name: "Zara Kamau",
-    user_email: "zara@example.com",
-    event_title: "Koroga Festival",
-  },
-  {
-    id: "ord-006",
-    user_id: "u1",
-    event_id: "evt-003",
-    quantity: 1,
-    status: "CONFIRMED",
-    payment_method: "MPESA",
-    payment_ref: "KP3R9T2W",
-    checked_in: false,
-    created_at: "2026-06-14T13:00:00Z",
-    user_name: "Amara Osei",
-    user_email: "amara@example.com",
-    event_title: "Koroga Festival",
-  },
-  {
-    id: "ord-007",
-    user_id: "u3",
-    event_id: "evt-001",
-    quantity: 2,
-    status: "REFUNDED",
-    payment_method: "MPESA",
-    payment_ref: "NL8M4Q6X",
-    checked_in: false,
-    created_at: "2026-06-13T10:00:00Z",
-    user_name: "Fatima Mwangi",
-    user_email: "fatima@example.com",
-    event_title: "Afropunk Nairobi 2026",
-  },
-  {
-    id: "ord-008",
-    user_id: "u8",
-    event_id: "evt-002",
-    quantity: 4,
-    status: "FAILED",
-    payment_method: "MPESA",
-    checked_in: false,
-    created_at: "2026-06-13T09:00:00Z",
-    user_name: "Tendai Moyo",
-    user_email: "tendai@example.com",
-    event_title: "Tech Summit East Africa",
-  },
-];
+import {
+  useAdminOrders,
+  type AdminOrderDetailResponse,
+} from "@/hooks/admin/use-orders";
 
 // Helpers
 function formatDate(iso: string) {
@@ -325,27 +200,22 @@ export default function AdminOrdersPage() {
   const [activeStatus, setActiveStatus] = useState<StatusFilter>("CONFIRMED");
   const [search, setSearch] = useState("");
 
+  const { data: orders = [], isLoading } = useAdminOrders({
+    status: activeStatus,
+  });
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return MOCK_ORDERS.filter((o) => {
-      const matchesStatus = o.status === activeStatus;
-      const matchesSearch =
-        q === "" ||
+    if (!q) return orders;
+    return orders.filter(
+      (o) =>
         o.id.toLowerCase().includes(q) ||
         o.user_name.toLowerCase().includes(q) ||
         o.user_email.toLowerCase().includes(q) ||
         o.event_title.toLowerCase().includes(q) ||
-        o.payment_ref?.toLowerCase().includes(q);
-      return matchesStatus && matchesSearch;
-    });
-  }, [activeStatus, search]);
-
-  const statusCounts = useMemo(() => {
-    return MOCK_ORDERS.reduce<Record<string, number>>((acc, o) => {
-      acc[o.status] = (acc[o.status] ?? 0) + 1;
-      return acc;
-    }, {});
-  }, []);
+        o.payment_ref?.toLowerCase().includes(q),
+    );
+  }, [orders, search]);
 
   return (
     <div className="space-y-6">
@@ -358,8 +228,7 @@ export default function AdminOrdersPage() {
           Orders
         </h1>
         <p className="text-white/30 text-sm mt-1">
-          {MOCK_ORDERS.length} total · {statusCounts["CONFIRMED"] ?? 0}{" "}
-          confirmed · {statusCounts["PENDING"] ?? 0} pending
+          {orders.length} {activeStatus.toLowerCase()} orders
         </p>
       </div>
 
@@ -382,7 +251,6 @@ export default function AdminOrdersPage() {
         )}
       </div>
 
-      {/* status filter — required by backend */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         {STATUS_FILTERS.map((f) => (
           <button
@@ -394,9 +262,6 @@ export default function AdminOrdersPage() {
                 : "text-white/35 hover:text-white/60 hover:bg-white/4"
             }`}>
             {f.charAt(0) + f.slice(1).toLowerCase()}
-            {(statusCounts[f] ?? 0) > 0 && (
-              <span className="ml-1.5 text-white/20">{statusCounts[f]}</span>
-            )}
           </button>
         ))}
         <span className="text-white/20 text-xs ml-auto shrink-0">
@@ -405,7 +270,11 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* list */}
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-24">
+          <p className="text-white/30 text-sm font-semibold">Loading...</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-14 h-14 rounded-2xl bg-white/3 border border-white/6 flex items-center justify-center mb-4">
             <ShoppingBag className="w-6 h-6 text-white/15" />
