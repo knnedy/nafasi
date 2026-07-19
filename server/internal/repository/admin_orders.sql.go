@@ -11,57 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const adminGetOrdersByStatus = `-- name: AdminGetOrdersByStatus :many
-SELECT id, user_id, event_id, ticket_type_id, quantity, unit_price, total_amount, currency, status, payment_method, payment_ref, qr_code, checked_in, checked_in_at, created_at, updated_at FROM "orders"
-WHERE "status" = $1
-ORDER BY "created_at" DESC
-LIMIT $2 OFFSET $3
-`
-
-type AdminGetOrdersByStatusParams struct {
-	Status OrderStatus
-	Limit  int32
-	Offset int32
-}
-
-func (q *Queries) AdminGetOrdersByStatus(ctx context.Context, arg AdminGetOrdersByStatusParams) ([]Order, error) {
-	rows, err := q.db.Query(ctx, adminGetOrdersByStatus, arg.Status, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Order
-	for rows.Next() {
-		var i Order
-		if err := rows.Scan(
-			&i.ID,
-			&i.UserID,
-			&i.EventID,
-			&i.TicketTypeID,
-			&i.Quantity,
-			&i.UnitPrice,
-			&i.TotalAmount,
-			&i.Currency,
-			&i.Status,
-			&i.PaymentMethod,
-			&i.PaymentRef,
-			&i.QrCode,
-			&i.CheckedIn,
-			&i.CheckedInAt,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const adminGetRecentOrdersWithDetails = `-- name: AdminGetRecentOrdersWithDetails :many
+const adminGetOrderDetailsByStatus = `-- name: AdminGetOrderDetailsByStatus :many
 SELECT
     o.id, o.user_id, o.event_id, o.ticket_type_id, o.quantity, o.unit_price, o.total_amount, o.currency, o.status, o.payment_method, o.payment_ref, o.qr_code, o.checked_in, o.checked_in_at, o.created_at, o.updated_at,
     u."name"  AS user_name,
@@ -70,11 +20,18 @@ SELECT
 FROM "orders" o
 JOIN "users"  u ON u."id" = o."user_id"
 JOIN "events" e ON e."id" = o."event_id"
+WHERE o."status" = $1
 ORDER BY o."created_at" DESC
-LIMIT $1
+LIMIT $2 OFFSET $3
 `
 
-type AdminGetRecentOrdersWithDetailsRow struct {
+type AdminGetOrderDetailsByStatusParams struct {
+	Status OrderStatus
+	Limit  int32
+	Offset int32
+}
+
+type AdminGetOrderDetailsByStatusRow struct {
 	ID            pgtype.UUID
 	UserID        pgtype.UUID
 	EventID       pgtype.UUID
@@ -96,15 +53,90 @@ type AdminGetRecentOrdersWithDetailsRow struct {
 	EventTitle    string
 }
 
-func (q *Queries) AdminGetRecentOrdersWithDetails(ctx context.Context, limit int32) ([]AdminGetRecentOrdersWithDetailsRow, error) {
-	rows, err := q.db.Query(ctx, adminGetRecentOrdersWithDetails, limit)
+func (q *Queries) AdminGetOrderDetailsByStatus(ctx context.Context, arg AdminGetOrderDetailsByStatusParams) ([]AdminGetOrderDetailsByStatusRow, error) {
+	rows, err := q.db.Query(ctx, adminGetOrderDetailsByStatus, arg.Status, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminGetRecentOrdersWithDetailsRow
+	var items []AdminGetOrderDetailsByStatusRow
 	for rows.Next() {
-		var i AdminGetRecentOrdersWithDetailsRow
+		var i AdminGetOrderDetailsByStatusRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.EventID,
+			&i.TicketTypeID,
+			&i.Quantity,
+			&i.UnitPrice,
+			&i.TotalAmount,
+			&i.Currency,
+			&i.Status,
+			&i.PaymentMethod,
+			&i.PaymentRef,
+			&i.QrCode,
+			&i.CheckedIn,
+			&i.CheckedInAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UserName,
+			&i.UserEmail,
+			&i.EventTitle,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminGetRecentOrderDetails = `-- name: AdminGetRecentOrderDetails :many
+SELECT
+    o.id, o.user_id, o.event_id, o.ticket_type_id, o.quantity, o.unit_price, o.total_amount, o.currency, o.status, o.payment_method, o.payment_ref, o.qr_code, o.checked_in, o.checked_in_at, o.created_at, o.updated_at,
+    u."name"  AS user_name,
+    u."email" AS user_email,
+    e."title" AS event_title
+FROM "orders" o
+JOIN "users"  u ON u."id" = o."user_id"
+JOIN "events" e ON e."id" = o."event_id"
+ORDER BY o."created_at" DESC
+LIMIT $1
+`
+
+type AdminGetRecentOrderDetailsRow struct {
+	ID            pgtype.UUID
+	UserID        pgtype.UUID
+	EventID       pgtype.UUID
+	TicketTypeID  pgtype.UUID
+	Quantity      int32
+	UnitPrice     pgtype.Numeric
+	TotalAmount   pgtype.Numeric
+	Currency      string
+	Status        OrderStatus
+	PaymentMethod NullPaymentMethod
+	PaymentRef    pgtype.Text
+	QrCode        pgtype.Text
+	CheckedIn     bool
+	CheckedInAt   pgtype.Timestamp
+	CreatedAt     pgtype.Timestamp
+	UpdatedAt     pgtype.Timestamp
+	UserName      string
+	UserEmail     string
+	EventTitle    string
+}
+
+func (q *Queries) AdminGetRecentOrderDetails(ctx context.Context, limit int32) ([]AdminGetRecentOrderDetailsRow, error) {
+	rows, err := q.db.Query(ctx, adminGetRecentOrderDetails, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AdminGetRecentOrderDetailsRow
+	for rows.Next() {
+		var i AdminGetRecentOrderDetailsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
