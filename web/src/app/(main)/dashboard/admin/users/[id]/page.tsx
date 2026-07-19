@@ -19,30 +19,15 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, APIError } from "@/lib/api";
-
-// Types
-interface UserResponse {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: string;
-  is_verified: boolean;
-  avatar_url?: string;
-  created_at: string;
-}
-
-// Mock user
-const MOCK_USER: UserResponse = {
-  id: "u4",
-  name: "Kwame Otieno",
-  email: "kwame@example.com",
-  role: "ORGANISER",
-  status: "ACTIVE",
-  is_verified: false,
-  created_at: "2026-03-01T08:00:00Z",
-};
+import { APIError } from "@/lib/api";
+import {
+  useAdminUser,
+  useUpdateUserVerification,
+  useBanUser,
+  useUnbanUser,
+  usePromoteToAdmin,
+  useDeleteUser,
+} from "@/hooks/admin/use-users";
 
 // Helpers
 function formatDate(iso: string) {
@@ -164,113 +149,88 @@ function ActionCard({ children }: { children: React.ReactNode }) {
   );
 }
 
+function errorMessage(err: unknown) {
+  if (err instanceof APIError) return err.message;
+  return "Something went wrong. Please try again.";
+}
+
 // Page
 export default function AdminUserDetailPage() {
   const { id: userId } = useParams<{ id: string }>();
   const router = useRouter();
 
-  const [user, setUser] = useState<UserResponse>(MOCK_USER);
   const [confirmingPromote, setConfirmingPromote] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [loadingVerify, setLoadingVerify] = useState(false);
-  const [loadingBan, setLoadingBan] = useState(false);
-  const [loadingPromote, setLoadingPromote] = useState(false);
-  const [loadingDelete, setLoadingDelete] = useState(false);
+
+  const { data: user, isLoading } = useAdminUser(userId);
+
+  const verifyMutation = useUpdateUserVerification(userId);
+  const banMutation = useBanUser(userId);
+  const unbanMutation = useUnbanUser(userId);
+  const promoteMutation = usePromoteToAdmin(userId);
+  const deleteMutation = useDeleteUser(userId);
+
+  const handleVerification = async (isVerified: boolean) => {
+    try {
+      await verifyMutation.mutateAsync(isVerified);
+      toast.success(
+        isVerified ? "Organiser verified." : "Verification revoked.",
+      );
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
+  };
+
+  const handleBan = async () => {
+    try {
+      await banMutation.mutateAsync();
+      toast.success("User banned.");
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
+  };
+
+  const handleUnban = async () => {
+    try {
+      await unbanMutation.mutateAsync();
+      toast.success("User unbanned.");
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
+  };
+
+  const handlePromote = async () => {
+    try {
+      await promoteMutation.mutateAsync();
+      setConfirmingPromote(false);
+      toast.success(`${user?.name} promoted to Admin.`);
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteMutation.mutateAsync();
+      toast.success("User deleted.");
+      router.push("/dashboard/admin/users");
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
+  };
+
+  if (isLoading || !user) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-white/30 text-sm font-semibold">Loading...</p>
+      </div>
+    );
+  }
 
   const rc = roleConfig(user.role);
   const sc = statusConfig(user.status);
   const RoleIcon = rc.icon;
   const StatusIcon = sc.icon;
-
-  const handleVerification = async (isVerified: boolean) => {
-    setLoadingVerify(true);
-    try {
-      await api.patch(`/api/v1/admin/users/${userId}/verification`, {
-        is_verified: isVerified,
-      });
-      setUser((u) => ({ ...u, is_verified: isVerified }));
-      toast.success(
-        isVerified ? "Organiser verified." : "Verification revoked.",
-      );
-    } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setLoadingVerify(false);
-    }
-  };
-
-  const handleBan = async () => {
-    setLoadingBan(true);
-    try {
-      await api.patch(`/api/v1/admin/users/${userId}/ban`, {});
-      setUser((u) => ({ ...u, status: "BANNED" }));
-      toast.success("User banned.");
-    } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setLoadingBan(false);
-    }
-  };
-
-  const handleUnban = async () => {
-    setLoadingBan(true);
-    try {
-      await api.patch(`/api/v1/admin/users/${userId}/unban`, {});
-      setUser((u) => ({ ...u, status: "ACTIVE" }));
-      toast.success("User unbanned.");
-    } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setLoadingBan(false);
-    }
-  };
-
-  const handlePromote = async () => {
-    setLoadingPromote(true);
-    try {
-      await api.patch(`/api/v1/admin/users/${userId}/promote`, {});
-      setUser((u) => ({ ...u, role: "ADMIN" }));
-      setConfirmingPromote(false);
-      toast.success(`${user.name} promoted to Admin.`);
-    } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setLoadingPromote(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    setLoadingDelete(true);
-    try {
-      await api.delete(`/api/v1/admin/users/${userId}`);
-      toast.success("User deleted.");
-      router.push("/dashboard/admin/users");
-    } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setLoadingDelete(false);
-    }
-  };
 
   return (
     <div className="space-y-8 max-w-2xl mx-auto">
@@ -367,13 +327,13 @@ export default function AdminUserDetailPage() {
               <button
                 type="button"
                 onClick={() => handleVerification(!user.is_verified)}
-                disabled={loadingVerify}
+                disabled={verifyMutation.isPending}
                 className={`shrink-0 h-9 px-4 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-2 disabled:opacity-40 ${
                   user.is_verified
                     ? "bg-white/6 border border-white/10 text-white/60 hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-400"
                     : "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/15"
                 }`}>
-                {loadingVerify && (
+                {verifyMutation.isPending && (
                   <LoaderCircle className="w-3.5 h-3.5 animate-spin" />
                 )}
                 {user.is_verified ? "Revoke verification" : "Verify organiser"}
@@ -399,13 +359,13 @@ export default function AdminUserDetailPage() {
               <button
                 type="button"
                 onClick={user.status === "BANNED" ? handleUnban : handleBan}
-                disabled={loadingBan}
+                disabled={banMutation.isPending || unbanMutation.isPending}
                 className={`shrink-0 h-9 px-4 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-2 disabled:opacity-40 ${
                   user.status === "BANNED"
                     ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/15"
                     : "bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/15"
                 }`}>
-                {loadingBan && (
+                {(banMutation.isPending || unbanMutation.isPending) && (
                   <LoaderCircle className="w-3.5 h-3.5 animate-spin" />
                 )}
                 {user.status === "BANNED" ? "Unban user" : "Ban user"}
@@ -425,7 +385,7 @@ export default function AdminUserDetailPage() {
                 confirmCls="bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20"
                 onConfirm={handlePromote}
                 onCancel={() => setConfirmingPromote(false)}
-                loading={loadingPromote}
+                loading={promoteMutation.isPending}
               />
             ) : (
               <ActionCard>
@@ -462,7 +422,7 @@ export default function AdminUserDetailPage() {
               confirmCls="bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/20"
               onConfirm={handleDelete}
               onCancel={() => setConfirmingDelete(false)}
-              loading={loadingDelete}
+              loading={deleteMutation.isPending}
             />
           ) : (
             <ActionCard>
