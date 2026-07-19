@@ -19,46 +19,12 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, APIError } from "@/lib/api";
-
-// Types
-interface AdminEventResponse {
-  id: string;
-  organiser_id: string;
-  title: string;
-  slug: string;
-  description?: string;
-  location?: string;
-  venue?: string;
-  banner_url?: string;
-  starts_at: string;
-  ends_at: string;
-  status: string;
-  is_online: boolean;
-  online_url?: string;
-  created_at: string;
-  updated_at: string;
-  organiser_name: string;
-}
-
-// Mock event
-const MOCK_EVENT: AdminEventResponse = {
-  id: "evt-001",
-  organiser_id: "u2",
-  title: "Afropunk Nairobi 2026",
-  slug: "afropunk-nairobi-2026",
-  description:
-    "The biggest Afropunk festival hits Nairobi with a lineup of world-class artists celebrating African culture, music, and identity.",
-  location: "Nairobi, Kenya",
-  venue: "Uhuru Gardens",
-  starts_at: "2026-06-14T18:00:00Z",
-  ends_at: "2026-06-14T23:00:00Z",
-  status: "PUBLISHED",
-  is_online: false,
-  created_at: "2026-04-01T10:00:00Z",
-  updated_at: "2026-04-01T10:00:00Z",
-  organiser_name: "Dexter Kimani",
-};
+import { APIError } from "@/lib/api";
+import {
+  useAdminEvent,
+  useCancelEvent,
+  useDeleteEvent,
+} from "@/hooks/admin/use-events";
 
 // Helpers
 function formatDate(iso: string) {
@@ -170,54 +136,53 @@ function ActionCard({ children }: { children: React.ReactNode }) {
   );
 }
 
+function errorMessage(err: unknown) {
+  if (err instanceof APIError) return err.message;
+  return "Something went wrong. Please try again.";
+}
+
 // Page
 export default function AdminEventDetailPage() {
   const { id: eventId } = useParams<{ id: string }>();
   const router = useRouter();
 
-  const [event, setEvent] = useState<AdminEventResponse>(MOCK_EVENT);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [loadingCancel, setLoadingCancel] = useState(false);
-  const [loadingDelete, setLoadingDelete] = useState(false);
 
-  const sc = statusConfig(event.status);
-  const StatusIcon = sc.icon;
+  const { data: event, isLoading } = useAdminEvent(eventId);
+  const cancelMutation = useCancelEvent(eventId);
+  const deleteMutation = useDeleteEvent(eventId);
 
   const handleCancel = async () => {
-    setLoadingCancel(true);
     try {
-      await api.patch(`/api/v1/admin/events/${eventId}/cancel`, {});
-      setEvent((e) => ({ ...e, status: "CANCELLED" }));
+      await cancelMutation.mutateAsync();
       setConfirmingCancel(false);
       toast.success("Event cancelled.");
     } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setLoadingCancel(false);
+      toast.error(errorMessage(err));
     }
   };
 
   const handleDelete = async () => {
-    setLoadingDelete(true);
     try {
-      await api.delete(`/api/v1/admin/events/${eventId}`);
+      await deleteMutation.mutateAsync();
       toast.success("Event deleted.");
       router.push("/dashboard/admin/events");
     } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setLoadingDelete(false);
+      toast.error(errorMessage(err));
     }
   };
+
+  if (isLoading || !event) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-white/30 text-sm font-semibold">Loading...</p>
+      </div>
+    );
+  }
+
+  const sc = statusConfig(event.status);
+  const StatusIcon = sc.icon;
 
   return (
     <div className="space-y-8 max-w-2xl mx-auto">
@@ -343,7 +308,7 @@ export default function AdminEventDetailPage() {
                 confirmCls="bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/20"
                 onConfirm={handleCancel}
                 onCancel={() => setConfirmingCancel(false)}
-                loading={loadingCancel}
+                loading={cancelMutation.isPending}
               />
             ) : (
               <ActionCard>
@@ -377,7 +342,7 @@ export default function AdminEventDetailPage() {
               confirmCls="bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/20"
               onConfirm={handleDelete}
               onCancel={() => setConfirmingDelete(false)}
-              loading={loadingDelete}
+              loading={deleteMutation.isPending}
             />
           ) : (
             <ActionCard>

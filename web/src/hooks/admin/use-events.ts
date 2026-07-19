@@ -92,7 +92,7 @@ export function useCancelEvent(eventId: string) {
   });
 }
 
-export function useDeleteAdminEvent(eventId: string) {
+export function useDeleteEvent(eventId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
