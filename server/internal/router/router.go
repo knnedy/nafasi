@@ -214,8 +214,8 @@ func adminRouter(
 
 		// order management
 		r.Route("/orders", func(r chi.Router) {
-			r.Get("/", admin.GetOrdersByStatus)
-			r.Get("/recent", admin.GetRecentOrdersWithDetails)
+			r.Get("/", admin.GetOrders)
+			r.Get("/recent", admin.GetRecentOrders)
 		})
 
 		// platform stats

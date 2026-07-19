@@ -332,8 +332,8 @@ func (s *AdminService) AdminDeleteEventCategory(ctx context.Context, categoryID 
 	return nil
 }
 
-func (s *AdminService) AdminGetOrdersByStatus(ctx context.Context, status repository.OrderStatus, limit, offset int32) ([]repository.Order, error) {
-	orders, err := s.db.AdminGetOrdersByStatus(ctx, repository.AdminGetOrdersByStatusParams{
+func (s *AdminService) AdminGetOrderDetailsByStatus(ctx context.Context, status repository.OrderStatus, limit, offset int32) ([]repository.AdminGetOrderDetailsByStatusRow, error) {
+	orders, err := s.db.AdminGetOrderDetailsByStatus(ctx, repository.AdminGetOrderDetailsByStatusParams{
 		Status: status,
 		Limit:  limit,
 		Offset: offset,
@@ -345,8 +345,8 @@ func (s *AdminService) AdminGetOrdersByStatus(ctx context.Context, status reposi
 	return orders, nil
 }
 
-func (s *AdminService) AdminGetRecentOrdersWithDetails(ctx context.Context, limit int32) ([]repository.AdminGetRecentOrdersWithDetailsRow, error) {
-	orders, err := s.db.AdminGetRecentOrdersWithDetails(ctx, limit)
+func (s *AdminService) AdminGetRecentOrderDetails(ctx context.Context, limit int32) ([]repository.AdminGetRecentOrderDetailsRow, error) {
+	orders, err := s.db.AdminGetRecentOrderDetails(ctx, limit)
 	if err != nil {
 		return nil, response.ErrDatabase
 	}

@@ -125,8 +125,8 @@ type AdminQuerier interface {
 	AdminDeleteEvent(ctx context.Context, id pgtype.UUID) (repository.Event, error)
 
 	// order management
-	AdminGetOrdersByStatus(ctx context.Context, arg repository.AdminGetOrdersByStatusParams) ([]repository.Order, error)
-	AdminGetRecentOrdersWithDetails(ctx context.Context, limit int32) ([]repository.AdminGetRecentOrdersWithDetailsRow, error)
+	AdminGetOrderDetailsByStatus(ctx context.Context, arg repository.AdminGetOrderDetailsByStatusParams) ([]repository.AdminGetOrderDetailsByStatusRow, error)
+	AdminGetRecentOrderDetails(ctx context.Context, limit int32) ([]repository.AdminGetRecentOrderDetailsRow, error)
 	AdminGetTotalRevenue(ctx context.Context) (int64, error)
 
 	AdminGetPlatformStats(ctx context.Context) (repository.AdminGetPlatformStatsRow, error)

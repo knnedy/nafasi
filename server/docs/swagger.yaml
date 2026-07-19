@@ -62,27 +62,6 @@ definitions:
       user_name:
         type: string
     type: object
-  handler.AdminOrderResponse:
-    properties:
-      checked_in:
-        type: boolean
-      created_at:
-        type: string
-      event_id:
-        type: string
-      id:
-        type: string
-      payment_method:
-        type: string
-      payment_ref:
-        type: string
-      quantity:
-        type: integer
-      status:
-        type: string
-      user_id:
-        type: string
-    type: object
   handler.AdminStatsResponse:
     properties:
       paid_orders:
@@ -321,6 +300,8 @@ definitions:
         type: string
       role:
         type: string
+      status:
+        type: string
     type: object
   handler.authDataResponse:
     properties:
@@ -375,6 +356,8 @@ definitions:
     type: object
   service.CreateEventInput:
     properties:
+      category_id:
+        type: string
       description:
         type: string
       ends_at:
@@ -394,6 +377,7 @@ definitions:
       venue:
         type: string
     required:
+    - category_id
     - ends_at
     - starts_at
     - title
@@ -554,6 +538,8 @@ definitions:
     type: object
   service.UpdateEventInput:
     properties:
+      category_id:
+        type: string
       description:
         type: string
       ends_at:
@@ -573,6 +559,7 @@ definitions:
       venue:
         type: string
     required:
+    - category_id
     - ends_at
     - starts_at
     - title
@@ -893,7 +880,8 @@ paths:
       - Admin
   /admin/orders:
     get:
-      description: Returns paginated list of orders filtered by status (admin only)
+      description: Returns paginated list of orders with user and event details, filtered
+        by status (admin only)
       parameters:
       - description: Status (PENDING, PAID, FAILED, CANCELLED, REFUNDED)
         in: query
@@ -915,7 +903,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/handler.AdminOrderResponse'
+              $ref: '#/definitions/handler.AdminOrderDetailResponse'
             type: array
         "400":
           description: Bad Request
@@ -935,7 +923,7 @@ paths:
             $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Get orders by status
+      summary: Get orders
       tags:
       - Admin
   /admin/orders/recent:
@@ -969,7 +957,7 @@ paths:
             $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Get recent orders with details
+      summary: Get recent orders
       tags:
       - Admin
   /admin/organisers:
@@ -1555,6 +1543,29 @@ paths:
       summary: Get checked-in orders
       tags:
       - CheckIn
+  /event-categories:
+    get:
+      description: Returns a list of all event categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.EventCategoryResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get event categories
+      tags:
+      - Events
   /events:
     post:
       consumes:
@@ -1927,29 +1938,6 @@ paths:
       summary: Get available ticket types
       tags:
       - TicketTypes
-  /events/categories:
-    get:
-      description: Returns a list of all event categories
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/handler.EventCategoryResponse'
-            type: array
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-      summary: Get event categories
-      tags:
-      - Events
   /events/published:
     get:
       description: Returns all published events

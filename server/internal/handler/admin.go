@@ -135,32 +135,54 @@ type AdminStatsResponse struct {
 	TotalRevenue    int64 `json:"total_revenue"`
 }
 
-func toAdminOrderDetailResponse(order repository.AdminGetRecentOrdersWithDetailsRow) AdminOrderDetailResponse {
-	r := AdminOrderDetailResponse{
+func toOrderDetailResponse(o repository.AdminGetOrderDetailsByStatusRow) AdminOrderDetailResponse {
+	resp := AdminOrderDetailResponse{
 		AdminOrderResponse: AdminOrderResponse{
-			ID:        order.ID.String(),
-			UserID:    order.UserID.String(),
-			EventID:   order.EventID.String(),
-			Quantity:  order.Quantity,
-			Status:    string(order.Status),
-			CheckedIn: order.CheckedIn,
-			CreatedAt: order.CreatedAt.Time.Format(time.RFC3339),
+			ID:        o.ID.String(),
+			UserID:    o.UserID.String(),
+			EventID:   o.EventID.String(),
+			Quantity:  o.Quantity,
+			Status:    string(o.Status),
+			CheckedIn: o.CheckedIn,
+			CreatedAt: o.CreatedAt.Time.Format(time.RFC3339),
 		},
-		UserName:   order.UserName,
-		UserEmail:  order.UserEmail,
-		EventTitle: order.EventTitle,
+		UserName:   o.UserName,
+		UserEmail:  o.UserEmail,
+		EventTitle: o.EventTitle,
 	}
-
-	if order.PaymentMethod.Valid {
-		pm := string(order.PaymentMethod.PaymentMethod)
-		r.PaymentMethod = &pm
+	if o.PaymentMethod.Valid {
+		pm := string(o.PaymentMethod.PaymentMethod)
+		resp.PaymentMethod = &pm
 	}
-
-	if order.PaymentRef.Valid {
-		r.PaymentRef = &order.PaymentRef.String
+	if o.PaymentRef.Valid {
+		resp.PaymentRef = &o.PaymentRef.String
 	}
+	return resp
+}
 
-	return r
+func toRecentOrderDetailResponse(o repository.AdminGetRecentOrderDetailsRow) AdminOrderDetailResponse {
+	resp := AdminOrderDetailResponse{
+		AdminOrderResponse: AdminOrderResponse{
+			ID:        o.ID.String(),
+			UserID:    o.UserID.String(),
+			EventID:   o.EventID.String(),
+			Quantity:  o.Quantity,
+			Status:    string(o.Status),
+			CheckedIn: o.CheckedIn,
+			CreatedAt: o.CreatedAt.Time.Format(time.RFC3339),
+		},
+		UserName:   o.UserName,
+		UserEmail:  o.UserEmail,
+		EventTitle: o.EventTitle,
+	}
+	if o.PaymentMethod.Valid {
+		pm := string(o.PaymentMethod.PaymentMethod)
+		resp.PaymentMethod = &pm
+	}
+	if o.PaymentRef.Valid {
+		resp.PaymentRef = &o.PaymentRef.String
+	}
+	return resp
 }
 
 // user management
@@ -668,22 +690,22 @@ func (h *AdminHandler) DeleteEventCategory(w http.ResponseWriter, r *http.Reques
 
 // order management
 
-// GetOrdersByStatus godoc
-// @Summary Get orders by status
-// @Description Returns paginated list of orders filtered by status (admin only)
+// GetOrders godoc
+// @Summary Get orders
+// @Description Returns paginated list of orders with user and event details, filtered by status (admin only)
 // @Tags Admin
 // @Produce json
 // @Security BearerAuth
 // @Param status query string true "Status (PENDING, PAID, FAILED, CANCELLED, REFUNDED)"
 // @Param limit query int false "Limit"
 // @Param offset query int false "Offset"
-// @Success 200 {array} AdminOrderResponse
+// @Success 200 {array} AdminOrderDetailResponse
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 401 {object} response.ErrorResponse
 // @Failure 403 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /admin/orders [get]
-func (h *AdminHandler) GetOrdersByStatus(w http.ResponseWriter, r *http.Request) {
+func (h *AdminHandler) GetOrders(w http.ResponseWriter, r *http.Request) {
 	status := r.URL.Query().Get("status")
 	if status == "" {
 		response.WriteError(w, response.ErrInvalidInput)
@@ -692,38 +714,27 @@ func (h *AdminHandler) GetOrdersByStatus(w http.ResponseWriter, r *http.Request)
 
 	limit, offset := getPagination(r)
 
-	orders, err := h.admin.AdminGetOrdersByStatus(r.Context(), repository.OrderStatus(status), limit, offset)
+	orders, err := h.admin.AdminGetOrderDetailsByStatus(
+		r.Context(),
+		repository.OrderStatus(status),
+		limit,
+		offset,
+	)
 	if err != nil {
 		response.WriteError(w, err)
 		return
 	}
 
-	var result []AdminOrderResponse
+	var result []AdminOrderDetailResponse
 	for _, o := range orders {
-		resp := AdminOrderResponse{
-			ID:        o.ID.String(),
-			UserID:    o.UserID.String(),
-			EventID:   o.EventID.String(),
-			Quantity:  o.Quantity,
-			Status:    string(o.Status),
-			CheckedIn: o.CheckedIn,
-			CreatedAt: o.CreatedAt.Time.Format(time.RFC3339),
-		}
-		if o.PaymentMethod.Valid {
-			pm := string(o.PaymentMethod.PaymentMethod)
-			resp.PaymentMethod = &pm
-		}
-		if o.PaymentRef.Valid {
-			resp.PaymentRef = &o.PaymentRef.String
-		}
-		result = append(result, resp)
+		result = append(result, toOrderDetailResponse(o))
 	}
 
 	response.WriteJSON(w, http.StatusOK, result)
 }
 
-// GetRecentOrdersWithDetails godoc
-// @Summary Get recent orders with details
+// GetRecentOrders godoc
+// @Summary Get recent orders
 // @Description Returns recent orders with user and event details (admin only)
 // @Tags Admin
 // @Produce json
@@ -734,10 +745,10 @@ func (h *AdminHandler) GetOrdersByStatus(w http.ResponseWriter, r *http.Request)
 // @Failure 403 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /admin/orders/recent [get]
-func (h *AdminHandler) GetRecentOrdersWithDetails(w http.ResponseWriter, r *http.Request) {
+func (h *AdminHandler) GetRecentOrders(w http.ResponseWriter, r *http.Request) {
 	limit, _ := getPagination(r)
 
-	orders, err := h.admin.AdminGetRecentOrdersWithDetails(r.Context(), limit)
+	orders, err := h.admin.AdminGetRecentOrderDetails(r.Context(), limit)
 	if err != nil {
 		response.WriteError(w, err)
 		return
@@ -745,7 +756,7 @@ func (h *AdminHandler) GetRecentOrdersWithDetails(w http.ResponseWriter, r *http
 
 	var result []AdminOrderDetailResponse
 	for _, o := range orders {
-		result = append(result, toAdminOrderDetailResponse(o))
+		result = append(result, toRecentOrderDetailResponse(o))
 	}
 
 	response.WriteJSON(w, http.StatusOK, result)

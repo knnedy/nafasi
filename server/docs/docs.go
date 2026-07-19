@@ -405,14 +405,14 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns paginated list of orders filtered by status (admin only)",
+                "description": "Returns paginated list of orders with user and event details, filtered by status (admin only)",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Admin"
                 ],
-                "summary": "Get orders by status",
+                "summary": "Get orders",
                 "parameters": [
                     {
                         "type": "string",
@@ -440,7 +440,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/handler.AdminOrderResponse"
+                                "$ref": "#/definitions/handler.AdminOrderDetailResponse"
                             }
                         }
                     },
@@ -485,7 +485,7 @@ const docTemplate = `{
                 "tags": [
                     "Admin"
                 ],
-                "summary": "Get recent orders with details",
+                "summary": "Get recent orders",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1427,6 +1427,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/event-categories": {
+            "get": {
+                "description": "Returns a list of all event categories",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Get event categories",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handler.EventCategoryResponse"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/events": {
             "post": {
                 "security": [
@@ -1471,41 +1506,6 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/events/categories": {
-            "get": {
-                "description": "Returns a list of all event categories",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Events"
-                ],
-                "summary": "Get event categories",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/handler.EventCategoryResponse"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -3439,38 +3439,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.AdminOrderResponse": {
-            "type": "object",
-            "properties": {
-                "checked_in": {
-                    "type": "boolean"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "event_id": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "payment_method": {
-                    "type": "string"
-                },
-                "payment_ref": {
-                    "type": "string"
-                },
-                "quantity": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
         "handler.AdminStatsResponse": {
             "type": "object",
             "properties": {
@@ -3832,6 +3800,9 @@ const docTemplate = `{
                 },
                 "role": {
                     "type": "string"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         },
@@ -3917,11 +3888,15 @@ const docTemplate = `{
         "service.CreateEventInput": {
             "type": "object",
             "required": [
+                "category_id",
                 "ends_at",
                 "starts_at",
                 "title"
             ],
             "properties": {
+                "category_id": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -4178,11 +4153,15 @@ const docTemplate = `{
         "service.UpdateEventInput": {
             "type": "object",
             "required": [
+                "category_id",
                 "ends_at",
                 "starts_at",
                 "title"
             ],
             "properties": {
+                "category_id": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
