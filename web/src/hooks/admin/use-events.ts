@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface AdminEventResponse {
   id: string;
@@ -52,6 +52,55 @@ export function useAdminEvents(params?: {
       const json = await res.json();
 
       return (json.data ?? []) as AdminEventResponse[];
+    },
+  });
+}
+
+export function useAdminEvent(eventId: string | undefined) {
+  return useQuery({
+    queryKey: ["admin", "events", eventId],
+    queryFn: async () => {
+      if (!eventId) throw new Error("Event ID is required");
+
+      const res = await api.get(`/api/v1/admin/events/${eventId}`);
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch event");
+      }
+
+      const json = await res.json();
+
+      return json.data as AdminEventResponse;
+    },
+    enabled: !!eventId,
+  });
+}
+
+export function useCancelEvent(eventId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const res = await api.patch(`/api/v1/admin/events/${eventId}/cancel`, {});
+      const json = await res.json();
+      return json.data as AdminEventResponse;
+    },
+    onSuccess: (updatedEvent) => {
+      queryClient.setQueryData(["admin", "events", eventId], updatedEvent);
+      queryClient.invalidateQueries({ queryKey: ["admin", "events"] });
+    },
+  });
+}
+
+export function useDeleteAdminEvent(eventId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      await api.delete(`/api/v1/admin/events/${eventId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "events"] });
     },
   });
 }
