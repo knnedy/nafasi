@@ -47,7 +47,7 @@ export function useAdminUsers(params?: {
 
       const json = await res.json();
 
-      return (json || []) as UserResponse[];
+      return (json.data ?? []) as UserResponse[];
     },
   });
 }
