@@ -14,112 +14,7 @@ import {
   ArrowUpRight,
   Clock,
 } from "lucide-react";
-
-// Types
-interface UserResponse {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: string;
-  is_verified: boolean;
-  avatar_url?: string;
-  created_at: string;
-}
-
-// Mock data
-const MOCK_USERS: UserResponse[] = [
-  {
-    id: "u1",
-    name: "Amara Osei",
-    email: "amara@example.com",
-    role: "ATTENDEE",
-    status: "ACTIVE",
-    is_verified: true,
-    created_at: "2026-01-10T10:00:00Z",
-  },
-  {
-    id: "u2",
-    name: "Dexter Kimani",
-    email: "dexter001@gmail.com",
-    role: "ORGANISER",
-    status: "ACTIVE",
-    is_verified: true,
-    created_at: "2026-01-08T09:00:00Z",
-  },
-  {
-    id: "u3",
-    name: "Fatima Mwangi",
-    email: "fatima@example.com",
-    role: "ATTENDEE",
-    status: "ACTIVE",
-    is_verified: true,
-    created_at: "2026-02-14T11:30:00Z",
-  },
-  {
-    id: "u4",
-    name: "Kwame Otieno",
-    email: "kwame@example.com",
-    role: "ORGANISER",
-    status: "ACTIVE",
-    is_verified: false,
-    created_at: "2026-03-01T08:00:00Z",
-  },
-  {
-    id: "u5",
-    name: "Zara Kamau",
-    email: "zara@example.com",
-    role: "ATTENDEE",
-    status: "BANNED",
-    is_verified: true,
-    created_at: "2026-02-20T14:00:00Z",
-  },
-  {
-    id: "u6",
-    name: "Dele Adeyemi",
-    email: "dele@example.com",
-    role: "ATTENDEE",
-    status: "ACTIVE",
-    is_verified: true,
-    created_at: "2026-03-15T16:00:00Z",
-  },
-  {
-    id: "u7",
-    name: "Aisha Njoroge",
-    email: "aisha@example.com",
-    role: "ORGANISER",
-    status: "ACTIVE",
-    is_verified: true,
-    created_at: "2026-04-01T10:00:00Z",
-  },
-  {
-    id: "u8",
-    name: "Tendai Moyo",
-    email: "tendai@example.com",
-    role: "ATTENDEE",
-    status: "ACTIVE",
-    is_verified: true,
-    created_at: "2026-04-10T09:00:00Z",
-  },
-  {
-    id: "u9",
-    name: "Chinwe Okafor",
-    email: "chinwe@example.com",
-    role: "ADMIN",
-    status: "ACTIVE",
-    is_verified: true,
-    created_at: "2026-01-01T00:00:00Z",
-  },
-  {
-    id: "u10",
-    name: "Seun Balogun",
-    email: "seun@example.com",
-    role: "ATTENDEE",
-    status: "DELETED",
-    is_verified: false,
-    created_at: "2026-03-20T12:00:00Z",
-  },
-];
+import { useAdminUsers } from "@/hooks/admin/use-users";
 
 // Helpers
 function formatDate(iso: string) {
@@ -208,9 +103,11 @@ export default function AdminUsersPage() {
   const [activeRole, setActiveRole] = useState<RoleFilter>("All");
   const [activeStatus, setActiveStatus] = useState<StatusFilter>("All");
 
+  const { data: users = [], isLoading } = useAdminUsers();
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return MOCK_USERS.filter((u) => {
+    return users.filter((u) => {
       const matchesRole = activeRole === "All" || u.role === activeRole;
       const matchesStatus = activeStatus === "All" || u.status === activeStatus;
       const matchesSearch =
@@ -220,21 +117,29 @@ export default function AdminUsersPage() {
         u.id.toLowerCase().includes(q);
       return matchesRole && matchesStatus && matchesSearch;
     });
-  }, [search, activeRole, activeStatus]);
+  }, [search, activeRole, activeStatus, users]);
 
   const roleCounts = useMemo(() => {
-    return MOCK_USERS.reduce<Record<string, number>>((acc, u) => {
+    return users.reduce<Record<string, number>>((acc, u) => {
       acc[u.role] = (acc[u.role] ?? 0) + 1;
       return acc;
     }, {});
-  }, []);
+  }, [users]);
 
   const statusCounts = useMemo(() => {
-    return MOCK_USERS.reduce<Record<string, number>>((acc, u) => {
+    return users.reduce<Record<string, number>>((acc, u) => {
       acc[u.status] = (acc[u.status] ?? 0) + 1;
       return acc;
     }, {});
-  }, []);
+  }, [users]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-white/30 text-sm font-semibold">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -245,8 +150,8 @@ export default function AdminUsersPage() {
         </p>
         <h1 className="text-white font-black text-3xl tracking-tight">Users</h1>
         <p className="text-white/30 text-sm mt-1">
-          {MOCK_USERS.length} total · {roleCounts["ORGANISER"] ?? 0} organisers
-          · {statusCounts["BANNED"] ?? 0} banned
+          {users.length} total · {roleCounts["ORGANISER"] ?? 0} organisers ·{" "}
+          {statusCounts["BANNED"] ?? 0} banned
         </p>
       </div>
 
