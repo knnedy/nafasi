@@ -12,76 +12,7 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
-
-// Types
-interface UserResponse {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: string;
-  is_verified: boolean;
-  avatar_url?: string;
-  created_at: string;
-}
-
-// Mock data
-const MOCK_ORGANISERS: UserResponse[] = [
-  {
-    id: "u2",
-    name: "Dexter Kimani",
-    email: "dexter001@gmail.com",
-    role: "ORGANISER",
-    status: "ACTIVE",
-    is_verified: true,
-    created_at: "2026-01-08T09:00:00Z",
-  },
-  {
-    id: "u4",
-    name: "Kwame Otieno",
-    email: "kwame@example.com",
-    role: "ORGANISER",
-    status: "ACTIVE",
-    is_verified: false,
-    created_at: "2026-03-01T08:00:00Z",
-  },
-  {
-    id: "u7",
-    name: "Aisha Njoroge",
-    email: "aisha@example.com",
-    role: "ORGANISER",
-    status: "ACTIVE",
-    is_verified: true,
-    created_at: "2026-04-01T10:00:00Z",
-  },
-  {
-    id: "u11",
-    name: "Musa Baraka",
-    email: "musa@example.com",
-    role: "ORGANISER",
-    status: "ACTIVE",
-    is_verified: false,
-    created_at: "2026-05-12T11:00:00Z",
-  },
-  {
-    id: "u12",
-    name: "Yemi Adeoye",
-    email: "yemi@example.com",
-    role: "ORGANISER",
-    status: "ACTIVE",
-    is_verified: false,
-    created_at: "2026-06-01T09:30:00Z",
-  },
-  {
-    id: "u13",
-    name: "Zawadi Omondi",
-    email: "zawadi@example.com",
-    role: "ORGANISER",
-    status: "BANNED",
-    is_verified: true,
-    created_at: "2026-02-10T14:00:00Z",
-  },
-];
+import { useAdminOrganisers } from "@/hooks/admin/use-organisers";
 
 // Helpers
 function formatDate(iso: string) {
@@ -115,9 +46,11 @@ export default function AdminOrganisersPage() {
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState<StatusFilter>("all");
 
+  const { data: organisers = [], isLoading } = useAdminOrganisers();
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return MOCK_ORGANISERS.filter((o) => {
+    return organisers.filter((o) => {
       const matchesStatus =
         activeStatus === "all" ||
         (activeStatus === "pending" && !o.is_verified) ||
@@ -128,16 +61,24 @@ export default function AdminOrganisersPage() {
         o.email.toLowerCase().includes(q);
       return matchesStatus && matchesSearch;
     });
-  }, [search, activeStatus]);
+  }, [search, activeStatus, organisers]);
 
   const pendingCount = useMemo(
-    () => MOCK_ORGANISERS.filter((o) => !o.is_verified).length,
-    [],
+    () => organisers.filter((o) => !o.is_verified).length,
+    [organisers],
   );
   const approvedCount = useMemo(
-    () => MOCK_ORGANISERS.filter((o) => o.is_verified).length,
-    [],
+    () => organisers.filter((o) => o.is_verified).length,
+    [organisers],
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-white/30 text-sm font-semibold">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -150,8 +91,8 @@ export default function AdminOrganisersPage() {
           Organisers
         </h1>
         <p className="text-white/30 text-sm mt-1">
-          {MOCK_ORGANISERS.length} total · {approvedCount} approved ·{" "}
-          {pendingCount} pending
+          {organisers.length} total · {approvedCount} approved · {pendingCount}{" "}
+          pending
         </p>
       </div>
 
@@ -203,7 +144,7 @@ export default function AdminOrganisersPage() {
               ? pendingCount
               : f === "approved"
                 ? approvedCount
-                : MOCK_ORGANISERS.length;
+                : organisers.length;
           return (
             <button
               key={f}
@@ -224,7 +165,14 @@ export default function AdminOrganisersPage() {
       </div>
 
       {/* list */}
-      {filtered.length === 0 ? (
+      {organisers.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-white/3 border border-white/6 flex items-center justify-center mb-4">
+            <Users className="w-6 h-6 text-white/15" />
+          </div>
+          <p className="text-white/20 text-sm">No organisers yet.</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-14 h-14 rounded-2xl bg-white/3 border border-white/6 flex items-center justify-center mb-4">
             <Users className="w-6 h-6 text-white/15" />
@@ -286,14 +234,19 @@ export default function AdminOrganisersPage() {
       )}
 
       {/* empty pending state */}
-      {activeStatus === "pending" && filtered.length === 0 && !search && (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-500/8 border border-emerald-500/15 flex items-center justify-center mb-4">
-            <ShieldCheck className="w-6 h-6 text-emerald-400/50" />
+      {activeStatus === "pending" &&
+        filtered.length === 0 &&
+        !search &&
+        organisers.length > 0 && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/8 border border-emerald-500/15 flex items-center justify-center mb-4">
+              <ShieldCheck className="w-6 h-6 text-emerald-400/50" />
+            </div>
+            <p className="text-white/30 text-sm">
+              All organisers are verified.
+            </p>
           </div>
-          <p className="text-white/30 text-sm">All organisers are verified.</p>
-        </div>
-      )}
+        )}
     </div>
   );
 }
