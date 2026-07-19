@@ -304,13 +304,19 @@ func (s *AdminService) AdminCreateEventCategory(ctx context.Context, input Creat
 	return eventCategory, err
 }
 
-func (s *AdminService) AdminUpdateEventCategory(ctx context.Context, input UpdateEventCategoryInput) (repository.EventCategory, error) {
+func (s *AdminService) AdminUpdateEventCategory(ctx context.Context, categoryID string, input UpdateEventCategoryInput) (repository.EventCategory, error) {
 	// Validate input
 	if err := s.validate.Struct(input); err != nil {
 		return repository.EventCategory{}, formatValidationError(err, s.trans)
 	}
 
+	parsedID, err := uuid.Parse(categoryID)
+	if err != nil {
+		return repository.EventCategory{}, response.ErrInvalidInput
+	}
+
 	eventCategory, err := s.db.UpdateCategory(ctx, repository.UpdateCategoryParams{
+		ID:          pgtype.UUID{Bytes: parsedID, Valid: true},
 		Name:        input.Name,
 		Description: pgtype.Text{String: input.Description, Valid: true},
 	})

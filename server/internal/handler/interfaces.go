@@ -94,7 +94,7 @@ type AdminServicer interface {
 	AdminCancelEvent(ctx context.Context, targetEventID string) (repository.Event, error)
 	AdminDeleteEvent(ctx context.Context, targetEventID string) (repository.Event, error)
 	AdminCreateEventCategory(ctx context.Context, input service.CreateEventCategoryInput) (repository.EventCategory, error)
-	AdminUpdateEventCategory(ctx context.Context, input service.UpdateEventCategoryInput) (repository.EventCategory, error)
+	AdminUpdateEventCategory(ctx context.Context, categoryID string, input service.UpdateEventCategoryInput) (repository.EventCategory, error)
 	AdminDeleteEventCategory(ctx context.Context, categoryID string) error
 	AdminGetOrderDetailsByStatus(ctx context.Context, status repository.OrderStatus, limit int32, offset int32) ([]repository.AdminGetOrderDetailsByStatusRow, error)
 	AdminGetRecentOrderDetails(ctx context.Context, limit int32) ([]repository.AdminGetRecentOrderDetailsRow, error)

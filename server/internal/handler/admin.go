@@ -644,13 +644,19 @@ func (h *AdminHandler) CreateEventCategory(w http.ResponseWriter, r *http.Reques
 // @Failure 500 {object} response.ErrorResponse
 // @Router /admin/events/categories/{categoryID} [patch]
 func (h *AdminHandler) UpdateEventCategory(w http.ResponseWriter, r *http.Request) {
+	categoryID := chi.URLParam(r, "categoryID")
+	if categoryID == "" {
+		response.WriteError(w, response.ErrNotFound)
+		return
+	}
+
 	var input service.UpdateEventCategoryInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		response.WriteError(w, response.ErrInvalidInput)
 		return
 	}
 
-	updatedCategory, err := h.admin.AdminUpdateEventCategory(r.Context(), input)
+	updatedCategory, err := h.admin.AdminUpdateEventCategory(r.Context(), categoryID, input)
 	if err != nil {
 		response.WriteError(w, err)
 		return
