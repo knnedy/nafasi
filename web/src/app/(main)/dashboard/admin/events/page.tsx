@@ -14,135 +14,7 @@ import {
   Wifi,
   ArrowUpRight,
 } from "lucide-react";
-
-// Types
-interface AdminEventResponse {
-  id: string;
-  organiser_id: string;
-  title: string;
-  slug: string;
-  description?: string;
-  location?: string;
-  venue?: string;
-  banner_url?: string;
-  starts_at: string;
-  ends_at: string;
-  status: string;
-  is_online: boolean;
-  online_url?: string;
-  created_at: string;
-  updated_at: string;
-  organiser_name: string;
-}
-
-// Mock data
-const MOCK_EVENTS: AdminEventResponse[] = [
-  {
-    id: "evt-001",
-    organiser_id: "u2",
-    title: "Afropunk Nairobi 2026",
-    slug: "afropunk-nairobi-2026",
-    description: "The biggest Afropunk festival hits Nairobi.",
-    location: "Nairobi, Kenya",
-    venue: "Uhuru Gardens",
-    starts_at: "2026-06-14T18:00:00Z",
-    ends_at: "2026-06-14T23:00:00Z",
-    status: "PUBLISHED",
-    is_online: false,
-    created_at: "2026-04-01T10:00:00Z",
-    updated_at: "2026-04-01T10:00:00Z",
-    organiser_name: "Dexter Kimani",
-  },
-  {
-    id: "evt-002",
-    organiser_id: "u7",
-    title: "Tech Summit East Africa",
-    slug: "tech-summit-east-africa",
-    location: "Nairobi, Kenya",
-    venue: "KICC, Nairobi",
-    starts_at: "2026-06-25T08:00:00Z",
-    ends_at: "2026-06-25T18:00:00Z",
-    status: "PUBLISHED",
-    is_online: false,
-    created_at: "2026-03-15T10:00:00Z",
-    updated_at: "2026-03-15T10:00:00Z",
-    organiser_name: "Aisha Njoroge",
-  },
-  {
-    id: "evt-003",
-    organiser_id: "u2",
-    title: "Koroga Festival",
-    slug: "koroga-festival",
-    location: "Nairobi, Kenya",
-    venue: "Two Rivers Mall",
-    starts_at: "2026-07-20T14:00:00Z",
-    ends_at: "2026-07-20T22:00:00Z",
-    status: "PUBLISHED",
-    is_online: false,
-    created_at: "2026-05-01T10:00:00Z",
-    updated_at: "2026-05-01T10:00:00Z",
-    organiser_name: "Dexter Kimani",
-  },
-  {
-    id: "evt-004",
-    organiser_id: "u4",
-    title: "Women in Tech Kenya",
-    slug: "women-in-tech-kenya",
-    location: "Nairobi, Kenya",
-    venue: "Radisson Blu Hotel",
-    starts_at: "2026-07-10T09:00:00Z",
-    ends_at: "2026-07-10T17:00:00Z",
-    status: "DRAFT",
-    is_online: false,
-    created_at: "2026-05-10T10:00:00Z",
-    updated_at: "2026-05-10T10:00:00Z",
-    organiser_name: "Kwame Otieno",
-  },
-  {
-    id: "evt-005",
-    organiser_id: "u7",
-    title: "Nairobi Music Week",
-    slug: "nairobi-music-week",
-    is_online: true,
-    online_url: "https://stream.example.com/nmw",
-    starts_at: "2026-08-01T10:00:00Z",
-    ends_at: "2026-08-07T22:00:00Z",
-    status: "DRAFT",
-    created_at: "2026-06-01T10:00:00Z",
-    updated_at: "2026-06-01T10:00:00Z",
-    organiser_name: "Aisha Njoroge",
-  },
-  {
-    id: "evt-006",
-    organiser_id: "u13",
-    title: "Blankets & Wine · May",
-    slug: "blankets-wine-may",
-    location: "Nairobi, Kenya",
-    venue: "Ngong Racecourse",
-    starts_at: "2026-05-18T12:00:00Z",
-    ends_at: "2026-05-18T20:00:00Z",
-    status: "CANCELLED",
-    is_online: false,
-    created_at: "2026-03-01T10:00:00Z",
-    updated_at: "2026-05-10T10:00:00Z",
-    organiser_name: "Zawadi Omondi",
-  },
-  {
-    id: "evt-007",
-    organiser_id: "u2",
-    title: "Startup Grind Nairobi",
-    slug: "startup-grind-nairobi",
-    location: "Nairobi, Kenya",
-    venue: "iHub",
-    starts_at: "2026-04-10T09:00:00Z",
-    ends_at: "2026-04-10T17:00:00Z",
-    status: "COMPLETED",
-    is_online: false,
-    created_at: "2026-02-01T10:00:00Z",
-    updated_at: "2026-04-11T10:00:00Z",
-    organiser_name: "Dexter Kimani",
-  },
-];
+import { useAdminEvents } from "@/hooks/admin/use-events";
 
 // Helpers
 function formatDate(iso: string) {
@@ -202,9 +74,11 @@ export default function AdminEventsPage() {
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState<StatusFilter>("All");
 
+  const { data: events = [], isLoading } = useAdminEvents();
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return MOCK_EVENTS.filter((e) => {
+    return events.filter((e) => {
       const matchesStatus = activeStatus === "All" || e.status === activeStatus;
       const matchesSearch =
         q === "" ||
@@ -214,14 +88,22 @@ export default function AdminEventsPage() {
         e.location?.toLowerCase().includes(q);
       return matchesStatus && matchesSearch;
     });
-  }, [search, activeStatus]);
+  }, [search, activeStatus, events]);
 
   const statusCounts = useMemo(() => {
-    return MOCK_EVENTS.reduce<Record<string, number>>((acc, e) => {
+    return events.reduce<Record<string, number>>((acc, e) => {
       acc[e.status] = (acc[e.status] ?? 0) + 1;
       return acc;
     }, {});
-  }, []);
+  }, [events]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-white/30 text-sm font-semibold">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -234,8 +116,8 @@ export default function AdminEventsPage() {
           Events
         </h1>
         <p className="text-white/30 text-sm mt-1">
-          {MOCK_EVENTS.length} total · {statusCounts["PUBLISHED"] ?? 0}{" "}
-          published · {statusCounts["DRAFT"] ?? 0} draft
+          {events.length} total · {statusCounts["PUBLISHED"] ?? 0} published ·{" "}
+          {statusCounts["DRAFT"] ?? 0} draft
         </p>
       </div>
 
@@ -261,8 +143,7 @@ export default function AdminEventsPage() {
       {/* filters */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         {STATUS_FILTERS.map((f) => {
-          const count =
-            f === "All" ? MOCK_EVENTS.length : (statusCounts[f] ?? 0);
+          const count = f === "All" ? events.length : (statusCounts[f] ?? 0);
           return (
             <button
               key={f}
@@ -285,7 +166,14 @@ export default function AdminEventsPage() {
       </div>
 
       {/* list */}
-      {filtered.length === 0 ? (
+      {events.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-white/3 border border-white/6 flex items-center justify-center mb-4">
+            <CalendarDays className="w-6 h-6 text-white/15" />
+          </div>
+          <p className="text-white/20 text-sm">No events yet.</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-14 h-14 rounded-2xl bg-white/3 border border-white/6 flex items-center justify-center mb-4">
             <CalendarDays className="w-6 h-6 text-white/15" />
