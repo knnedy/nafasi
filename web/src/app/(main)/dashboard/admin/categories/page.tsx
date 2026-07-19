@@ -15,55 +15,13 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, APIError } from "@/lib/api";
-
-// Types
-interface EventCategoryResponse {
-  id: string;
-  name: string;
-  description: string;
-  created_at: string;
-  updated_at: string;
-}
-
-// Mock data
-const MOCK_CATEGORIES: EventCategoryResponse[] = [
-  {
-    id: "cat-001",
-    name: "Music",
-    description: "Concerts, festivals, live performances and music events.",
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-  },
-  {
-    id: "cat-002",
-    name: "Technology",
-    description: "Tech conferences, hackathons, and developer meetups.",
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-  },
-  {
-    id: "cat-003",
-    name: "Arts & Culture",
-    description: "Art exhibitions, cultural festivals, and creative showcases.",
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-  },
-  {
-    id: "cat-004",
-    name: "Business",
-    description: "Networking events, seminars, and professional development.",
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-  },
-  {
-    id: "cat-005",
-    name: "Sports & Fitness",
-    description: "Sporting events, fitness classes, and wellness activities.",
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-  },
-];
+import { APIError } from "@/lib/api";
+import { useEventCategories, type EventCategory } from "@/hooks/use-events";
+import {
+  useCreateEventCategory,
+  useUpdateEventCategory,
+  useDeleteEventCategory,
+} from "@/hooks/admin/use-categories";
 
 // Schema
 const categorySchema = z.object({
@@ -161,10 +119,12 @@ function DeleteConfirm({
   category,
   onConfirm,
   onCancel,
+  loading,
 }: {
-  category: EventCategoryResponse;
+  category: EventCategory;
   onConfirm: () => void;
   onCancel: () => void;
+  loading: boolean;
 }) {
   return (
     <div className="rounded-2xl border border-red-500/20 bg-red-500/4 p-5 space-y-4">
@@ -184,13 +144,16 @@ function DeleteConfirm({
         <button
           type="button"
           onClick={onCancel}
-          className="h-9 px-4 rounded-lg text-white/40 hover:text-white/70 text-xs font-bold transition-colors">
+          disabled={loading}
+          className="h-9 px-4 rounded-lg text-white/40 hover:text-white/70 text-xs font-bold transition-colors disabled:opacity-40">
           Cancel
         </button>
         <button
           type="button"
           onClick={onConfirm}
-          className="h-9 px-4 rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/20 text-xs font-bold transition-colors">
+          disabled={loading}
+          className="h-9 px-4 rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/20 text-xs font-bold transition-colors flex items-center gap-2 disabled:opacity-40">
+          {loading && <LoaderCircle className="w-3.5 h-3.5 animate-spin" />}
           Delete category
         </button>
       </div>
@@ -203,10 +166,12 @@ function CategoryCard({
   category,
   onEdit,
   onDelete,
+  deleting,
 }: {
-  category: EventCategoryResponse;
+  category: EventCategory;
   onEdit: () => void;
   onDelete: () => void;
+  deleting: boolean;
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -216,6 +181,7 @@ function CategoryCard({
         category={category}
         onConfirm={onDelete}
         onCancel={() => setConfirmingDelete(false)}
+        loading={deleting}
       />
     );
   }
@@ -253,12 +219,21 @@ function CategoryCard({
   );
 }
 
+function errorMessage(err: unknown) {
+  if (err instanceof APIError) return err.message;
+  return "Something went wrong. Please try again.";
+}
+
 // Page
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] =
-    useState<EventCategoryResponse[]>(MOCK_CATEGORIES);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  const { data: categories = [], isLoading } = useEventCategories();
+
+  const createMutation = useCreateEventCategory();
+  const updateMutation = useUpdateEventCategory();
+  const deleteMutation = useDeleteEventCategory();
 
   const addForm = useForm<CategoryForm>({
     resolver: zodResolver(categorySchema),
@@ -271,25 +246,16 @@ export default function AdminCategoriesPage() {
 
   const handleAdd = async (data: CategoryForm) => {
     try {
-      const res = await api.post("/api/v1/event-categories", {
-        name: data.name,
-        description: data.description,
-      });
-      const json = await res.json();
-      setCategories((prev) => [...prev, json.data]);
+      await createMutation.mutateAsync(data);
       addForm.reset();
       setShowAddForm(false);
       toast.success(`"${data.name}" created.`);
     } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
+      toast.error(errorMessage(err));
     }
   };
 
-  const startEdit = (category: EventCategoryResponse) => {
+  const startEdit = (category: EventCategory) => {
     editForm.reset({ name: category.name, description: category.description });
     setEditingId(category.id);
     setShowAddForm(false);
@@ -298,38 +264,30 @@ export default function AdminCategoriesPage() {
   const handleUpdate = async (data: CategoryForm) => {
     if (!editingId) return;
     try {
-      const res = await api.patch(
-        `/api/v1/admin/event-categories/${editingId}`,
-        { name: data.name, description: data.description },
-      );
-      const json = await res.json();
-      setCategories((prev) =>
-        prev.map((c) => (c.id === editingId ? json.data : c)),
-      );
+      await updateMutation.mutateAsync({ categoryId: editingId, data });
       setEditingId(null);
       toast.success(`"${data.name}" updated.`);
     } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
+      toast.error(errorMessage(err));
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, name: string) => {
     try {
-      await api.delete(`/api/v1/admin/event-categories/${id}`);
-      setCategories((prev) => prev.filter((c) => c.id !== id));
-      toast.success("Category deleted.");
+      await deleteMutation.mutateAsync(id);
+      toast.success(`"${name}" deleted.`);
     } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
+      toast.error(errorMessage(err));
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-white/30 text-sm font-semibold">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-2xl mx-auto">
@@ -466,7 +424,11 @@ export default function AdminCategoriesPage() {
                 key={category.id}
                 category={category}
                 onEdit={() => startEdit(category)}
-                onDelete={() => handleDelete(category.id)}
+                onDelete={() => handleDelete(category.id, category.name)}
+                deleting={
+                  deleteMutation.isPending &&
+                  deleteMutation.variables === category.id
+                }
               />
             ),
           )}
