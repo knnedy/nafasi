@@ -24,10 +24,16 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
-import { api, APIError } from "@/lib/api";
+import { APIError } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import Image from "next/image";
-import { useCurrentUser } from "@/hooks/profile/use-user";
+import {
+  useCurrentUser,
+  useUpdateProfile,
+  useUpdatePassword,
+  useUpdateAvatar,
+  useDeleteAccount,
+} from "@/hooks/profile/use-user";
 
 // Schemas
 const updateProfileSchema = z.object({
@@ -125,6 +131,11 @@ function Section({
   );
 }
 
+function errorMessage(err: unknown) {
+  if (err instanceof APIError) return err.message;
+  return "Something went wrong. Please try again.";
+}
+
 // Settings page
 export default function SettingsPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -136,6 +147,11 @@ export default function SettingsPage() {
   const { data: fetchedUser, isLoading } = useCurrentUser();
 
   const currentUser = fetchedUser ?? storeUser;
+
+  const updateProfileMutation = useUpdateProfile();
+  const updatePasswordMutation = useUpdatePassword();
+  const updateAvatarMutation = useUpdateAvatar();
+  const deleteAccountMutation = useDeleteAccount();
 
   const profileForm = useForm<UpdateProfileForm>({
     resolver: zodResolver(updateProfileSchema),
@@ -161,81 +177,59 @@ export default function SettingsPage() {
       : undefined,
   });
 
-  const isProfileLoading = profileForm.formState.isSubmitting;
-  const isPasswordLoading = passwordForm.formState.isSubmitting;
-  const isAvatarLoading = avatarForm.formState.isSubmitting;
-
   const onUpdateProfile = async (data: UpdateProfileForm) => {
     try {
-      const res = await api.patch("/api/v1/users/me", data);
-      const json = await res.json();
-      if (storeUser) setAuth(json.data, useAuthStore.getState().accessToken!);
+      const updatedUser = await updateProfileMutation.mutateAsync(data);
+      if (storeUser) setAuth(updatedUser, useAuthStore.getState().accessToken!);
       toast.success("Profile updated successfully.");
     } catch (err) {
-      if (err instanceof APIError) {
-        if (err.code === "EMAIL_ALREADY_EXISTS") {
-          profileForm.setError("email", {
-            message: "An account with this email already exists.",
-          });
-          return;
-        }
-        toast.error(err.message);
+      if (err instanceof APIError && err.code === "EMAIL_ALREADY_EXISTS") {
+        profileForm.setError("email", {
+          message: "An account with this email already exists.",
+        });
         return;
       }
-      toast.error("Something went wrong. Please try again.");
+      toast.error(errorMessage(err));
     }
   };
 
   const onUpdatePassword = async (data: UpdatePasswordForm) => {
     try {
-      await api.patch("/api/v1/users/me/password", {
+      await updatePasswordMutation.mutateAsync({
         current_password: data.current_password,
         new_password: data.new_password,
       });
       toast.success("Password updated successfully.");
       passwordForm.reset();
     } catch (err) {
-      if (err instanceof APIError) {
-        if (err.code === "INVALID_CREDENTIALS") {
-          passwordForm.setError("current_password", {
-            message: "Current password is incorrect.",
-          });
-          return;
-        }
-        toast.error(err.message);
+      if (err instanceof APIError && err.code === "INVALID_CREDENTIALS") {
+        passwordForm.setError("current_password", {
+          message: "Current password is incorrect.",
+        });
         return;
       }
-      toast.error("Something went wrong. Please try again.");
+      toast.error(errorMessage(err));
     }
   };
 
   const onUpdateAvatar = async (data: UpdateAvatarForm) => {
     try {
-      const res = await api.patch("/api/v1/users/me/avatar", data);
-      const json = await res.json();
-      if (storeUser) setAuth(json.data, useAuthStore.getState().accessToken!);
+      const updatedUser = await updateAvatarMutation.mutateAsync(data);
+      if (storeUser) setAuth(updatedUser, useAuthStore.getState().accessToken!);
       toast.success("Avatar updated successfully.");
     } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
+      toast.error(errorMessage(err));
     }
   };
 
   const onDeleteAccount = async () => {
     if (!currentUser || deleteInput !== currentUser.email) return;
     try {
-      await api.delete("/api/v1/users/me");
+      await deleteAccountMutation.mutateAsync();
       clearAuth();
       window.location.href = "/";
     } catch (err) {
-      if (err instanceof APIError) {
-        toast.error(err.message);
-        return;
-      }
-      toast.error("Something went wrong. Please try again.");
+      toast.error(errorMessage(err));
     }
   };
 
@@ -340,9 +334,9 @@ export default function SettingsPage() {
             <div className="flex justify-end pt-2">
               <button
                 type="submit"
-                disabled={isProfileLoading}
+                disabled={updateProfileMutation.isPending}
                 className="h-11 px-6 rounded-xl font-bold text-sm text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 shadow-lg shadow-orange-500/20 transition-all duration-200 flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-                {isProfileLoading ? (
+                {updateProfileMutation.isPending ? (
                   <>
                     <LoaderCircle className="w-4 h-4 animate-spin" />
                     Saving…
@@ -403,9 +397,9 @@ export default function SettingsPage() {
             <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={isAvatarLoading}
+                disabled={updateAvatarMutation.isPending}
                 className="h-11 px-6 rounded-xl font-bold text-sm text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 shadow-lg shadow-orange-500/20 transition-all duration-200 flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-                {isAvatarLoading ? (
+                {updateAvatarMutation.isPending ? (
                   <>
                     <LoaderCircle className="w-4 h-4 animate-spin" />
                     Saving…
@@ -507,9 +501,9 @@ export default function SettingsPage() {
             <div className="flex justify-end pt-2">
               <button
                 type="submit"
-                disabled={isPasswordLoading}
+                disabled={updatePasswordMutation.isPending}
                 className="h-11 px-6 rounded-xl font-bold text-sm text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 shadow-lg shadow-orange-500/20 transition-all duration-200 flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-                {isPasswordLoading ? (
+                {updatePasswordMutation.isPending ? (
                   <>
                     <LoaderCircle className="w-4 h-4 animate-spin" />
                     Updating…
@@ -579,9 +573,16 @@ export default function SettingsPage() {
               </button>
               <button
                 onClick={onDeleteAccount}
-                disabled={deleteInput !== currentUser.email}
+                disabled={
+                  deleteInput !== currentUser.email ||
+                  deleteAccountMutation.isPending
+                }
                 className="h-10 px-4 rounded-xl font-bold text-sm text-white bg-red-500 hover:bg-red-400 transition-all duration-200 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed">
-                <Trash2 className="w-4 h-4" />
+                {deleteAccountMutation.isPending ? (
+                  <LoaderCircle className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
                 Confirm deletion
               </button>
             </div>
