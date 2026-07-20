@@ -27,7 +27,7 @@ import {
 import { api, APIError } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import Image from "next/image";
-import { useCurrentUser } from "@/hooks/use-user";
+import { useCurrentUser } from "@/hooks/profile/use-user";
 
 // Schemas
 const updateProfileSchema = z.object({

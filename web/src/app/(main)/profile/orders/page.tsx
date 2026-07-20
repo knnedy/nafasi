@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { accentForId, formatPrice } from "@/lib/utils";
 import Image from "next/image";
-import { useMyOrders, UserOrderResponse } from "@/hooks/use-orders";
+import { useMyOrders, UserOrderResponse } from "@/hooks/profile/use-orders";
 
 // Helpers
 function formatDate(iso: string) {
