@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 
@@ -19,13 +19,71 @@ export function useCurrentUser() {
   return useQuery({
     queryKey: ["users", "me"],
     queryFn: async () => {
-      // Uses the authenticated api instance (assuming api.get includes the Bearer token)
       const res = await api.get("/api/v1/users/me");
       const json = await res.json();
 
       return json.data as UserProfile;
     },
-    // Only attempt to fetch if the user is authenticated in the local store
     enabled: isAuthenticated,
+  });
+}
+
+export interface UpdateProfileInput {
+  name: string;
+  email: string;
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: UpdateProfileInput) => {
+      const res = await api.patch("/api/v1/users/me", data);
+      const json = await res.json();
+      return json.data as UserProfile;
+    },
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(["users", "me"], updatedUser);
+    },
+  });
+}
+
+export interface UpdatePasswordInput {
+  current_password: string;
+  new_password: string;
+}
+
+export function useUpdatePassword() {
+  return useMutation({
+    mutationFn: async (data: UpdatePasswordInput) => {
+      await api.patch("/api/v1/users/me/password", data);
+    },
+  });
+}
+
+export interface UpdateAvatarInput {
+  avatar_url: string;
+}
+
+export function useUpdateAvatar() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: UpdateAvatarInput) => {
+      const res = await api.patch("/api/v1/users/me/avatar", data);
+      const json = await res.json();
+      return json.data as UserProfile;
+    },
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(["users", "me"], updatedUser);
+    },
+  });
+}
+
+export function useDeleteAccount() {
+  return useMutation({
+    mutationFn: async () => {
+      await api.delete("/api/v1/users/me");
+    },
   });
 }
