@@ -19,140 +19,11 @@ import {
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-
-// Types
-interface AdminStatsResponse {
-  total_users: number;
-  total_organisers: number;
-  total_attendees: number;
-  total_events: number;
-  published_events: number;
-  total_orders: number;
-  paid_orders: number;
-  total_revenue: number;
-}
-
-interface AdminOrderDetailResponse {
-  id: string;
-  user_id: string;
-  event_id: string;
-  quantity: number;
-  status: string;
-  payment_method?: string;
-  payment_ref?: string;
-  checked_in: boolean;
-  created_at: string;
-  user_name: string;
-  user_email: string;
-  event_title: string;
-}
-
-// Mock data
-const MOCK_STATS: AdminStatsResponse = {
-  total_users: 1284,
-  total_organisers: 38,
-  total_attendees: 1246,
-  total_events: 74,
-  published_events: 51,
-  total_orders: 3892,
-  paid_orders: 3601,
-  total_revenue: 189500000,
-};
-
-const MOCK_EVENT_STATUS_BREAKDOWN = {
-  PUBLISHED: 51,
-  DRAFT: 16,
-  CANCELLED: 4,
-  COMPLETED: 3,
-};
-
-const MOCK_PENDING_ORGANISERS = 3;
-const MOCK_CATEGORIES_COUNT = 5;
-
-const MOCK_RECENT_ORDERS: AdminOrderDetailResponse[] = [
-  {
-    id: "ord-001",
-    user_id: "u1",
-    event_id: "evt-001",
-    quantity: 2,
-    status: "CONFIRMED",
-    payment_method: "MPESA",
-    payment_ref: "QH7K2L9M",
-    checked_in: false,
-    created_at: "2026-06-14T18:45:00Z",
-    user_name: "Amara Osei",
-    user_email: "amara@example.com",
-    event_title: "Afropunk Nairobi 2026",
-  },
-  {
-    id: "ord-002",
-    user_id: "u2",
-    event_id: "evt-001",
-    quantity: 1,
-    status: "CONFIRMED",
-    payment_method: "MPESA",
-    payment_ref: "RT4P8N3X",
-    checked_in: false,
-    created_at: "2026-06-14T17:30:00Z",
-    user_name: "Fatima Mwangi",
-    user_email: "fatima@example.com",
-    event_title: "Afropunk Nairobi 2026",
-  },
-  {
-    id: "ord-003",
-    user_id: "u3",
-    event_id: "evt-002",
-    quantity: 3,
-    status: "PENDING",
-    payment_method: "MPESA",
-    checked_in: false,
-    created_at: "2026-06-14T16:15:00Z",
-    user_name: "Kwame Otieno",
-    user_email: "kwame@example.com",
-    event_title: "Tech Summit East Africa",
-  },
-  {
-    id: "ord-004",
-    user_id: "u4",
-    event_id: "evt-002",
-    quantity: 1,
-    status: "CONFIRMED",
-    payment_method: "MPESA",
-    payment_ref: "WQ2J5K8Y",
-    checked_in: false,
-    created_at: "2026-06-14T15:00:00Z",
-    user_name: "Zara Kamau",
-    user_email: "zara@example.com",
-    event_title: "Tech Summit East Africa",
-  },
-  {
-    id: "ord-005",
-    user_id: "u5",
-    event_id: "evt-003",
-    quantity: 2,
-    status: "CANCELLED",
-    payment_method: "MPESA",
-    checked_in: false,
-    created_at: "2026-06-14T14:00:00Z",
-    user_name: "Dele Adeyemi",
-    user_email: "dele@example.com",
-    event_title: "Koroga Festival",
-  },
-  {
-    id: "ord-006",
-    user_id: "u6",
-    event_id: "evt-003",
-    quantity: 1,
-    status: "CONFIRMED",
-    payment_method: "MPESA",
-    payment_ref: "KP3R9T2W",
-    checked_in: false,
-    created_at: "2026-06-14T13:00:00Z",
-    user_name: "Aisha Njoroge",
-    user_email: "aisha@example.com",
-    event_title: "Koroga Festival",
-  },
-];
+import { useAdminStats } from "@/hooks/admin/use-stats";
+import { useAdminRecentOrders } from "@/hooks/admin/use-orders";
+import { useAdminEvents } from "@/hooks/admin/use-events";
+import { useAdminOrganisers } from "@/hooks/admin/use-organisers";
+import { useEventCategories } from "@/hooks/use-events";
 
 // Helpers
 function timeAgo(iso: string) {
@@ -268,25 +139,21 @@ const EVENT_STATUS_CONFIG = [
     key: "PUBLISHED",
     label: "Published",
     color: "#10b981",
-    glow: "rgba(16,185,129,0.3)",
   },
   {
     key: "DRAFT",
     label: "Draft",
     color: "#ffffff30",
-    glow: "rgba(255,255,255,0.1)",
   },
   {
     key: "CANCELLED",
     label: "Cancelled",
     color: "#ef4444",
-    glow: "rgba(239,68,68,0.3)",
   },
   {
     key: "COMPLETED",
     label: "Completed",
     color: "#3b82f6",
-    glow: "rgba(59,130,246,0.3)",
   },
 ];
 
@@ -319,12 +186,12 @@ function EventStatusBreakdown({
   breakdown,
   total,
 }: {
-  breakdown: typeof MOCK_EVENT_STATUS_BREAKDOWN;
+  breakdown: Record<string, number>;
   total: number;
 }) {
   const chartData = EVENT_STATUS_CONFIG.map(({ key, label, color }) => ({
     name: label,
-    value: breakdown[key as keyof typeof breakdown] ?? 0,
+    value: breakdown[key] ?? 0,
     color,
   })).filter((d) => d.value > 0);
 
@@ -383,7 +250,7 @@ function EventStatusBreakdown({
       {/* legend */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
         {EVENT_STATUS_CONFIG.map(({ key, label, color }) => {
-          const count = breakdown[key as keyof typeof breakdown] ?? 0;
+          const count = breakdown[key] ?? 0;
           const pct = total > 0 ? Math.round((count / total) * 100) : 0;
           return (
             <div key={key} className="flex items-center gap-2.5">
@@ -412,7 +279,30 @@ function EventStatusBreakdown({
 
 // Overview page
 export default function AdminOverviewPage() {
-  const stats = MOCK_STATS;
+  const { data: stats, isLoading: statsLoading } = useAdminStats();
+  const { data: recentOrders = [], isLoading: ordersLoading } =
+    useAdminRecentOrders(6);
+  const { data: events = [], isLoading: eventsLoading } = useAdminEvents();
+  const { data: organisers = [], isLoading: organisersLoading } =
+    useAdminOrganisers();
+  const { data: categories = [], isLoading: categoriesLoading } =
+    useEventCategories();
+
+  if (
+    statsLoading ||
+    ordersLoading ||
+    eventsLoading ||
+    organisersLoading ||
+    categoriesLoading ||
+    !stats
+  ) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-white/30 text-sm font-semibold">Loading...</p>
+      </div>
+    );
+  }
+
   const paidPct =
     stats.total_orders > 0
       ? Math.round((stats.paid_orders / stats.total_orders) * 100)
@@ -421,6 +311,16 @@ export default function AdminOverviewPage() {
     stats.total_events > 0
       ? Math.round((stats.published_events / stats.total_events) * 100)
       : 0;
+
+  const eventStatusBreakdown = events.reduce<Record<string, number>>(
+    (acc, e) => {
+      acc[e.status] = (acc[e.status] ?? 0) + 1;
+      return acc;
+    },
+    {},
+  );
+
+  const pendingOrganisers = organisers.filter((o) => !o.is_verified).length;
 
   return (
     <div className="space-y-8">
@@ -438,14 +338,13 @@ export default function AdminOverviewPage() {
       </div>
 
       {/* pending organisers alert */}
-      {MOCK_PENDING_ORGANISERS > 0 && (
+      {pendingOrganisers > 0 && (
         <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/6 border border-amber-500/15">
           <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="text-amber-400/90 text-sm font-bold">
-              {MOCK_PENDING_ORGANISERS} organiser
-              {Number(MOCK_PENDING_ORGANISERS) === 1 ? "" : "s"} awaiting
-              verification
+              {pendingOrganisers} organiser
+              {pendingOrganisers === 1 ? "" : "s"} awaiting verification
             </p>
             <p className="text-amber-400/50 text-xs mt-0.5">
               Review and approve their accounts to allow event publishing.
@@ -550,7 +449,7 @@ export default function AdminOverviewPage() {
             </p>
           </div>
           <p className="text-white font-black text-2xl tracking-tight">
-            {MOCK_CATEGORIES_COUNT}
+            {categories.length}
           </p>
           <Link
             href="/dashboard/admin/categories"
@@ -565,7 +464,7 @@ export default function AdminOverviewPage() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-2">
           <EventStatusBreakdown
-            breakdown={MOCK_EVENT_STATUS_BREAKDOWN}
+            breakdown={eventStatusBreakdown}
             total={stats.total_events}
           />
         </div>
@@ -583,50 +482,56 @@ export default function AdminOverviewPage() {
             </Link>
           </div>
 
-          <div className="rounded-2xl border border-white/8 bg-white/2 overflow-hidden">
-            {MOCK_RECENT_ORDERS.map((order, i) => {
-              const sc = orderStatusConfig(order.status);
-              const StatusIcon = sc.icon;
+          {recentOrders.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl border border-white/6 bg-white/2">
+              <p className="text-white/20 text-sm">No orders yet.</p>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-white/8 bg-white/2 overflow-hidden">
+              {recentOrders.map((order, i) => {
+                const sc = orderStatusConfig(order.status);
+                const StatusIcon = sc.icon;
 
-              return (
-                <div
-                  key={order.id}
-                  className={`flex items-center gap-4 px-5 py-4 ${
-                    i < MOCK_RECENT_ORDERS.length - 1
-                      ? "border-b border-white/4"
-                      : ""
-                  }`}>
-                  <UserInitials name={order.user_name} />
+                return (
+                  <div
+                    key={order.id}
+                    className={`flex items-center gap-4 px-5 py-4 ${
+                      i < recentOrders.length - 1
+                        ? "border-b border-white/4"
+                        : ""
+                    }`}>
+                    <UserInitials name={order.user_name} />
 
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white/80 text-sm font-bold truncate leading-tight">
-                      {order.user_name}
-                    </p>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      <span className="text-white/30 text-xs truncate">
-                        {order.event_title}
-                      </span>
-                      <span className="text-white/20 text-xs">·</span>
-                      <span className="text-white/25 text-xs">
-                        qty {order.quantity}
-                      </span>
-                      <span className="text-white/20 text-xs">·</span>
-                      <span className="text-white/20 text-xs flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {timeAgo(order.created_at)}
-                      </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white/80 text-sm font-bold truncate leading-tight">
+                        {order.user_name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span className="text-white/30 text-xs truncate">
+                          {order.event_title}
+                        </span>
+                        <span className="text-white/20 text-xs">·</span>
+                        <span className="text-white/25 text-xs">
+                          qty {order.quantity}
+                        </span>
+                        <span className="text-white/20 text-xs">·</span>
+                        <span className="text-white/20 text-xs flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {timeAgo(order.created_at)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  <span
-                    className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border flex items-center gap-1 shrink-0 ${sc.cls}`}>
-                    <StatusIcon className="w-2.5 h-2.5" />
-                    {sc.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                    <span
+                      className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border flex items-center gap-1 shrink-0 ${sc.cls}`}>
+                      <StatusIcon className="w-2.5 h-2.5" />
+                      {sc.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
