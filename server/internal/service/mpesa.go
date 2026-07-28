@@ -55,7 +55,7 @@ type mpesaAuthResponse struct {
 
 func (s *MpesaService) getAccessToken(ctx context.Context) (string, error) {
 	credentials := base64.StdEncoding.EncodeToString(
-		[]byte(fmt.Sprintf("%s:%s", s.config.MpesaConsumerKey, s.config.MpesaConsumerSecret)),
+		fmt.Appendf(nil, "%s:%s", s.config.MpesaConsumerKey, s.config.MpesaConsumerSecret),
 	)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.baseURL+authEndpoint, nil)

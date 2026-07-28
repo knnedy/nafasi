@@ -8,7 +8,20 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-const ExchangeName = "nafasi.events"
+const (
+	ExchangeName               = "nafasi.events"
+	RoutingKeyPaymentConfirmed = "payment.confirmed"
+	RoutingKeyEmailSend        = "email.send"
+)
+
+// EmailSendPayload is the message contract published to the email.send
+// routing key and consumed by the worker.
+type EmailSendPayload struct {
+	Type       string `json:"type"`
+	Email      string `json:"email"`
+	EventTitle string `json:"event_title"`
+	QRCode     string `json:"qr_code"`
+}
 
 // Publisher publishes messages to the message broker.
 type Publisher interface {
