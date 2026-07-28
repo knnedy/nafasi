@@ -22,6 +22,7 @@ type Config struct {
 	MpesaCallbackURL    string
 	ResendAPIKey        string
 	ResendFromEmail     string
+	AMQPUrl             string
 }
 
 func Load() (*Config, error) {
@@ -51,6 +52,7 @@ func Load() (*Config, error) {
 		"MPESA_CALLBACK_URL":    &cfg.MpesaCallbackURL,
 		"RESEND_API_KEY":        &cfg.ResendAPIKey,
 		"RESEND_FROM_EMAIL":     &cfg.ResendFromEmail,
+		"AMQP_URL":              &cfg.AMQPUrl,
 	}
 
 	for key, dest := range required {
