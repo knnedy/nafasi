@@ -21,6 +21,7 @@ import (
 	"github.com/knnedy/nafasi/internal/config"
 	"github.com/knnedy/nafasi/internal/handler"
 	"github.com/knnedy/nafasi/internal/notifications"
+	"github.com/knnedy/nafasi/internal/queue"
 	"github.com/knnedy/nafasi/internal/repository"
 	"github.com/knnedy/nafasi/internal/router"
 	"github.com/knnedy/nafasi/internal/service"
@@ -49,6 +50,15 @@ func main() {
 	}
 	defer db.Pool.Close()
 	slog.Info("connected to database")
+
+	// connect to rabbitmq
+	publisher, err := queue.Connect(cfg.AMQPUrl)
+	if err != nil {
+		slog.Error("failed to connect to rabbitmq", "error", err)
+		os.Exit(1)
+	}
+	defer publisher.Close()
+	slog.Info("connected to rabbitmq")
 
 	// initialize token manager
 	tokens := token.NewTokenManager(cfg.JWTSecret)
