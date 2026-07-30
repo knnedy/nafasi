@@ -14,6 +14,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/knnedy/nafasi/internal/queue"
 	"github.com/knnedy/nafasi/internal/repository"
@@ -220,6 +221,9 @@ func (s *PaymentService) confirmFreeOrder(ctx context.Context, order repository.
 			ID:           pgtype.UUID{Bytes: ticketTypeID, Valid: true},
 			QuantitySold: quantity,
 		}); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return response.ErrInsufficientTickets
+			}
 			return response.ErrDatabase
 		}
 
@@ -341,6 +345,7 @@ func (s *PaymentService) HandleMpesaCallback(ctx context.Context, callback Mpesa
 	}
 
 	// Payment SUCCESS - atomic transaction
+	soldOut := false
 	err = s.db.WithTransaction(ctx, func(q *repository.Queries) error {
 		_, err := q.UpdateOrderPayment(ctx, repository.UpdateOrderPaymentParams{
 			ID:     order.ID,
@@ -368,12 +373,37 @@ func (s *PaymentService) HandleMpesaCallback(ctx context.Context, callback Mpesa
 			QuantitySold: order.Quantity,
 		})
 		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				soldOut = true
+				return response.ErrInsufficientTickets
+			}
 			return fmt.Errorf("callback: failed to increment quantity sold: %w", err)
 		}
 
 		return nil
 	})
 	if err != nil {
+		if soldOut {
+			// money has already been taken via M-Pesa but no ticket inventory remains —
+			// mark the order failed and flag loudly for manual refund handling
+			if _, updateErr := s.queries.UpdateOrderStatus(ctx, repository.UpdateOrderStatusParams{
+				ID:     order.ID,
+				Status: repository.OrderStatusFAILED,
+			}); updateErr != nil {
+				slog.Error("failed to mark sold-out order as failed after successful mpesa payment",
+					"order_id", uuid.UUID(order.ID.Bytes).String(),
+					"mpesa_receipt", result.MpesaReceiptNumber,
+					"err", updateErr,
+				)
+			}
+
+			slog.Error("PAID BUT SOLD OUT — customer charged with no ticket available, needs manual refund",
+				"order_id", uuid.UUID(order.ID.Bytes).String(),
+				"mpesa_receipt", result.MpesaReceiptNumber,
+				"phone", result.PhoneNumber,
+				"amount", result.Amount,
+			)
+		}
 		return err
 	}
 
@@ -399,7 +429,6 @@ func (s *PaymentService) HandleMpesaCallback(ctx context.Context, callback Mpesa
 	}
 
 	return nil
-
 }
 
 func (s *PaymentService) QueryPaymentStatus(ctx context.Context, orderID string) (*repository.Order, error) {
