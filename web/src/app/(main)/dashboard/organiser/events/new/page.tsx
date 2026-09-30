@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner";
 import { APIError } from "@/lib/api";
 import { useCreateEvent } from "@/hooks/organiser/use-events";
+import { useEventCategories } from "@/hooks/use-events";
 
 const createEventSchema = z
   .object({
@@ -137,6 +138,7 @@ export default function NewEventPage() {
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(false);
   const createEvent = useCreateEvent();
+  const { data: eventCategories } = useEventCategories();
 
   const form = useForm<CreateEventForm>({
     resolver: zodResolver(createEventSchema),
@@ -276,21 +278,14 @@ export default function NewEventPage() {
                     <option value="" disabled className="text-black">
                       Select a category...
                     </option>
-                    <option value="1" className="text-black">
-                      Music & Concerts
-                    </option>
-                    <option value="2" className="text-black">
-                      Tech & Business
-                    </option>
-                    <option value="3" className="text-black">
-                      Comedy & Entertainment
-                    </option>
-                    <option value="4" className="text-black">
-                      Sports & Fitness
-                    </option>
-                    <option value="5" className="text-black">
-                      Art & Culture
-                    </option>
+                    {eventCategories?.map((category) => (
+                      <option
+                        key={category.id}
+                        value={category.id}
+                        className="text-black">
+                        {category.name}
+                      </option>
+                    ))}
                   </select>
                 </FormField>
               )}

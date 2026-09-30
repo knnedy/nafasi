@@ -82,13 +82,13 @@ func (s *EventService) CreateEvent(ctx context.Context, organiserID string, inpu
 	// parse organiser ID
 	parsedOrganiserID, err := uuid.Parse(organiserID)
 	if err != nil {
-		return repository.Event{}, response.ErrNotFound
+		return repository.Event{}, response.ErrInvalidInput
 	}
 
 	// parse category ID
 	parsedCategoryID, err := uuid.Parse(input.CategoryID)
 	if err != nil {
-		return repository.Event{}, response.ErrNotFound
+		return repository.Event{}, response.ErrInvalidInput
 	}
 
 	// parse times

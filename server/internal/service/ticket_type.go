@@ -86,7 +86,7 @@ type UpdateTicketTypeInput struct {
 	SaleEnds    string `json:"sale_ends"   validate:"omitempty"`
 }
 
-func (s *TicketTypeService) CreateTicketType(ctx context.Context, eventID, organiserID string, input CreateTicketTypeInput) (repository.TicketType, error) {
+func (s *TicketTypeService) CreateTicketType(ctx context.Context, organiserID, eventID string, input CreateTicketTypeInput) (repository.TicketType, error) {
 	// validate struct
 	if err := s.validate.Struct(input); err != nil {
 		return repository.TicketType{}, formatValidationError(err, s.trans)
