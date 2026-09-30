@@ -98,7 +98,7 @@ export function useUpdateEvent() {
 export type EventStatus = "DRAFT" | "PUBLISHED" | "CANCELLED" | "COMPLETED";
 
 interface UpdateEventStatusVariables {
-  id: string;
+  eventId: string;
   status: EventStatus;
 }
 
@@ -106,14 +106,16 @@ export function useUpdateEventStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, status }: UpdateEventStatusVariables) => {
-      const res = await api.patch(`/api/v1/events/${id}/status`, { status });
+    mutationFn: async ({ eventId, status }: UpdateEventStatusVariables) => {
+      const res = await api.patch(`/api/v1/events/${eventId}/status`, {
+        status,
+      });
       return res.json();
     },
     onSuccess: (_, variables) => {
       // Invalidate the specific event cache
       queryClient.invalidateQueries({
-        queryKey: ["organiser", "events", variables.id],
+        queryKey: ["organiser", "events", variables.eventId],
       });
       // Invalidate the general list cache so the status tag updates everywhere
       queryClient.invalidateQueries({

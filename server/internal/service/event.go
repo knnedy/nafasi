@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -172,6 +173,7 @@ func (s *EventService) GetPublishedEvents(ctx context.Context, limit, offset int
 		Offset: offset,
 	})
 	if err != nil {
+		log.Printf("PublicGetPublishedEvents DB Error: %v", err) // Log exact query failure
 		return nil, response.ErrDatabase
 	}
 
@@ -190,6 +192,7 @@ func (s *EventService) GetPublishedEventsByCategory(ctx context.Context, categor
 		Offset:     offset,
 	})
 	if err != nil {
+		log.Printf("PublicGetPublishedEvents DB Error: %v", err) // Log exact query failure
 		return nil, response.ErrDatabase
 	}
 

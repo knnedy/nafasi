@@ -220,7 +220,7 @@ export default function EventSetupPage() {
     }
 
     updateStatus.mutate(
-      { id: eventId, status: "PUBLISHED" },
+      { eventId: eventId, status: "PUBLISHED" },
       {
         onSuccess: () => {
           toast.success("Event published successfully!");
